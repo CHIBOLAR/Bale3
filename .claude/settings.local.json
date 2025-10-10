@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(powershell:*)",
+      "Bash(npx supabase:*)",
+      "Bash(mv:*)",
+      "Bash(supabase db reset:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
