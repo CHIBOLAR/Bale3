@@ -28,10 +28,33 @@ export async function GET(request: NextRequest) {
       // If user doesn't exist, create company and user record
       if (!existingUser) {
         try {
+          const email = data.user.email!;
+
+          // Check if user has a valid platform invite
+          const { data: invite, error: inviteError } = await supabase
+            .from('invites')
+            .select('*')
+            .eq('email', email)
+            .eq('invite_type', 'platform')
+            .eq('status', 'pending')
+            .gt('expires_at', new Date().toISOString())
+            .single();
+
+          if (inviteError || !invite) {
+            console.error('No valid invite found for:', email);
+            await supabase.auth.signOut();
+            return NextResponse.redirect(`${origin}/signup?error=no_invite_found`);
+          }
+
+          // Mark invite as accepted
+          await supabase
+            .from('invites')
+            .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+            .eq('id', invite.id);
+
           // Extract user info from Google OAuth
           const firstName = data.user.user_metadata.given_name || data.user.email?.split('@')[0] || 'User';
           const lastName = data.user.user_metadata.family_name || '';
-          const email = data.user.email!;
 
           // Create company (use email domain or user's name)
           const companyName = data.user.user_metadata.full_name
@@ -53,6 +76,7 @@ export async function GET(request: NextRequest) {
             company_id: company.id,
             first_name: firstName,
             last_name: lastName,
+            phone_number: data.user.user_metadata.phone || '', // Default empty string if no phone
             email: email,
             role: 'admin',
             auth_user_id: data.user.id,

@@ -7,7 +7,11 @@
       "Bash(mv:*)",
       "Bash(supabase db reset:*)",
       "Bash(psql:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []
