@@ -173,7 +173,8 @@ CREATE TABLE stock_units (
     manufacturing_date DATE,
     
     -- Receipt tracking (links back to goods receipt that created this unit)
-    created_from_receipt_id UUID REFERENCES goods_receipts(id),
+    -- FK constraint will be added after goods_receipts table is created
+    created_from_receipt_id UUID,
     
     notes TEXT,
     
@@ -1231,3 +1232,10 @@ LEFT JOIN (
     FROM job_work_finished_goods  
     GROUP BY job_work_id
 ) fg_summary ON jw.id = fg_summary.job_work_id;
+
+-- =====================================================
+-- ADD FOREIGN KEY CONSTRAINT FOR STOCK UNITS
+-- =====================================================
+-- Add FK constraint for created_from_receipt_id after goods_receipts table exists
+ALTER TABLE stock_units ADD CONSTRAINT fk_stock_unit_receipt
+    FOREIGN KEY (created_from_receipt_id) REFERENCES goods_receipts(id);
