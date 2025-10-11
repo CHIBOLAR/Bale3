@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
           company: company?.trim() || null,
           message: message?.trim() || null,
           is_demo_upgrade: existingUser?.is_demo || false,
+          generation_method: 'api',
         },
-        generation_method: 'api',
       })
       .select()
       .single();

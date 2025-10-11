@@ -144,7 +144,6 @@ export async function POST(request: NextRequest) {
       .from('invites')
       .update({
         status: 'accepted',
-        accepted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', invite.id);

@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
             // Mark invite as accepted
             await supabase
               .from('invites')
-              .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+              .update({ status: 'accepted' })
               .eq('id', invite.id);
 
             // Create new company for official user

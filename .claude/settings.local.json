@@ -24,7 +24,9 @@
       "Bash(mkdir:*)",
       "Bash(cp:*)",
       "WebFetch(domain:supabase.com)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "ask": []
