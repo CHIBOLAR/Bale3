@@ -74,14 +74,6 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      // Check if user already exists
-      const { data: existingAuthUser } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          shouldCreateUser: false, // Don't create yet
-        },
-      });
-
       // Send OTP for verification
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: email,
@@ -93,7 +85,16 @@ export default function SignupPage() {
         },
       });
 
-      if (otpError) throw otpError;
+      // Handle rate limit error gracefully - OTP might already be sent
+      if (otpError) {
+        // If rate limited, assume OTP was already sent and proceed
+        if (otpError.message?.includes('security') || otpError.message?.includes('seconds')) {
+          console.log('Rate limit hit, but OTP likely already sent');
+          setStep('verify-otp');
+          return;
+        }
+        throw otpError;
+      }
 
       setStep('verify-otp');
     } catch (err: any) {
