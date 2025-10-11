@@ -1,278 +1,341 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function SignupPage() {
+  const [step, setStep] = useState<'loading' | 'send-otp' | 'verify-otp' | 'error'>('loading');
   const [inviteCode, setInviteCode] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUpgrade, setIsUpgrade] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const handleSignup = async (e: React.FormEvent) => {
+  // Validate invite code from URL
+  useEffect(() => {
+    const code = searchParams.get('code');
+
+    if (!code) {
+      setError('No invite code provided. Please use the link from your invitation email.');
+      setStep('error');
+      return;
+    }
+
+    setInviteCode(code);
+    validateInviteCode(code);
+  }, [searchParams]);
+
+  const validateInviteCode = async (code: string) => {
+    try {
+      const { data: invite, error: inviteError } = await supabase
+        .from('invites')
+        .select('email, status, expires_at, metadata')
+        .eq('code', code)
+        .eq('invite_type', 'platform')
+        .single();
+
+      if (inviteError || !invite) {
+        setError('Invalid invite code. Please check your invitation link.');
+        setStep('error');
+        return;
+      }
+
+      if (invite.status !== 'accepted') {
+        setError('This invite has not been approved yet or has already been used.');
+        setStep('error');
+        return;
+      }
+
+      if (new Date(invite.expires_at) < new Date()) {
+        setError('This invite has expired. Please request a new invitation.');
+        setStep('error');
+        return;
+      }
+
+      setEmail(invite.email);
+      const metadata = invite.metadata as any;
+      setIsUpgrade(metadata?.is_demo_upgrade || false);
+      setStep('send-otp');
+    } catch (err: any) {
+      console.error('Error validating invite:', err);
+      setError('Failed to validate invite code. Please try again.');
+      setStep('error');
+    }
+  };
+
+  const handleSendOTP = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Check if user already exists
+      const { data: existingAuthUser } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: false, // Don't create yet
+        },
+      });
+
+      // Send OTP for verification
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: true,
+          data: {
+            invite_code: inviteCode,
+          },
+        },
+      });
+
+      if (otpError) throw otpError;
+
+      setStep('verify-otp');
+    } catch (err: any) {
+      console.error('Error sending OTP:', err);
+      setError(err.message || 'Failed to send verification code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // Step 1: Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            phone: phone,
-          },
-        },
+      // Verify OTP
+      const { data: authData, error: verifyError } = await supabase.auth.verifyOtp({
+        email: email,
+        token: otp,
+        type: 'email',
       });
 
-      if (authError) throw authError;
+      if (verifyError) throw verifyError;
 
-      if (authData.user) {
-        // Step 2: Create company
+      if (!authData.user) {
+        throw new Error('Failed to verify OTP');
+      }
+
+      // Check if user record exists
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('*, companies(*)')
+        .eq('auth_user_id', authData.user.id)
+        .single();
+
+      if (existingUser && existingUser.is_demo) {
+        // UPGRADE FLOW: Convert demo user to full user
+        await supabase
+          .from('users')
+          .update({
+            is_demo: false,
+            role: 'admin',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingUser.id);
+
+        console.log('✅ Demo user upgraded to full access');
+      } else if (!existingUser) {
+        // NEW USER FLOW: Create company and user
+        const defaultCompanyName = `${email.split('@')[0]}'s Company`;
         const { data: company, error: companyError } = await supabase
           .from('companies')
-          .insert({
-            name: companyName,
-          })
+          .insert({ name: defaultCompanyName })
           .select()
           .single();
 
         if (companyError) throw companyError;
 
-        // Step 3: Create user record linked to company
-        const { error: userError } = await supabase.from('users').insert({
+        const defaultFirstName = email.split('@')[0] || 'User';
+        await supabase.from('users').insert({
           company_id: company.id,
-          first_name: firstName,
-          last_name: lastName,
-          phone_number: phone,
+          first_name: defaultFirstName,
+          last_name: '',
+          phone_number: '',
           email: email,
           role: 'admin',
           auth_user_id: authData.user.id,
+          is_demo: false,
         });
 
-        if (userError) throw userError;
-
-        // Step 4: Create default warehouse
+        // Create default warehouse
         await supabase.from('warehouses').insert({
           company_id: company.id,
           name: 'Main Warehouse',
           created_by: authData.user.id,
         });
 
-        router.push('/dashboard');
-        router.refresh();
+        console.log('✅ New user account created');
       }
+
+      // Mark invite as used
+      await supabase
+        .from('invites')
+        .update({
+          status: 'expired',
+          metadata: {
+            used_at: new Date().toISOString(),
+            used_by: authData.user.id,
+          },
+        })
+        .eq('code', inviteCode);
+
+      // Redirect to dashboard
+      router.push('/dashboard');
+      router.refresh();
     } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+      console.error('Error verifying OTP:', err);
+      setError(err.message || 'Invalid verification code. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign up with Google');
-      setLoading(false);
-    }
+  const handleResendOTP = async () => {
+    setOtp('');
+    await handleSendOTP();
   };
 
+  if (step === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Validating your invitation...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 'error') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+              <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h2 className="mt-4 text-2xl font-bold text-gray-900">Invalid Invitation</h2>
+            <p className="mt-2 text-sm text-gray-600">{error}</p>
+            <div className="mt-6">
+              <Link
+                href="/request-invite"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Request New Invitation
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mt-8">
-      <form onSubmit={handleSignup} className="space-y-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
-            {error}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isUpgrade ? 'Upgrade Your Account' : 'Welcome to Bale Inventory'}
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            {isUpgrade
+              ? 'Your demo account will be upgraded to full access'
+              : 'Complete your signup to get started'}
+          </p>
+        </div>
+
+        {step === 'send-otp' && (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>Email:</strong> {email}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                We'll send a verification code to this email
+              </p>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleSendOTP}
+              disabled={loading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Sending...' : 'Send Verification Code'}
+            </button>
           </div>
         )}
 
-        <div>
-          <label htmlFor="inviteCode" className="block text-sm font-medium text-gray-700">
-            Invite Code <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="inviteCode"
-            type="text"
-            required
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 uppercase"
-            placeholder="XXXXXXXXXXXX"
-            maxLength={12}
-          />
-          <p className="mt-1 text-xs text-gray-500">Platform is invite-only. Enter your 12-character invite code.</p>
-        </div>
+        {step === 'verify-otp' && (
+          <form onSubmit={handleVerifyOTP} className="space-y-6">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="text-sm text-green-800">
+                ✅ Verification code sent to <strong>{email}</strong>
+              </p>
+              <p className="text-xs text-green-600 mt-1">
+                Check your inbox and enter the 6-digit code below
+              </p>
+            </div>
 
-        <div>
-          <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
-            Company Name
-          </label>
-          <input
-            id="companyName"
-            type="text"
-            required
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Acme Fabrics"
-          />
-        </div>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
+                {error}
+              </div>
+            )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-              First Name
-            </label>
-            <input
-              id="firstName"
-              type="text"
-              required
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-              Last Name
-            </label>
-            <input
-              id="lastName"
-              type="text"
-              required
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-            Phone Number
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            required
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            placeholder="+91 98765 43210"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email address
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            placeholder="you@example.com"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            placeholder="••••••••"
-            minLength={6}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Creating account...' : 'Create account'}
-        </button>
-      </form>
-
-      <div className="mt-6">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <button
-            type="button"
-            onClick={handleGoogleSignup}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            <div>
+              <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
+                Verification Code
+              </label>
+              <input
+                id="otp"
+                type="text"
+                inputMode="numeric"
+                required
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-center text-2xl tracking-widest font-mono"
+                placeholder="000000"
+                maxLength={6}
+                autoComplete="one-time-code"
               />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              />
-            </svg>
-            Sign up with Google
-          </button>
-        </div>
-      </div>
+            </div>
 
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-            Sign in
-          </Link>
-        </p>
+            <button
+              type="submit"
+              disabled={loading || otp.length !== 6}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Verifying...' : isUpgrade ? 'Upgrade Account' : 'Create Account'}
+            </button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={loading}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
+              >
+                Didn't receive the code? Resend
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

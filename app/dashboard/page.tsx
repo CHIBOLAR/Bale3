@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
+import QuickActions from './QuickActions';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -36,13 +38,62 @@ export default async function DashboardPage() {
     .select('*', { count: 'exact', head: true })
     .eq('company_id', userData?.company_id);
 
+  const isDemo = userData?.is_demo || false;
+
   return (
     <div>
+      {/* Demo Banner */}
+      {isDemo && (
+        <div className="mb-6 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center">
+                <svg
+                  className="h-6 w-6 text-blue-200 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <h3 className="text-lg font-semibold">Demo Mode</h3>
+              </div>
+              <p className="mt-2 text-sm text-blue-100">
+                You're exploring with read-only access to sample data. To create your own company
+                with full access, team collaboration, and your own data, request official access.
+              </p>
+              <div className="mt-4 flex gap-3">
+                <Link
+                  href="/request-invite"
+                  className="inline-flex items-center px-4 py-2 bg-white text-blue-600 rounded-md font-medium hover:bg-blue-50 transition-colors"
+                >
+                  Request Official Access
+                </Link>
+                <Link
+                  href="/"
+                  className="inline-flex items-center px-4 py-2 text-white border border-white/30 rounded-md font-medium hover:bg-white/10 transition-colors"
+                >
+                  Learn More
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-4 py-6 sm:px-0">
         <h1 className="text-3xl font-bold text-gray-900">
           Welcome, {userData?.first_name}!
         </h1>
-        <p className="mt-2 text-sm text-gray-600">{userData?.company?.name}</p>
+        <p className="mt-2 text-sm text-gray-600">
+          {userData?.company?.name}
+          {isDemo && <span className="ml-2 text-blue-600 font-medium">(Demo Account)</span>}
+        </p>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -183,35 +234,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="mt-8 bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <a
-            href="/dashboard/products"
-            className="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-6 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <span className="mt-2 block text-sm font-medium text-gray-900">
-              Add New Product
-            </span>
-          </a>
-          <a
-            href="/dashboard/inventory"
-            className="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-6 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <span className="mt-2 block text-sm font-medium text-gray-900">
-              Record Goods Receipt
-            </span>
-          </a>
-          <a
-            href="/dashboard/sales"
-            className="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-6 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <span className="mt-2 block text-sm font-medium text-gray-900">
-              Create Sales Order
-            </span>
-          </a>
-        </div>
-      </div>
+      <QuickActions isDemo={isDemo} />
     </div>
   );
 }
