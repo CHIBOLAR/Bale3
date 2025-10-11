@@ -22,9 +22,7 @@
       "mcp__supabase__deploy_edge_function",
       "Bash(git log:*)",
       "Bash(mkdir:*)",
-      "Bash(cp:*)",
-      "WebFetch(domain:supabase.com)",
-      "Bash(git checkout:*)"
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []
