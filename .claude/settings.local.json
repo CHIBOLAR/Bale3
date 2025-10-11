@@ -26,7 +26,8 @@
       "WebFetch(domain:supabase.com)",
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "mcp__supabase__list_migrations"
     ],
     "deny": [],
     "ask": []
