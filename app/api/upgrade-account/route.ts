@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       .eq('code', token.toUpperCase())
       .eq('email', currentUser.email.toLowerCase())
       .eq('invite_type', 'platform')
-      .eq('status', 'pending')
+      .eq('status', 'accepted')
       .gt('expires_at', new Date().toISOString())
       .single();
 

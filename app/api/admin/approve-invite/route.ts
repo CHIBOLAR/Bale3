@@ -110,13 +110,68 @@ export async function POST(request: NextRequest) {
       inviteCode
     );
 
-    // TODO: Send email with invite link using Resend
-    // This will be implemented in Phase 8
+    // Generate invite links
     const upgradeLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/upgrade?token=${inviteCode}`;
     const signupLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/signup?code=${inviteCode}`;
+    const inviteLink = isUpgrade ? upgradeLink : signupLink;
 
-    console.log('TODO: Send invite email to:', email, '| Invite code:', inviteCode);
-    console.log(isUpgrade ? '📧 Upgrade link:' : '📧 Signup link:', isUpgrade ? upgradeLink : signupLink);
+    // Send email using Supabase Auth
+    try {
+      // For new users: Use admin invite (creates auth user + sends email)
+      // For demo upgrades: Use signInWithOtp to send magic link
+
+      if (!isUpgrade && !existingUser) {
+        // New user signup - Use Supabase Admin Invite
+        const { data: inviteData, error: inviteEmailError } = await supabase.auth.admin.inviteUserByEmail(
+          email,
+          {
+            data: {
+              invite_code: inviteCode,
+              invite_link: signupLink,
+              invited_by: user.id,
+              name: metadata.name || 'there',
+            },
+            redirectTo: signupLink,
+          }
+        );
+
+        if (inviteEmailError) {
+          console.error('Error sending invite email:', inviteEmailError);
+          console.log('⚠️ Email not sent. Please configure custom SMTP in Supabase Dashboard.');
+          console.log('📧 Invite link:', signupLink);
+        } else {
+          console.log('✅ Invite email sent successfully to:', email);
+        }
+      } else {
+        // Demo user upgrade - Send OTP for authentication
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: email,
+          options: {
+            data: {
+              invite_code: inviteCode,
+              upgrade_link: upgradeLink,
+              is_upgrade: true,
+            },
+            shouldCreateUser: false, // Don't create new user
+          },
+        });
+
+        if (otpError) {
+          console.error('Error sending upgrade OTP:', otpError);
+          console.log('⚠️ Email not sent. Please configure custom SMTP in Supabase Dashboard.');
+          console.log('📧 Upgrade link:', upgradeLink);
+        } else {
+          console.log('✅ Upgrade notification sent to:', email);
+        }
+      }
+    } catch (emailError) {
+      console.error('Error sending email:', emailError);
+      console.log('⚠️ Email sending failed. Please ensure custom SMTP is configured in Supabase Dashboard.');
+      console.log('📋 Manual action required: Send this link to the user:');
+      console.log('📧', inviteLink);
+    }
+
+    console.log(isUpgrade ? '📧 Upgrade link:' : '📧 Signup link:', inviteLink);
 
     return NextResponse.json(
       {

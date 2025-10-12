@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
             .select('*')
             .eq('email', email)
             .eq('invite_type', 'platform')
-            .eq('status', 'pending')
+            .in('status', ['pending', 'accepted'])
             .gt('expires_at', new Date().toISOString())
             .maybeSingle();
 
