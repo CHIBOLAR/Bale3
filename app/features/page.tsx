@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function HomePage() {
+export default function FeaturesPage() {
   const [email, setEmail] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,8 +23,6 @@ export default function HomePage() {
     try {
       const supabase = createClient();
 
-      console.log('📧 Sending OTP to:', email);
-
       const { data, error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
@@ -32,24 +30,133 @@ export default function HomePage() {
         },
       });
 
-      console.log('📬 Supabase response:', { data, error });
-
       if (error) {
-        console.error('❌ Supabase error:', error);
         throw error;
       }
 
-      console.log('✅ OTP sent successfully, redirecting to verification page');
-
-      // Redirect to OTP verification page
       router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (err: any) {
-      console.error('Error sending magic link:', err);
       setError(err.message || 'Failed to send magic link. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const features = [
+    {
+      category: "Inventory Management",
+      items: [
+        {
+          title: "Smart Inventory Tracking",
+          description: "Track fabric stock by roll, meter, or kilogram. See live quantity updates with QR code scanning."
+        },
+        {
+          title: "Multi-Warehouse Support",
+          description: "Manage inventory across multiple godowns and warehouses with real-time sync."
+        },
+        {
+          title: "Stock Movement Logging",
+          description: "Every roll movement is logged with time, date, and user details for complete traceability."
+        },
+        {
+          title: "Low Stock Alerts",
+          description: "Get notified when inventory falls below minimum levels to avoid stockouts."
+        }
+      ]
+    },
+    {
+      category: "Product Management",
+      items: [
+        {
+          title: "Product Master Database",
+          description: "Centralized catalog with fabric details, designs, colors, and specifications."
+        },
+        {
+          title: "Variant Management",
+          description: "Track different colors, patterns, and sizes of the same fabric design."
+        },
+        {
+          title: "Batch & Lot Tracking",
+          description: "Monitor fabric by batch numbers and lot IDs for quality control."
+        }
+      ]
+    },
+    {
+      category: "Operations",
+      items: [
+        {
+          title: "Job Work Coordination",
+          description: "Create and track job work for embroidery, dyeing, stitching, or printing."
+        },
+        {
+          title: "Goods Dispatch & Receipt",
+          description: "Record incoming and outgoing fabric movements with digital challans."
+        },
+        {
+          title: "QR Code Generation",
+          description: "Generate and print QR codes in batches. Stick them to rolls for instant scanning."
+        },
+        {
+          title: "Sales Order Management",
+          description: "Create, track, and fulfill customer orders with automatic stock updates."
+        }
+      ]
+    },
+    {
+      category: "Partner Management",
+      items: [
+        {
+          title: "Customer Database",
+          description: "Maintain detailed records of buyers with contact info and order history."
+        },
+        {
+          title: "Supplier Management",
+          description: "Track your fabric suppliers and their delivery performance."
+        },
+        {
+          title: "Job Worker Directory",
+          description: "Manage relationships with embroidery, dyeing, and printing vendors."
+        }
+      ]
+    },
+    {
+      category: "Reports & Analytics",
+      items: [
+        {
+          title: "Fabric-Specific Reports",
+          description: "Track old stock, slow-moving products, and sales performance in one dashboard.",
+          comingSoon: true
+        },
+        {
+          title: "Stock Valuation",
+          description: "Real-time inventory value calculations for financial planning.",
+          comingSoon: true
+        },
+        {
+          title: "Sales Analytics",
+          description: "Analyze sales trends, top customers, and revenue patterns.",
+          comingSoon: true
+        }
+      ]
+    },
+    {
+      category: "Access Control",
+      items: [
+        {
+          title: "Role-Based Permissions",
+          description: "Control who can view, edit, or delete data with staff roles."
+        },
+        {
+          title: "Multi-User Support",
+          description: "Add unlimited team members with customized access levels."
+        },
+        {
+          title: "Activity Audit Log",
+          description: "Track all user actions for security and accountability."
+        }
+      ]
+    }
+  ];
 
   return (
     <div className="min-h-screen">
@@ -70,72 +177,44 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div className="text-center max-w-5xl mx-auto mb-8">
-          <h1 className="text-5xl md:text-6xl font-bold text-brand-blue mb-6 leading-tight">
-            Every Roll Matters.<br/>
-            Let's make sure it's counted.
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-bold text-brand-blue mb-4">
+            All Features
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-8">
-            That's why we built a tool that keeps your fabric organised and lets you focus on important tasks.
+          <p className="text-lg text-gray-600">
+            Everything you need to manage your fabric inventory business efficiently
           </p>
-
-          <a
-            href="#invite-form"
-            className="inline-block px-10 py-4 bg-brand-orange text-white rounded-lg font-bold hover:bg-brand-orange/90 transition-all shadow-lg hover:shadow-xl"
-          >
-            Try Demo
-          </a>
         </div>
       </section>
 
-      {/* Why Fabric Traders Choose Bale - B.A.L.E */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h2 className="text-4xl font-bold text-center mb-3 text-brand-blue">Why fabric traders choose Bale</h2>
-        <p className="text-center text-gray-600 mb-10 max-w-2xl mx-auto">
-          Because every feature of Bale is built around how your business actually works.
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <div className="text-left">
-            <div className="mb-4">
-              <span className="text-5xl font-bold text-brand-blue">B</span>
+      {/* Features Grid */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+        <div className="space-y-10">
+          {features.map((category, categoryIndex) => (
+            <div key={categoryIndex}>
+              <h2 className="text-3xl font-bold text-brand-blue mb-8">
+                {category.category}
+              </h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                {category.items.map((feature, featureIndex) => (
+                  <div key={featureIndex} className="bg-white p-6 rounded-xl border border-gray-100">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-xl font-bold text-gray-900">{feature.title}</h3>
+                      {feature.comingSoon && (
+                        <span className="inline-block px-3 py-1 bg-brand-orange/10 text-brand-orange text-xs font-semibold rounded-full whitespace-nowrap ml-2">
+                          Coming Soon
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-600 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <h3 className="text-2xl font-bold mb-3 text-gray-900">Better visibility</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Know your stock by rolls, color, and meters.
-            </p>
-          </div>
-
-          <div className="text-left">
-            <div className="mb-4">
-              <span className="text-5xl font-bold text-brand-orange">A</span>
-            </div>
-            <h3 className="text-2xl font-bold mb-3 text-gray-900">Accuracy in every order</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Sync stock, dispatch, and sales data seamlessly.
-            </p>
-          </div>
-
-          <div className="text-left">
-            <div className="mb-4">
-              <span className="text-5xl font-bold text-brand-green">L</span>
-            </div>
-            <h3 className="text-2xl font-bold mb-3 text-gray-900">Log every movement</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Track every roll with time, date, and user.
-            </p>
-          </div>
-
-          <div className="text-left">
-            <div className="mb-4">
-              <span className="text-5xl font-bold text-brand-blue">E</span>
-            </div>
-            <h3 className="text-2xl font-bold mb-3 text-gray-900">Easy for everyone</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Scan, dispatch, and update in seconds.
-            </p>
-          </div>
+          ))}
         </div>
       </section>
 
@@ -224,93 +303,6 @@ export default function HomePage() {
               </button>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Feature Highlights */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h2 className="text-4xl font-bold text-center mb-8 text-brand-blue">See Bale in Action</h2>
-
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white p-8 rounded-xl border border-gray-100">
-            <span className="text-sm font-semibold text-brand-orange mb-2 block">Feature #1</span>
-            <h3 className="text-xl font-bold mb-3 text-brand-blue">Smart Inventory Tracking</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Track fabric stock by roll, meter, or kilogram. See live quantity updates with QR code
-            </p>
-          </div>
-
-          <div className="bg-white p-8 rounded-xl border border-gray-100">
-            <span className="text-sm font-semibold text-brand-orange mb-2 block">Feature #2</span>
-            <h3 className="text-xl font-bold mb-3 text-brand-blue">Job Work Coordination</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Create and track job work for embroidery, dyeing, stitching, or printing so you don't need to call
-            </p>
-          </div>
-
-          <div className="bg-white p-8 rounded-xl border border-gray-100">
-            <span className="text-sm font-semibold text-brand-orange mb-2 block">Feature #3</span>
-            <h3 className="text-xl font-bold mb-3 text-brand-blue">QR Code Generation</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Generate and print QRs in batches. Stick them to rolls and scan to update instantly.
-            </p>
-          </div>
-
-          <div className="bg-white p-8 rounded-xl border border-gray-100">
-            <span className="text-sm font-semibold text-brand-orange mb-2 block">Feature #4</span>
-            <h3 className="text-xl font-bold mb-3 text-brand-blue">Fabric-Specific Reports</h3>
-            <p className="text-gray-600 leading-relaxed mb-2">
-              See reports to track old and slow moving products, sales performance in one dashboard
-            </p>
-            <span className="inline-block px-3 py-1 bg-brand-orange/10 text-brand-orange text-sm font-semibold rounded-full">
-              Coming Soon
-            </span>
-          </div>
-        </div>
-
-        <div className="text-center">
-          <p className="text-gray-600 mb-6">...and much more</p>
-          <Link
-            href="/features"
-            className="inline-block px-8 py-3 bg-brand-blue text-white rounded-lg font-semibold hover:bg-brand-blue/90 transition-all shadow-md hover:shadow-lg"
-          >
-            See All Features
-          </Link>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h2 className="text-4xl font-bold text-center mb-8 text-brand-blue">Frequently Asked Questions</h2>
-
-        <div className="space-y-4">
-          <div className="bg-white p-6 rounded-xl border border-gray-100">
-            <h3 className="text-lg font-bold mb-2 text-gray-900">What exactly does Bale do?</h3>
-            <p className="text-gray-600">
-              Bale is an all-in-one inventory app built for fabric traders. It tracks every roll, manages job work, and keeps your warehouses in sync.
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl border border-gray-100">
-            <h3 className="text-lg font-bold mb-2 text-gray-900">How is Bale different from Tally or ERP software?</h3>
-            <p className="text-gray-600">
-              Bale is built for fabric-specific workflows. Not too simple like generic apps, not too complex like enterprise ERPs.
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl border border-gray-100">
-            <h3 className="text-lg font-bold mb-2 text-gray-900">How is my data safe from other fabric traders?</h3>
-            <p className="text-gray-600">
-              Bale is built on a multi-tenant architecture in Supabase ensuring data isolation with strict data access control. We achieve this with the help of Authorization via Row Level Security
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl border border-gray-100">
-            <h3 className="text-lg font-bold mb-2 text-gray-900">Will my staff be able to use it easily?</h3>
-            <p className="text-gray-600">
-              Yes, Bale is designed for simple, tap-based workflows — scan, update, done.
-            </p>
-          </div>
         </div>
       </section>
 

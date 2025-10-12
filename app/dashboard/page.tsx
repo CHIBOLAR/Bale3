@@ -8,37 +8,55 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Get user's company
+  // Check if user has a full account
   const { data: userData } = await supabase
     .from('users')
     .select('*, company:companies(*)')
     .eq('auth_user_id', user?.id)
     .single();
 
+  // If no user record, user is in demo mode
+  const isDemo = !userData;
+
+  let companyId = userData?.company_id;
+  let companyName = userData?.company?.name;
+  let firstName = userData?.first_name;
+
+  // For demo users, get demo company
+  if (isDemo) {
+    const { data: demoCompany } = await supabase
+      .from('companies')
+      .select('id, name')
+      .eq('is_demo', true)
+      .single();
+
+    companyId = demoCompany?.id;
+    companyName = demoCompany?.name;
+    firstName = user?.email?.split('@')[0] || 'Demo User';
+  }
+
   // Get some quick stats
   const { count: productsCount } = await supabase
     .from('products')
     .select('*', { count: 'exact', head: true })
-    .eq('company_id', userData?.company_id);
+    .eq('company_id', companyId);
 
   const { count: stockUnitsCount } = await supabase
     .from('stock_units')
     .select('*', { count: 'exact', head: true })
-    .eq('company_id', userData?.company_id)
+    .eq('company_id', companyId)
     .eq('status', 'in_stock');
 
   const { count: salesOrdersCount } = await supabase
     .from('sales_orders')
     .select('*', { count: 'exact', head: true })
-    .eq('company_id', userData?.company_id)
+    .eq('company_id', companyId)
     .eq('status', 'in_progress');
 
   const { count: partnersCount } = await supabase
     .from('partners')
     .select('*', { count: 'exact', head: true })
-    .eq('company_id', userData?.company_id);
-
-  const isDemo = userData?.is_demo || false;
+    .eq('company_id', companyId);
 
   return (
     <div>
@@ -69,7 +87,7 @@ export default async function DashboardPage() {
               </p>
               <div className="mt-4 flex gap-3">
                 <Link
-                  href="/request-invite"
+                  href="/dashboard/request-upgrade"
                   className="inline-flex items-center px-4 py-2 bg-white text-blue-600 rounded-md font-medium hover:bg-blue-50 transition-colors"
                 >
                   Request Official Access
@@ -88,11 +106,11 @@ export default async function DashboardPage() {
 
       <div className="px-4 py-6 sm:px-0">
         <h1 className="text-3xl font-bold text-gray-900">
-          Welcome, {userData?.first_name}!
+          Welcome, {firstName}!
         </h1>
         <p className="mt-2 text-sm text-gray-600">
-          {userData?.company?.name}
-          {isDemo && <span className="ml-2 text-blue-600 font-medium">(Demo Account)</span>}
+          {companyName}
+          {isDemo && <span className="ml-2 text-blue-600 font-medium">(Demo Mode)</span>}
         </p>
       </div>
 

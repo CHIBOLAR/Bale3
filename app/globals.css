@@ -2,26 +2,130 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Brand Colors */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Premium Cream Background */
+  --cream: #FEFBF4;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Professional Blue */
+  --blue-primary: #026AA2;
+  --blue-light: rgba(2, 106, 162, 0.1);
+  --blue-lighter: rgba(2, 106, 162, 0.05);
+
+  /* Energy Orange */
+  --orange-primary: #EB9852;
+  --orange-light: rgba(235, 152, 82, 0.1);
+
+  /* Olive Green */
+  --olive-green: #9FAF70;
+
+  /* Neutral Colors */
+  --white: #FFFFFF;
+  --gray-dark: #333333;
+  --gray-medium: #666666;
+  --gray-light: #999999;
+
+  /* Grid Pattern */
+  --grid-color: rgba(2, 106, 162, 0.03);
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--cream);
+  color: var(--gray-dark);
+  position: relative;
+}
+
+/* Subtle Grid Pattern Background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content is above grid */
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Brand Color Utilities */
+  .bg-brand-cream {
+    background-color: var(--cream);
+  }
+
+  .bg-brand-blue {
+    background-color: var(--blue-primary);
+  }
+
+  .bg-brand-orange {
+    background-color: var(--orange-primary);
+  }
+
+  .text-brand-blue {
+    color: var(--blue-primary);
+  }
+
+  .text-brand-orange {
+    color: var(--orange-primary);
+  }
+
+  .border-brand-blue {
+    border-color: var(--blue-primary);
+  }
+
+  .hover-brand-blue:hover {
+    background-color: var(--blue-primary);
+  }
+
+  /* Brand Card Style */
+  .brand-card {
+    background: var(--white);
+    border-radius: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Brand Button Styles */
+  .btn-brand-primary {
+    background-color: var(--orange-primary);
+    color: var(--white);
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .btn-brand-primary:hover {
+    background-color: #d88744;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(235, 152, 82, 0.3);
+  }
+
+  .btn-brand-secondary {
+    background-color: transparent;
+    color: var(--blue-primary);
+    padding: 0.75rem 2rem;
+    border: 2px solid var(--blue-primary);
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .btn-brand-secondary:hover {
+    background-color: var(--blue-light);
   }
 }

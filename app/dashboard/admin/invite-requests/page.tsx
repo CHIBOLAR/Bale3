@@ -14,45 +14,47 @@ export default async function InviteRequestsPage() {
     redirect('/login');
   }
 
-  // Get user's role
+  // Get user's role and company
   const { data: userData } = await supabase
     .from('users')
-    .select('role, is_demo')
+    .select('role, is_demo, is_superadmin, company_id')
     .eq('auth_user_id', user.id)
     .single();
 
-  // Only admins and non-demo users can access this page
-  if (!userData || userData.role !== 'admin' || userData.is_demo) {
+  // Only super admins can access this page
+  if (!userData || userData.role !== 'admin' || userData.is_demo || !userData.is_superadmin) {
     redirect('/dashboard');
   }
 
-  // Fetch all access requests from invites table
-  // Filter for records with metadata.request_type = 'access_request'
-  const { data: requests, error } = await supabase
-    .from('invites')
+  // Fetch pending upgrade requests from the new table
+  const { data: upgradeRequests, error } = await supabase
+    .from('upgrade_requests')
     .select('*')
-    .eq('invite_type', 'platform')
+    .eq('status', 'pending')
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching invite requests:', error);
+    console.error('Error fetching upgrade requests:', error);
   }
 
-  // Filter for access requests (those with metadata.request_type = 'access_request')
-  const accessRequests = requests?.filter(
-    (req) => req.metadata && (req.metadata as any).request_type === 'access_request'
-  ) || [];
+  const accessRequests = upgradeRequests || [];
 
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Access Requests</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          Upgrade Requests
+        </h1>
         <p className="mt-2 text-sm text-gray-600">
-          Review and approve access requests from potential customers
+          Review and approve upgrade requests from demo users who want full access to the platform.
         </p>
       </div>
 
-      <InviteRequestsClient initialRequests={accessRequests} currentUserId={user.id} />
+      <InviteRequestsClient
+        initialRequests={accessRequests}
+        currentUserId={user.id}
+        isSuperAdmin={true}
+      />
     </div>
   );
 }
