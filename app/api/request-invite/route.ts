@@ -3,109 +3,124 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * POST /api/request-invite
- * Public endpoint for website visitors to request access
+ * DEMO USERS ONLY - Request upgrade from demo to full access
+ * Stores request in upgrade_requests table (no user record created until approval)
  */
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, phone, company, message } = await request.json();
+    const { name, phone, company, message } = await request.json();
 
     // Validation
-    if (!name || !email) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Name and email are required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
+        { error: 'Name is required' },
         { status: 400 }
       );
     }
 
     const supabase = await createClient();
 
-    // Check if user already exists (allow demo users to request upgrade)
+    // CRITICAL: User must be logged in
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'You must be logged in to request upgrade. Please try the demo first.' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user already has a full account
     const { data: existingUser } = await supabase
       .from('users')
       .select('id, is_demo')
-      .eq('email', email.toLowerCase())
-      .single();
-
-    if (existingUser && !existingUser.is_demo) {
-      // Official user already exists - reject
-      return NextResponse.json(
-        { error: 'An account with this email already exists' },
-        { status: 400 }
-      );
-    }
-
-    // Demo user exists - allow request (will trigger upgrade flow)
-    if (existingUser && existingUser.is_demo) {
-      console.log('Demo user requesting upgrade:', email);
-    }
-
-    // Check if there's already an active invite
-    const { data: existingInvite } = await supabase
-      .from('invites')
-      .select('id, status')
-      .eq('email', email.toLowerCase())
-      .eq('invite_type', 'platform')
-      .in('status', ['pending'])
-      .gt('expires_at', new Date().toISOString())
+      .eq('auth_user_id', authUser.id)
       .maybeSingle();
 
-    if (existingInvite) {
+    if (existingUser && !existingUser.is_demo) {
       return NextResponse.json(
-        { error: 'You already have an active invitation. Check your email.' },
+        { error: 'Your account already has full access' },
         { status: 400 }
       );
     }
 
-    // Generate a unique code for this request
-    const code = `REQ-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+    // Check if already requested
+    const { data: existingRequest } = await supabase
+      .from('upgrade_requests')
+      .select('id, status')
+      .eq('auth_user_id', authUser.id)
+      .maybeSingle();
 
-    // Store the request in the invites table with special metadata
-    const { data: invite, error: createError } = await supabase
-      .from('invites')
+    if (existingRequest) {
+      if (existingRequest.status === 'pending') {
+        return NextResponse.json(
+          { error: 'Your upgrade request is pending admin approval' },
+          { status: 400 }
+        );
+      } else if (existingRequest.status === 'approved') {
+        return NextResponse.json(
+          { error: 'Your upgrade has been approved. Please log out and log back in.' },
+          { status: 400 }
+        );
+      } else if (existingRequest.status === 'rejected') {
+        // Allow re-request if previously rejected
+        const { error: updateError } = await supabase
+          .from('upgrade_requests')
+          .update({
+            name: name.trim(),
+            phone: phone?.trim() || null,
+            company: company?.trim() || null,
+            message: message?.trim() || null,
+            status: 'pending',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingRequest.id);
+
+        if (updateError) {
+          console.error('Error updating upgrade request:', updateError);
+          return NextResponse.json(
+            { error: 'Failed to submit request' },
+            { status: 500 }
+          );
+        }
+
+        console.log('✅ Upgrade request resubmitted:', authUser.email);
+        return NextResponse.json({
+          success: true,
+          message: 'Your upgrade request has been resubmitted! Our team will review it and you\'ll receive an email once approved.',
+        }, { status: 200 });
+      }
+    }
+
+    // Create new upgrade request
+    const { error: insertError } = await supabase
+      .from('upgrade_requests')
       .insert({
-        invite_type: 'platform',
-        code: code,
-        email: email.toLowerCase().trim(),
+        auth_user_id: authUser.id,
+        email: authUser.email || '',
+        name: name.trim(),
+        phone: phone?.trim() || null,
+        company: company?.trim() || null,
+        message: message?.trim() || null,
         status: 'pending',
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-        metadata: {
-          request_type: 'access_request',
-          name: name.trim(),
-          phone: phone?.trim() || null,
-          company: company?.trim() || null,
-          message: message?.trim() || null,
-          is_demo_upgrade: existingUser?.is_demo || false,
-          generation_method: 'api',
-        },
-      })
-      .select()
-      .single();
+      });
 
-    if (createError) {
-      console.error('Error creating invite request:', createError);
+    if (insertError) {
+      console.error('Error creating upgrade request:', insertError);
       return NextResponse.json(
         { error: 'Failed to submit request' },
         { status: 500 }
       );
     }
 
-    console.log('📬 New access request created:', invite.id);
-
-    // TODO: Send email notification to super admin
+    console.log('✅ Upgrade request created:', authUser.email);
 
     return NextResponse.json({
       success: true,
-      message: 'Your access request has been submitted successfully! You will receive an email once it is approved.',
-    }, { status: 201 });
+      message: 'Your upgrade request has been submitted! Our team will review it and you\'ll receive an email once your account is upgraded.',
+    }, { status: 200 });
 
   } catch (error) {
     console.error('Error in request-invite:', error);

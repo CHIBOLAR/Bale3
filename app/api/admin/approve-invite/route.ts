@@ -33,13 +33,14 @@ export async function POST(request: NextRequest) {
 
     const { data: userData } = await supabase
       .from('users')
-      .select('role, is_demo')
+      .select('role, is_demo, is_super_admin')
       .eq('auth_user_id', user.id)
       .single();
 
-    if (!userData || userData.role !== 'admin' || userData.is_demo) {
+    // Only super admins can approve access requests
+    if (!userData || userData.role !== 'admin' || userData.is_demo || !userData.is_super_admin) {
       return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
+        { error: 'Forbidden: Super admin access required' },
         { status: 403 }
       );
     }
@@ -77,11 +78,11 @@ export async function POST(request: NextRequest) {
 
     const isUpgrade = metadata.is_demo_upgrade || (existingUser && existingUser.is_demo);
 
-    // Use the existing invite record - just update status to accepted and set invited_by
+    // Update invite status - super admin approval
     const { error: updateError } = await supabase
       .from('invites')
       .update({
-        status: 'accepted',
+        status: 'approved',
         invited_by: user.id,
         updated_at: new Date().toISOString(),
         metadata: {
@@ -102,26 +103,30 @@ export async function POST(request: NextRequest) {
 
     const inviteId = requestId;
     const inviteCode = inviteRequest.code;
+    const inviteType = inviteRequest.invite_type;
 
     console.log(
-      isUpgrade ? '🔄 Approved upgrade request for:' : '✨ Approved new access request for:',
+      '✅ Super admin approved',
+      inviteType === 'platform' ? 'NEW COMPANY request' : 'STAFF request',
+      '| Email:',
       email,
       '| Code:',
-      inviteCode
+      inviteCode,
+      '| Is Upgrade:',
+      isUpgrade
     );
 
-    // Generate invite links
-    const upgradeLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/upgrade?token=${inviteCode}`;
+    // Generate invite link - always use /signup for both staff and upgrades
     const signupLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/signup?code=${inviteCode}`;
-    const inviteLink = isUpgrade ? upgradeLink : signupLink;
+    const inviteLink = signupLink;
 
     // Send email using Supabase Auth
     try {
-      // For new users: Use admin invite (creates auth user + sends email)
-      // For demo upgrades: Use signInWithOtp to send magic link
+      // Platform invites = Demo upgrades (existing demo users)
+      // Staff invites = New staff members (uses admin invite)
 
-      if (!isUpgrade && !existingUser) {
-        // New user signup - Use Supabase Admin Invite
+      if (inviteType === 'staff') {
+        // STAFF INVITE: New staff member joining existing company
         const { data: inviteData, error: inviteEmailError } = await supabase.auth.admin.inviteUserByEmail(
           email,
           {
@@ -136,33 +141,42 @@ export async function POST(request: NextRequest) {
         );
 
         if (inviteEmailError) {
-          console.error('Error sending invite email:', inviteEmailError);
+          console.error('Error sending staff invite email:', inviteEmailError);
           console.log('⚠️ Email not sent. Please configure custom SMTP in Supabase Dashboard.');
-          console.log('📧 Invite link:', signupLink);
+          console.log('📧 Staff invite link:', signupLink);
         } else {
-          console.log('✅ Invite email sent successfully to:', email);
+          console.log('✅ Staff invite email sent successfully to:', email);
         }
-      } else {
-        // Demo user upgrade - Send OTP for authentication
+      } else if (inviteType === 'platform') {
+        // PLATFORM INVITE: Demo user upgrading to full access
+        if (!isUpgrade) {
+          console.error('❌ ERROR: Platform invite without demo upgrade flag!');
+          console.log('This should not happen. Platform invites must be for demo upgrades only.');
+          throw new Error('Invalid platform invite: must be for demo user upgrade');
+        }
+
+        // Send signup link to demo user (they'll verify via OTP)
         const { error: otpError } = await supabase.auth.signInWithOtp({
           email: email,
           options: {
             data: {
               invite_code: inviteCode,
-              upgrade_link: upgradeLink,
+              signup_link: signupLink,
               is_upgrade: true,
             },
-            shouldCreateUser: false, // Don't create new user
+            shouldCreateUser: false, // User already exists (demo user)
           },
         });
 
         if (otpError) {
-          console.error('Error sending upgrade OTP:', otpError);
+          console.error('Error sending upgrade notification:', otpError);
           console.log('⚠️ Email not sent. Please configure custom SMTP in Supabase Dashboard.');
-          console.log('📧 Upgrade link:', upgradeLink);
+          console.log('📧 Signup link:', signupLink);
         } else {
           console.log('✅ Upgrade notification sent to:', email);
         }
+      } else {
+        throw new Error(`Unknown invite type: ${inviteType}`);
       }
     } catch (emailError) {
       console.error('Error sending email:', emailError);
@@ -171,18 +185,18 @@ export async function POST(request: NextRequest) {
       console.log('📧', inviteLink);
     }
 
-    console.log(isUpgrade ? '📧 Upgrade link:' : '📧 Signup link:', inviteLink);
+    console.log('📧 Invite link:', inviteLink);
 
     return NextResponse.json(
       {
         success: true,
         message: isUpgrade
-          ? 'Upgrade approved! User will receive upgrade link via email.'
+          ? 'Upgrade approved! User will receive signup link via email.'
           : 'Invite request approved successfully',
         inviteId,
         inviteCode,
         isUpgrade,
-        inviteLink: isUpgrade ? upgradeLink : signupLink,
+        inviteLink: signupLink,
       },
       { status: 200 }
     );

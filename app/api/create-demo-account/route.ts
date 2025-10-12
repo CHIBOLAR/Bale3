@@ -23,64 +23,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists in database
+    // Check if user already has a full account
     const { data: existingUser } = await supabase
       .from('users')
-      .select('id')
+      .select('id, role')
       .eq('auth_user_id', userId)
       .single();
 
     if (existingUser) {
       return NextResponse.json(
-        { message: 'User already exists' },
+        {
+          success: true,
+          message: 'User already has full access',
+          hasFullAccess: true
+        },
         { status: 200 }
       );
     }
 
-    // Get demo company
-    const { data: demoCompany, error: companyError } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('is_demo', true)
-      .single();
-
-    if (companyError || !demoCompany) {
-      console.error('Demo company not found:', companyError);
-      return NextResponse.json(
-        { error: 'Demo company not found. Please contact support.' },
-        { status: 500 }
-      );
-    }
-
-    // Extract first name from email
-    const firstName = email.split('@')[0] || 'User';
-
-    // Create demo user record
-    const { error: userError } = await supabase.from('users').insert({
-      company_id: demoCompany.id,
-      first_name: firstName,
-      last_name: '',
-      phone_number: '',
-      email: email,
-      role: 'staff', // Staff role for demo users (limited by RLS policies)
-      is_demo: true,
-      auth_user_id: userId,
-    });
-
-    if (userError) {
-      console.error('Error creating demo user:', userError);
-      return NextResponse.json(
-        { error: 'Failed to create demo account' },
-        { status: 500 }
-      );
-    }
-
-    console.log('✅ Demo account created for:', email);
+    // No user record = demo mode
+    // User can access dashboard in demo mode without a database record
+    // Full account will be created only after approval of upgrade request
+    console.log('✅ Demo access granted for:', email);
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Demo account created successfully'
+        message: 'Demo access granted',
+        hasFullAccess: false
       },
       { status: 200 }
     );

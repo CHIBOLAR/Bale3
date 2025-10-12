@@ -28,7 +28,10 @@
       "Bash(git merge:*)",
       "Bash(git branch:*)",
       "mcp__supabase__list_migrations",
-      "mcp__supabase__search_docs"
+      "mcp__supabase__search_docs",
+      "Bash(ls:*)",
+      "mcp__context7__get-library-docs",
+      "Bash(npm run dev)"
     ],
     "deny": [],
     "ask": []

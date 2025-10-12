@@ -35,9 +35,8 @@ export default function SignupPage() {
     try {
       const { data: invite, error: inviteError } = await supabase
         .from('invites')
-        .select('email, status, expires_at, metadata')
+        .select('email, status, expires_at, metadata, invite_type, company_id, role')
         .eq('code', code)
-        .eq('invite_type', 'platform')
         .single();
 
       if (inviteError || !invite) {
@@ -46,7 +45,7 @@ export default function SignupPage() {
         return;
       }
 
-      if (invite.status !== 'accepted') {
+      if (invite.status !== 'approved') {
         setError('This invite has not been approved yet or has already been used.');
         setStep('error');
         return;
@@ -131,57 +130,58 @@ export default function SignupPage() {
         .eq('auth_user_id', authData.user.id)
         .single();
 
-      if (existingUser && existingUser.is_demo) {
-        // UPGRADE FLOW: Convert demo user to full user
-        await supabase
-          .from('users')
-          .update({
-            is_demo: false,
-            role: 'admin',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existingUser.id);
+      // Fetch invite details to determine flow
+      const { data: invite } = await supabase
+        .from('invites')
+        .select('invite_type, company_id, role, metadata')
+        .eq('code', inviteCode)
+        .single();
 
-        console.log('✅ Demo user upgraded to full access');
-      } else if (!existingUser) {
-        // NEW USER FLOW: Create company and user
-        const defaultCompanyName = `${email.split('@')[0]}'s Company`;
-        const { data: company, error: companyError } = await supabase
-          .from('companies')
-          .insert({ name: defaultCompanyName })
-          .select()
-          .single();
-
-        if (companyError) throw companyError;
-
-        const defaultFirstName = email.split('@')[0] || 'User';
-        await supabase.from('users').insert({
-          company_id: company.id,
-          first_name: defaultFirstName,
-          last_name: '',
-          phone_number: '',
-          email: email,
-          role: 'admin',
-          auth_user_id: authData.user.id,
-          is_demo: false,
-        });
-
-        // Create default warehouse
-        await supabase.from('warehouses').insert({
-          company_id: company.id,
-          name: 'Main Warehouse',
-          created_by: authData.user.id,
-        });
-
-        console.log('✅ New user account created');
+      if (!invite) {
+        throw new Error('Invite not found');
       }
 
-      // Mark invite as used
+      if (existingUser && existingUser.is_demo) {
+        // Upgrades are now instant and handled by admin approval
+        // This code path should not be reached
+        throw new Error('Demo upgrades are now handled automatically by admin approval. Please contact support if you received this invite link.');
+      } else if (!existingUser) {
+        // NEW USER FLOW: Only staff invites are allowed
+        const isStaffInvite = invite.invite_type === 'staff' && invite.metadata?.staff_user_id;
+
+        if (!isStaffInvite) {
+          // Direct platform signups are not allowed - users must try demo first
+          throw new Error('Invalid invite type. New users must try the demo first before requesting full access.');
+        }
+
+        // STAFF FLOW: Link auth to existing staff record created by admin
+        const staffUserId = (invite.metadata as any).staff_user_id;
+
+        // Update existing staff record with auth_user_id
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({
+            auth_user_id: authData.user.id,
+            email: email, // Update email in case staff used different email
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', staffUserId);
+
+        if (updateError) {
+          console.error('Error linking staff auth:', updateError);
+          throw new Error('Failed to link staff account');
+        }
+
+        console.log('✅ Staff linked to auth:', staffUserId);
+      }
+
+      // Mark invite as accepted (used)
       await supabase
         .from('invites')
         .update({
-          status: 'expired',
+          status: 'accepted',
           metadata: {
+            ...(invite.metadata || {}),
             used_at: new Date().toISOString(),
             used_by: authData.user.id,
           },
