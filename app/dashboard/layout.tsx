@@ -24,10 +24,13 @@ export default async function DashboardLayout({
     .single();
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-brand-cream">
       <DashboardNav user={userData} />
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {children}
+      {/* Mobile: no left padding. Desktop: left padding for sidebar */}
+      <main className="lg:pl-64 min-h-screen">
+        <div className="px-4 py-6 sm:px-6 lg:px-8">
+          {children}
+        </div>
       </main>
     </div>
   );

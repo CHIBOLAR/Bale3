@@ -103,25 +103,9 @@ Additionally, the font family has a huge range of weights, from light to black. 
 
 The font also supports all the relevant symbols (from ₹ to #), which are crucial to our business, as well as a clear and bold slate of numerics.
 
-## Work Sans
+## Inter
 
-**Download:** https://fonts.google.com/specimen/work+sans
-
-### light, Light
-AaBbCcDdEeFf ...
-
-### regular, REGULAR
-AaBbCcDdEeFfGgHhIiJjKk ...
-
-### medium, MEDIUM
-AaBbCcDdEeFfGgHhIiJjKk ...
-
-### bold, BOLD
-AaBbCcDdEeFfGg ...
-
-### black, BLACK
-AaBbCcDdEeFfGgHh ...
-
+**Download:** https://fonts.google.com/specimen/Inter
 ---
 
 # Typography Styling

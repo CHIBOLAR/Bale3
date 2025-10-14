@@ -31,7 +31,11 @@
       "mcp__supabase__search_docs",
       "Bash(ls:*)",
       "mcp__context7__get-library-docs",
-      "Bash(npm run dev)"
+      "Bash(npm run dev)",
+      "mcp__context7__resolve-library-id",
+      "Read(//c/Users/Chirag/Bale NEW/bale-frontend/**)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

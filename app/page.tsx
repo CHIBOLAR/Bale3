@@ -60,12 +60,20 @@ export default function HomePage() {
             <Image src="/logo.jpeg" alt="Bale Logo" width={40} height={40} className="rounded-lg" />
             <span className="text-2xl font-bold text-brand-blue">Bale</span>
           </Link>
-          <a
-            href="#invite-form"
-            className="px-6 py-2 bg-brand-orange text-white rounded-lg font-semibold hover:bg-brand-orange/90 transition-all shadow-md hover:shadow-lg"
-          >
-            Try Demo
-          </a>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="px-4 py-2 text-brand-blue font-semibold hover:text-brand-orange transition-colors"
+            >
+              Login
+            </Link>
+            <a
+              href="#invite-form"
+              className="px-6 py-2 bg-brand-orange text-white rounded-lg font-semibold hover:bg-brand-orange/90 transition-all shadow-md hover:shadow-lg"
+            >
+              Try Demo
+            </a>
+          </div>
         </div>
       </header>
 
