@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 
-export default async function ProductDetailPage({ params }: { params: { id: string } }) {
+export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
 
   // Get current user
@@ -36,7 +37,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
   const { data: product, error: productError } = await supabase
     .from('products')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
     .single()
@@ -189,7 +190,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
               <div>
                 <p className="text-sm text-gray-500 mb-1">Selling Price per Unit</p>
                 <p className="text-base font-semibold text-brand-blue">
-                  ¹{product.selling_price_per_unit}
+                  ï¿½{product.selling_price_per_unit}
                   {product.measuring_unit && `/${product.measuring_unit}`}
                 </p>
               </div>

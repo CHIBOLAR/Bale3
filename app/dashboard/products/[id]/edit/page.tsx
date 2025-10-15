@@ -3,7 +3,8 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import ProductForm from '../../ProductForm'
 
-export default async function EditProductPage({ params }: { params: { id: string } }) {
+export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
 
   // Get current user
@@ -35,14 +36,14 @@ export default async function EditProductPage({ params }: { params: { id: string
 
   // Check if demo mode
   if (userData.is_demo) {
-    redirect(`/dashboard/products/${params.id}`)
+    redirect(`/dashboard/products/${id}`)
   }
 
   // Fetch product details
   const { data: product, error: productError } = await supabase
     .from('products')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
     .single()
@@ -74,7 +75,7 @@ export default async function EditProductPage({ params }: { params: { id: string
       </div>
 
       {/* Product Form */}
-      <ProductForm product={product} />
+      <ProductForm product={product} mode="edit" />
     </div>
   )
 }

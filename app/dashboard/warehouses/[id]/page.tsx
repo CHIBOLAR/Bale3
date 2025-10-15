@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation'
 import WarehouseForm from '../WarehouseForm'
 import Link from 'next/link'
 
-export default async function EditWarehousePage({ params }: { params: { id: string } }) {
+export default async function EditWarehousePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
 
   // Get current user
@@ -32,7 +33,7 @@ export default async function EditWarehousePage({ params }: { params: { id: stri
   const { data: warehouse, error: warehouseError } = await supabase
     .from('warehouses')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
     .single()
