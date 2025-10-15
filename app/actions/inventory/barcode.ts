@@ -59,6 +59,7 @@ export async function getProductFilterOptions() {
 
 /**
  * Gets summary of products with QR code status
+ * Staff users only see products from their assigned warehouse
  */
 export async function getProductsQRSummary(): Promise<ProductQRSummary[]> {
   try {
@@ -72,19 +73,25 @@ export async function getProductsQRSummary(): Promise<ProductQRSummary[]> {
 
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id')
+      .select('company_id, role, warehouse_id')
       .eq('auth_user_id', user.id)
       .single();
 
     if (!userData?.company_id) return [];
 
     // Get all stock units grouped by product
-    const { data: units } = await supabase
+    let query = supabase
       .from('stock_units')
-      .select('id, product_id, products(id, name), date_received')
+      .select('id, product_id, warehouse_id, products(id, name), date_received')
       .eq('company_id', userData.company_id)
-      .is('deleted_at', null)
-      .order('date_received', { ascending: false });
+      .is('deleted_at', null);
+
+    // Apply warehouse filtering for staff users
+    if (userData.role === 'staff' && userData.warehouse_id) {
+      query = query.eq('warehouse_id', userData.warehouse_id);
+    }
+
+    const { data: units } = await query.order('date_received', { ascending: false });
 
     if (!units) return [];
 
@@ -136,6 +143,7 @@ export async function getProductsQRSummary(): Promise<ProductQRSummary[]> {
 
 /**
  * Gets stock units for a product for QR generation with QR status
+ * Staff users only see units from their assigned warehouse
  */
 export async function getStockUnitsForQRGeneration(
   productId: string
@@ -151,13 +159,13 @@ export async function getStockUnitsForQRGeneration(
 
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id')
+      .select('company_id, role, warehouse_id')
       .eq('auth_user_id', user.id)
       .single();
 
     if (!userData?.company_id) return [];
 
-    const { data: units, error } = await supabase
+    let query = supabase
       .from('stock_units')
       .select(
         `
@@ -168,8 +176,14 @@ export async function getStockUnitsForQRGeneration(
       )
       .eq('company_id', userData.company_id)
       .eq('product_id', productId)
-      .is('deleted_at', null)
-      .order('date_received', { ascending: false });
+      .is('deleted_at', null);
+
+    // Apply warehouse filtering for staff users
+    if (userData.role === 'staff' && userData.warehouse_id) {
+      query = query.eq('warehouse_id', userData.warehouse_id);
+    }
+
+    const { data: units, error } = await query.order('date_received', { ascending: false });
 
     if (error) {
       console.error('Error fetching units:', error);
@@ -411,6 +425,7 @@ export async function createBarcodeBatch(
 
 /**
  * Gets all barcode batches
+ * Staff users only see batches from their assigned warehouse
  */
 export async function getBarcodeBatches(): Promise<BarcodeBatchWithRelations[]> {
   try {
@@ -424,13 +439,13 @@ export async function getBarcodeBatches(): Promise<BarcodeBatchWithRelations[]> 
 
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id')
+      .select('company_id, role, warehouse_id')
       .eq('auth_user_id', user.id)
       .single();
 
     if (!userData?.company_id) return [];
 
-    const { data: batches, error } = await supabase
+    let query = supabase
       .from('barcode_batches')
       .select(
         `
@@ -438,8 +453,14 @@ export async function getBarcodeBatches(): Promise<BarcodeBatchWithRelations[]> 
         warehouses (id, name)
       `
       )
-      .eq('company_id', userData.company_id)
-      .order('created_at', { ascending: false });
+      .eq('company_id', userData.company_id);
+
+    // Apply warehouse filtering for staff users
+    if (userData.role === 'staff' && userData.warehouse_id) {
+      query = query.eq('warehouse_id', userData.warehouse_id);
+    }
+
+    const { data: batches, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching batches:', error);
@@ -470,6 +491,7 @@ export async function getBarcodeBatches(): Promise<BarcodeBatchWithRelations[]> 
 
 /**
  * Gets a single barcode batch with all items
+ * Staff users can only access batches from their assigned warehouse
  */
 export async function getBarcodeBatch(batchId: string) {
   try {
@@ -483,13 +505,13 @@ export async function getBarcodeBatch(batchId: string) {
 
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id')
+      .select('company_id, role, warehouse_id')
       .eq('auth_user_id', user.id)
       .single();
 
     if (!userData?.company_id) return null;
 
-    const { data: batch, error } = await supabase
+    let query = supabase
       .from('barcode_batches')
       .select(
         `
@@ -498,8 +520,14 @@ export async function getBarcodeBatch(batchId: string) {
       `
       )
       .eq('id', batchId)
-      .eq('company_id', userData.company_id)
-      .single();
+      .eq('company_id', userData.company_id);
+
+    // Apply warehouse filtering for staff users
+    if (userData.role === 'staff' && userData.warehouse_id) {
+      query = query.eq('warehouse_id', userData.warehouse_id);
+    }
+
+    const { data: batch, error } = await query.single();
 
     if (error || !batch) {
       console.error('Error fetching batch:', error);

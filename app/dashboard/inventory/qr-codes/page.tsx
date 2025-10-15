@@ -17,10 +17,10 @@ export default async function QRCodesPage() {
     redirect('/login');
   }
 
-  // Get user details
+  // Get user details including role and warehouse
   const { data: userData, error: userError } = await supabase
     .from('users')
-    .select('company_id')
+    .select('company_id, role, warehouse_id')
     .eq('auth_user_id', user.id)
     .single();
 
@@ -29,7 +29,7 @@ export default async function QRCodesPage() {
   }
 
   // Fetch barcode batches
-  const { data: batches } = await supabase
+  let batchQuery = supabase
     .from('barcode_batches')
     .select(
       `
@@ -38,8 +38,14 @@ export default async function QRCodesPage() {
     `
     )
     .eq('company_id', userData.company_id)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
+    .is('deleted_at', null);
+
+  // Apply warehouse filtering for staff users
+  if (userData.role === 'staff' && userData.warehouse_id) {
+    batchQuery = batchQuery.eq('warehouse_id', userData.warehouse_id);
+  }
+
+  const { data: batches } = await batchQuery.order('created_at', { ascending: false });
 
   // Get item counts for each batch
   const batchesWithCounts = await Promise.all(

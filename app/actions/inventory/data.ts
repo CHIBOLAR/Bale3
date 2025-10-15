@@ -29,7 +29,7 @@ export async function getProducts() {
 
     const { data, error } = await supabase
       .from('products')
-      .select('id, name, fabric_type, color, product_number, image_url')
+      .select('id, name, material, color, product_number, product_images')
       .eq('company_id', userData.company_id)
       .is('deleted_at', null)
       .order('name');
@@ -48,6 +48,7 @@ export async function getProducts() {
 
 /**
  * Gets all warehouses for the current company
+ * Staff users only see their assigned warehouse
  */
 export async function getWarehouses() {
   try {
@@ -63,7 +64,7 @@ export async function getWarehouses() {
 
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id')
+      .select('company_id, role, warehouse_id')
       .eq('auth_user_id', user.id)
       .single();
 
@@ -71,12 +72,18 @@ export async function getWarehouses() {
       return [];
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('warehouses')
       .select('id, name')
       .eq('company_id', userData.company_id)
-      .is('deleted_at', null)
-      .order('name');
+      .is('deleted_at', null);
+
+    // Apply warehouse filtering for staff users
+    if (userData.role === 'staff' && userData.warehouse_id) {
+      query = query.eq('id', userData.warehouse_id);
+    }
+
+    const { data, error } = await query.order('name');
 
     if (error) {
       console.error('Error fetching warehouses:', error);
@@ -136,6 +143,7 @@ export async function getPartners() {
 
 /**
  * Gets all stock units with optional filters
+ * Staff users are automatically restricted to their assigned warehouse
  */
 export async function getStockUnits(filters?: {
   warehouse_id?: string;
@@ -158,7 +166,7 @@ export async function getStockUnits(filters?: {
 
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id')
+      .select('company_id, role, warehouse_id')
       .eq('auth_user_id', user.id)
       .single();
 
@@ -179,10 +187,15 @@ export async function getStockUnits(filters?: {
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
-    // Apply filters
-    if (filters?.warehouse_id) {
+    // Apply warehouse filtering for staff users (overrides filter parameter)
+    if (userData.role === 'staff' && userData.warehouse_id) {
+      query = query.eq('warehouse_id', userData.warehouse_id);
+    } else if (filters?.warehouse_id) {
+      // For admins, respect the filter parameter
       query = query.eq('warehouse_id', filters.warehouse_id);
     }
+
+    // Apply other filters
     if (filters?.status) {
       query = query.eq('status', filters.status);
     }
@@ -217,6 +230,7 @@ export async function getStockUnits(filters?: {
 
 /**
  * Gets a single stock unit by ID
+ * Staff users can only access units in their assigned warehouse
  */
 export async function getStockUnit(unitId: string) {
   try {
@@ -232,7 +246,7 @@ export async function getStockUnit(unitId: string) {
 
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id')
+      .select('company_id, role, warehouse_id')
       .eq('auth_user_id', user.id)
       .single();
 
@@ -240,18 +254,24 @@ export async function getStockUnit(unitId: string) {
       return null;
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('stock_units')
       .select(
         `
         *,
-        products (id, name, material, color, product_number, image_url),
+        products (id, name, material, color, product_number, product_images),
         warehouses (id, name)
       `
       )
       .eq('id', unitId)
-      .eq('company_id', userData.company_id)
-      .single();
+      .eq('company_id', userData.company_id);
+
+    // Apply warehouse filtering for staff users
+    if (userData.role === 'staff' && userData.warehouse_id) {
+      query = query.eq('warehouse_id', userData.warehouse_id);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       console.error('Error fetching stock unit:', error);

@@ -17,10 +17,10 @@ export default async function GoodsDispatchesPage() {
     redirect('/login');
   }
 
-  // Get user details
+  // Get user details including role and warehouse
   const { data: userData, error: userError } = await supabase
     .from('users')
-    .select('company_id')
+    .select('company_id, role, warehouse_id')
     .eq('auth_user_id', user.id)
     .single();
 
@@ -29,7 +29,7 @@ export default async function GoodsDispatchesPage() {
   }
 
   // Fetch all dispatches
-  const { data: dispatches } = await supabase
+  let dispatchQuery = supabase
     .from('goods_dispatches')
     .select(
       `
@@ -40,16 +40,28 @@ export default async function GoodsDispatchesPage() {
     `
     )
     .eq('company_id', userData.company_id)
-    .is('deleted_at', null)
-    .order('dispatch_date', { ascending: false });
+    .is('deleted_at', null);
+
+  // Apply warehouse filtering for staff users
+  if (userData.role === 'staff' && userData.warehouse_id) {
+    dispatchQuery = dispatchQuery.eq('warehouse_id', userData.warehouse_id);
+  }
+
+  const { data: dispatches } = await dispatchQuery.order('dispatch_date', { ascending: false });
 
   // Fetch warehouses
-  const { data: warehouses } = await supabase
+  let warehouseQuery = supabase
     .from('warehouses')
     .select('id, name')
     .eq('company_id', userData.company_id)
-    .is('deleted_at', null)
-    .order('name');
+    .is('deleted_at', null);
+
+  // Apply warehouse filtering for staff users
+  if (userData.role === 'staff' && userData.warehouse_id) {
+    warehouseQuery = warehouseQuery.eq('id', userData.warehouse_id);
+  }
+
+  const { data: warehouses } = await warehouseQuery.order('name');
 
   // Fetch partners
   const { data: partners } = await supabase

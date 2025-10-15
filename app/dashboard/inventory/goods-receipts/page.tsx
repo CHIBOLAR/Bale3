@@ -18,10 +18,10 @@ export default async function GoodsReceiptPage() {
     redirect('/login');
   }
 
-  // Get user's company_id
+  // Get user's company_id, role, and warehouse_id
   const { data: userData } = await supabase
     .from('users')
-    .select('company_id')
+    .select('company_id, role, warehouse_id')
     .eq('auth_user_id', user.id)
     .single();
 
@@ -30,7 +30,7 @@ export default async function GoodsReceiptPage() {
   }
 
   // Fetch goods receipts with related data
-  const { data: receipts } = await supabase
+  let query = supabase
     .from('goods_receipts')
     .select(`
       id,
@@ -57,8 +57,14 @@ export default async function GoodsReceiptPage() {
       )
     `)
     .eq('company_id', userData.company_id)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
+    .is('deleted_at', null);
+
+  // Apply warehouse filtering for staff users
+  if (userData.role === 'staff' && userData.warehouse_id) {
+    query = query.eq('warehouse_id', userData.warehouse_id);
+  }
+
+  const { data: receipts } = await query.order('created_at', { ascending: false });
 
   const getTotalQuantity = (items: any[]) => {
     return items?.reduce((sum, item) => sum + (item.quantity_received || 0), 0) || 0;
