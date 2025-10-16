@@ -139,9 +139,9 @@ export default function StockUnitDetailPage() {
               <div className="flex items-start gap-4">
                 {/* Product Image */}
                 <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-md bg-gray-100">
-                  {stockUnit.products.image_url ? (
+                  {stockUnit.products.product_images?.[0] ? (
                     <Image
-                      src={stockUnit.products.image_url}
+                      src={stockUnit.products.product_images[0]}
                       alt={stockUnit.products.name}
                       width={80}
                       height={80}

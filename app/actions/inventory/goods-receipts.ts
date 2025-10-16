@@ -268,9 +268,9 @@ export async function getGoodsReceipt(receiptId: string) {
       .select(
         `
         *,
-        warehouses (id, name),
-        partners:issued_by_partner_id (id, company_name, partner_type),
-        issued_warehouse:issued_by_warehouse_id (id, name)
+        warehouses!goods_receipts_warehouse_id_fkey (id, name),
+        partners:partners!goods_receipts_issued_by_partner_id_fkey (id, company_name, partner_type),
+        issued_warehouse:warehouses!goods_receipts_issued_by_warehouse_id_fkey (id, name)
       `
       )
       .eq('id', receiptId)
@@ -342,8 +342,10 @@ export async function getGoodsReceipts(filters?: {
       .select(
         `
         *,
-        warehouses (id, name),
-        partners:issued_by_partner_id (id, company_name, partner_type)
+        warehouses!goods_receipts_warehouse_id_fkey (id, name),
+        partners:partners!goods_receipts_issued_by_partner_id_fkey (id, company_name, partner_type),
+        source_warehouses:warehouses!goods_receipts_issued_by_warehouse_id_fkey (id, name),
+        goods_receipt_items (quantity_received)
       `
       )
       .eq('company_id', userData.company_id)

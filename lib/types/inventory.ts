@@ -297,7 +297,7 @@ export interface GoodsDispatchFormData extends CreateGoodsDispatchInput {
 
 export interface SelectedStockUnitItem extends StockUnitWithRelations {
   // Extended properties for dispatch UI
-  selected_quantity?: number; // For partial dispatch (if needed)
+  dispatched_quantity: number; // Actual quantity to dispatch (can be partial, excludes wastage)
 }
 
 // ============================================

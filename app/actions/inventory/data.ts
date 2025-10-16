@@ -229,6 +229,53 @@ export async function getStockUnits(filters?: {
 }
 
 /**
+ * Gets pending sales orders for dispatch linking
+ * Returns orders with status 'pending' or 'partially_fulfilled'
+ */
+export async function getPendingSalesOrders() {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return [];
+    }
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (!userData?.company_id) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('sales_orders')
+      .select('id, order_number, customer:partners!sales_orders_customer_id_fkey(company_name)')
+      .eq('company_id', userData.company_id)
+      .in('status', ['pending', 'partially_fulfilled'])
+      .is('deleted_at', null)
+      .order('order_date', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Error fetching pending sales orders:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getPendingSalesOrders:', error);
+    return [];
+  }
+}
+
+/**
  * Gets a single stock unit by ID
  * Staff users can only access units in their assigned warehouse
  */

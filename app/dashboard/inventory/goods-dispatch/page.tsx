@@ -34,9 +34,9 @@ export default async function GoodsDispatchesPage() {
     .select(
       `
       *,
-      warehouses (id, name),
-      dispatch_to_partner:dispatch_to_partner_id (id, company_name, partner_type),
-      dispatch_to_warehouse:dispatch_to_warehouse_id (id, name)
+      warehouses!goods_dispatches_warehouse_id_fkey (id, name),
+      dispatch_to_partner:partners!goods_dispatches_dispatch_to_partner_id_fkey (id, company_name, partner_type),
+      dispatch_to_warehouse:warehouses!goods_dispatches_dispatch_to_warehouse_id_fkey (id, name)
     `
     )
     .eq('company_id', userData.company_id)
@@ -66,10 +66,10 @@ export default async function GoodsDispatchesPage() {
   // Fetch partners
   const { data: partners } = await supabase
     .from('partners')
-    .select('id, name, partner_type')
+    .select('id, company_name, partner_type')
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
-    .order('name');
+    .order('company_name');
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

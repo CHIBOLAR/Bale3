@@ -8,6 +8,7 @@ import { SelectedStockUnitItem } from '@/lib/types/inventory';
 interface StockUnitSelectorProps {
   selectedUnits: SelectedStockUnitItem[];
   onUnitRemove: (unitId: string) => void;
+  onQuantityChange: (unitId: string, quantity: number) => void;
   onSelectFromInventory: () => void;
   onQRScan?: () => void;
 }
@@ -15,6 +16,7 @@ interface StockUnitSelectorProps {
 export default function StockUnitSelector({
   selectedUnits,
   onUnitRemove,
+  onQuantityChange,
   onSelectFromInventory,
   onQRScan,
 }: StockUnitSelectorProps) {
@@ -72,9 +74,9 @@ export default function StockUnitSelector({
               <div className="flex items-center gap-3">
                 {/* Product Image */}
                 <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md bg-gray-100">
-                  {unit.products.image_url ? (
+                  {unit.products.product_images?.[0] ? (
                     <Image
-                      src={unit.products.image_url}
+                      src={unit.products.product_images[0]}
                       alt={unit.products.name}
                       width={48}
                       height={48}
@@ -94,16 +96,48 @@ export default function StockUnitSelector({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                {/* Size Display */}
-                <div className="text-right">
-                  <p className="text-lg font-semibold text-gray-900">
-                    {unit.size_quantity - unit.wastage}
-                    <span className="text-sm font-normal text-gray-500">
-                      {' '}
-                      / {unit.size_quantity} mtr
+              <div className="flex items-center gap-6">
+                {/* Quantity Details */}
+                <div className="flex flex-col gap-1.5">
+                  {/* Available Quantity (Informational) */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-gray-500">Available:</span>
+                    <span className="font-medium text-gray-700">
+                      {(unit.size_quantity - unit.wastage).toFixed(2)} mtr
                     </span>
-                  </p>
+                  </div>
+
+                  {/* Wastage (Informational - Internal Only) */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-gray-400">Wastage (internal):</span>
+                    <span className="font-mono text-gray-400">{unit.wastage.toFixed(2)} mtr</span>
+                  </div>
+
+                  {/* Dispatched Quantity (Editable) */}
+                  <div className="flex items-center gap-2">
+                    <label htmlFor={`qty-${unit.id}`} className="text-xs font-medium text-gray-700">
+                      Dispatch:
+                    </label>
+                    <input
+                      id={`qty-${unit.id}`}
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      max={unit.size_quantity - unit.wastage}
+                      value={unit.dispatched_quantity}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        const availableQty = unit.size_quantity - unit.wastage;
+                        if (value > 0 && value <= availableQty) {
+                          onQuantityChange(unit.id, value);
+                        } else if (value > availableQty) {
+                          onQuantityChange(unit.id, availableQty);
+                        }
+                      }}
+                      className="w-24 rounded border border-gray-300 px-2 py-1 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-500">mtr</span>
+                  </div>
                 </div>
 
                 {/* Remove Button */}

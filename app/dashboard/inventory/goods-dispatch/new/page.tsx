@@ -7,8 +7,8 @@ import StockUnitSelector from '../components/StockUnitSelector';
 import InventoryBrowserModal from '../components/InventoryBrowserModal';
 import DispatchForm, { DispatchFormData } from '../components/DispatchForm';
 import { SelectedStockUnitItem, StockUnitWithRelations } from '@/lib/types/inventory';
-import { getStockUnits, getWarehouses, getPartners } from '@/app/actions/inventory/data';
-import { createGoodsDispatch } from '@/app/actions/inventory/goods-dispatch';
+import { getStockUnits, getWarehouses, getPartners, getPendingSalesOrders } from '@/app/actions/inventory/data';
+import { createGoodsDispatch, getGoodsDispatches } from '@/app/actions/inventory/goods-dispatch';
 
 interface Warehouse {
   id: string;
@@ -17,13 +17,26 @@ interface Warehouse {
 
 interface Partner {
   id: string;
-  name: string;
+  company_name: string;
   partner_type: string;
 }
 
 interface Agent {
   id: string;
   name: string;
+}
+
+interface SalesOrder {
+  id: string;
+  order_number: string;
+  customer?: {
+    company_name: string;
+  };
+}
+
+interface JobWork {
+  id: string;
+  work_number: string;
 }
 
 export default function NewGoodsDispatchPage() {
@@ -36,6 +49,8 @@ export default function NewGoodsDispatchPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
+  const [recentDispatches, setRecentDispatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal state
@@ -52,15 +67,19 @@ export default function NewGoodsDispatchPage() {
   async function fetchData() {
     setLoading(true);
     try {
-      const [unitsData, warehousesData, partnersData] = await Promise.all([
+      const [unitsData, warehousesData, partnersData, salesOrdersData, recentDispatchesData] = await Promise.all([
         getStockUnits({ status: 'available' }), // Only fetch available units
         getWarehouses(),
         getPartners(),
+        getPendingSalesOrders(),
+        getGoodsDispatches({}), // Fetch all recent dispatches
       ]);
 
       setAvailableUnits(unitsData);
       setWarehouses(warehousesData);
       setPartners(partnersData);
+      setSalesOrders(salesOrdersData);
+      setRecentDispatches((recentDispatchesData || []).slice(0, 5)); // Keep only 5 most recent
       // TODO: Fetch agents from database
       setAgents([]);
     } catch (error) {
@@ -72,8 +91,22 @@ export default function NewGoodsDispatchPage() {
   }
 
   const handleUnitsSelect = (unitIds: string[]) => {
-    const newUnits = availableUnits.filter((unit) => unitIds.includes(unit.id));
+    const newUnits = availableUnits
+      .filter((unit) => unitIds.includes(unit.id))
+      .map((unit) => ({
+        ...unit,
+        // Default dispatched_quantity to available quantity (size - wastage)
+        dispatched_quantity: unit.size_quantity - unit.wastage,
+      }));
     setSelectedUnits(newUnits);
+  };
+
+  const handleQuantityChange = (unitId: string, quantity: number) => {
+    setSelectedUnits((prev) =>
+      prev.map((unit) =>
+        unit.id === unitId ? { ...unit, dispatched_quantity: quantity } : unit
+      )
+    );
   };
 
   const handleUnitRemove = (unitId: string) => {
@@ -101,6 +134,11 @@ export default function NewGoodsDispatchPage() {
       const dispatchData = {
         ...formData,
         stock_unit_ids: selectedUnits.map((unit) => unit.id),
+        // Pass dispatched quantities for each unit
+        dispatched_quantities: selectedUnits.map((unit) => ({
+          stock_unit_id: unit.id,
+          dispatched_quantity: unit.dispatched_quantity,
+        })),
       };
 
       const result = await createGoodsDispatch(dispatchData);
@@ -128,7 +166,7 @@ export default function NewGoodsDispatchPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-6">
           <button
@@ -154,68 +192,155 @@ export default function NewGoodsDispatchPage() {
           </div>
         )}
 
-        {/* Step 1: Stock Unit Selection */}
-        {currentStep === 1 && (
-          <>
-            <StockUnitSelector
-              selectedUnits={selectedUnits}
-              onUnitRemove={handleUnitRemove}
-              onSelectFromInventory={() => setShowInventoryBrowser(true)}
-              onQRScan={() => {
-                // TODO: Implement QR scanner
-                alert('QR scanner coming soon!');
-              }}
-            />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Main Content - 2 columns */}
+          <div className="lg:col-span-2">
+            {/* Step 1: Stock Unit Selection */}
+            {currentStep === 1 && (
+              <>
+                <StockUnitSelector
+                  selectedUnits={selectedUnits}
+                  onUnitRemove={handleUnitRemove}
+                  onQuantityChange={handleQuantityChange}
+                  onSelectFromInventory={() => setShowInventoryBrowser(true)}
+                  onQRScan={() => {
+                    // TODO: Implement QR scanner
+                    alert('QR scanner coming soon!');
+                  }}
+                />
 
-            {/* Next Button */}
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={handleNextStep}
-                disabled={selectedUnits.length === 0}
-                className="rounded-md bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Next Step
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Step 2: Dispatch Form */}
-        {currentStep === 2 && (
-          <>
-            {/* Selected Units Summary */}
-            <div className="mb-6 rounded-lg bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {selectedUnits.length} {selectedUnits.length === 1 ? 'unit' : 'units'}{' '}
-                    selected
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Total: {selectedUnits.reduce((sum, unit) => sum + (unit.size_quantity - unit.wastage), 0).toFixed(2)} mtr
-                  </p>
+                {/* Next Button */}
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={handleNextStep}
+                    disabled={selectedUnits.length === 0}
+                    className="rounded-md bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    Next Step
+                  </button>
                 </div>
-                <button
-                  onClick={handlePrevStep}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  Change selection
-                </button>
-              </div>
-            </div>
+              </>
+            )}
 
-            <DispatchForm
-              warehouses={warehouses}
-              partners={partners}
-              agents={agents}
-              salesOrders={[]} // TODO: Fetch from database
-              jobWorks={[]} // TODO: Fetch from database
-              onSubmit={handleDispatchSubmit}
-              onCancel={handlePrevStep}
-              isSubmitting={isSubmitting}
-            />
-          </>
-        )}
+            {/* Step 2: Dispatch Form */}
+            {currentStep === 2 && (
+              <>
+                {/* Selected Units Summary */}
+                <div className="mb-6 rounded-lg bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {selectedUnits.length} {selectedUnits.length === 1 ? 'unit' : 'units'}{' '}
+                        selected
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Total to dispatch: {selectedUnits.reduce((sum, unit) => sum + unit.dispatched_quantity, 0).toFixed(2)} mtr
+                      </p>
+                    </div>
+                    <button
+                      onClick={handlePrevStep}
+                      className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                    >
+                      Change selection
+                    </button>
+                  </div>
+                </div>
+
+                <DispatchForm
+                  warehouses={warehouses}
+                  partners={partners}
+                  agents={agents}
+                  salesOrders={salesOrders}
+                  jobWorks={[]} // TODO: Fetch from database
+                  onSubmit={handleDispatchSubmit}
+                  onCancel={handlePrevStep}
+                  isSubmitting={isSubmitting}
+                />
+              </>
+            )}
+          </div>
+
+          {/* Recent Dispatches Sidebar - 1 column */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-6 rounded-lg bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-gray-900">Recent Dispatches</h2>
+
+              {recentDispatches.length === 0 ? (
+                <p className="text-sm text-gray-500">No recent dispatches found</p>
+              ) : (
+                <div className="space-y-3">
+                  {recentDispatches.map((dispatch: any) => {
+                    const totalQty = dispatch.items?.reduce(
+                      (sum: number, item: any) => sum + (item.dispatched_quantity || 0),
+                      0
+                    ) || 0;
+
+                    const getStatusColor = (status: string) => {
+                      switch (status) {
+                        case 'pending':
+                          return 'bg-yellow-100 text-yellow-800';
+                        case 'in_transit':
+                          return 'bg-blue-100 text-blue-800';
+                        case 'delivered':
+                          return 'bg-green-100 text-green-800';
+                        case 'cancelled':
+                          return 'bg-gray-100 text-gray-800';
+                        default:
+                          return 'bg-gray-100 text-gray-800';
+                      }
+                    };
+
+                    return (
+                      <a
+                        key={dispatch.id}
+                        href={`/dashboard/inventory/goods-dispatch/${dispatch.id}`}
+                        className="block rounded-lg border border-gray-200 p-3 hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
+                      >
+                        <div className="mb-1 flex items-center justify-between">
+                          <span className="font-mono text-sm font-medium text-gray-900">
+                            {dispatch.dispatch_number}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(dispatch.dispatch_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          <div className="mb-1">
+                            <span className="font-medium">
+                              {dispatch.link_type === 'sales_order' && 'Sales Order'}
+                              {dispatch.link_type === 'job_work' && 'Job Work'}
+                              {dispatch.link_type === 'purchase_return' && 'Purchase Return'}
+                              {dispatch.link_type === 'other' && 'Other'}
+                            </span>
+                            {dispatch.dispatch_to_partner?.company_name && (
+                              <span className="text-gray-500"> to {dispatch.dispatch_to_partner.company_name}</span>
+                            )}
+                            {dispatch.dispatch_to_warehouse?.name && (
+                              <span className="text-gray-500"> to {dispatch.dispatch_to_warehouse.name}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(dispatch.status)}`}>
+                              {dispatch.status.replace('_', ' ')}
+                            </span>
+                            <span className="font-medium text-gray-900">{totalQty.toFixed(2)} mtr</span>
+                          </div>
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+
+              <a
+                href="/dashboard/inventory/goods-dispatch"
+                className="mt-4 block text-center text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                View all dispatches →
+              </a>
+            </div>
+          </div>
+        </div>
 
         {/* Inventory Browser Modal */}
         <InventoryBrowserModal

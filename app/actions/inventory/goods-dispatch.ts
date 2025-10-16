@@ -137,12 +137,51 @@ export async function createGoodsDispatch(
       };
     }
 
-    // Create dispatch items for each stock unit
-    const dispatchItems = formData.stock_unit_ids.map((unitId) => ({
-      company_id: companyId,
-      dispatch_id: dispatch.id,
-      stock_unit_id: unitId,
-    }));
+    // Get stock units with product information to match with sales order items
+    const { data: stockUnitsWithProducts } = await supabase
+      .from('stock_units')
+      .select('id, product_id')
+      .in('id', formData.stock_unit_ids);
+
+    // If linked to a sales order, get the sales order items for matching
+    let salesOrderItems: any[] = [];
+    if (formData.sales_order_id) {
+      const { data: items } = await supabase
+        .from('sales_order_items')
+        .select('id, product_id, required_quantity, dispatched_quantity')
+        .eq('sales_order_id', formData.sales_order_id)
+        .eq('company_id', companyId);
+
+      salesOrderItems = items || [];
+    }
+
+    // Create dispatch items for each stock unit with dispatched quantities
+    const dispatchItems = formData.stock_unit_ids.map((unitId) => {
+      // Find the dispatched quantity for this unit
+      const quantityInfo = (formData as any).dispatched_quantities?.find(
+        (q: any) => q.stock_unit_id === unitId
+      );
+
+      // Find the product_id for this stock unit
+      const stockUnit = stockUnitsWithProducts?.find((su) => su.id === unitId);
+
+      // If linked to sales order, find matching sales_order_item by product_id
+      let salesOrderItemId = null;
+      if (formData.sales_order_id && stockUnit) {
+        const matchingOrderItem = salesOrderItems.find(
+          (item) => item.product_id === stockUnit.product_id
+        );
+        salesOrderItemId = matchingOrderItem?.id || null;
+      }
+
+      return {
+        company_id: companyId,
+        dispatch_id: dispatch.id,
+        stock_unit_id: unitId,
+        dispatched_quantity: quantityInfo?.dispatched_quantity || null,
+        sales_order_item_id: salesOrderItemId,
+      };
+    });
 
     const { error: itemsError } = await supabase
       .from('goods_dispatch_items')
@@ -154,6 +193,40 @@ export async function createGoodsDispatch(
         success: false,
         error: 'Failed to create dispatch items',
       };
+    }
+
+    // Update sales_order_items.dispatched_quantity if linked to sales order
+    if (formData.sales_order_id) {
+      // Group dispatched quantities by sales_order_item_id
+      const dispatchedByOrderItem = new Map<string, number>();
+
+      dispatchItems.forEach((item) => {
+        if (item.sales_order_item_id && item.dispatched_quantity) {
+          const current = dispatchedByOrderItem.get(item.sales_order_item_id) || 0;
+          dispatchedByOrderItem.set(item.sales_order_item_id, current + item.dispatched_quantity);
+        }
+      });
+
+      // Update each sales_order_item
+      for (const [orderItemId, additionalQty] of dispatchedByOrderItem.entries()) {
+        // Get current dispatched_quantity
+        const orderItem = salesOrderItems.find((item) => item.id === orderItemId);
+        if (orderItem) {
+          const newDispatchedQty = (orderItem.dispatched_quantity || 0) + additionalQty;
+
+          await supabase
+            .from('sales_order_items')
+            .update({
+              dispatched_quantity: newDispatchedQty,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', orderItemId)
+            .eq('company_id', companyId);
+        }
+      }
+
+      // Revalidate sales order path
+      revalidatePath(`/dashboard/sales-orders/${formData.sales_order_id}`);
     }
 
     // Update stock unit statuses to 'dispatched'
@@ -224,9 +297,9 @@ export async function getGoodsDispatch(dispatchId: string) {
       .select(
         `
         *,
-        warehouses (id, name),
-        dispatch_to_partner:dispatch_to_partner_id (id, name, partner_type),
-        dispatch_to_warehouse:dispatch_to_warehouse_id (id, name)
+        warehouses!goods_dispatches_warehouse_id_fkey (id, name),
+        dispatch_to_partner:partners!goods_dispatches_dispatch_to_partner_id_fkey (id, company_name, partner_type),
+        dispatch_to_warehouse:warehouses!goods_dispatches_dispatch_to_warehouse_id_fkey (id, name)
       `
       )
       .eq('id', dispatchId)
@@ -238,15 +311,18 @@ export async function getGoodsDispatch(dispatchId: string) {
       return null;
     }
 
-    // Get dispatch items with stock units
+    // Get dispatch items with stock units (including dispatched_quantity)
     const { data: items } = await supabase
       .from('goods_dispatch_items')
       .select(
         `
-        *,
+        id,
+        stock_unit_id,
+        dispatched_quantity,
+        created_at,
         stock_units (
           *,
-          products (id, name, material, color, product_number, image_url),
+          products (id, name, material, color, product_number, product_images),
           warehouses (id, name)
         )
       `
@@ -303,8 +379,10 @@ export async function getGoodsDispatches(filters?: {
       .select(
         `
         *,
-        warehouses (id, name),
-        dispatch_to_partner:dispatch_to_partner_id (id, name, partner_type)
+        warehouses!goods_dispatches_warehouse_id_fkey (id, name),
+        dispatch_to_partner:partners!goods_dispatches_dispatch_to_partner_id_fkey (id, company_name, partner_type),
+        dispatch_to_warehouse:warehouses!goods_dispatches_dispatch_to_warehouse_id_fkey (id, name),
+        items:goods_dispatch_items (dispatched_quantity)
       `
       )
       .eq('company_id', userData.company_id)

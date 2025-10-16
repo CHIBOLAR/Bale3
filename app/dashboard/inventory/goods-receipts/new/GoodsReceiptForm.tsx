@@ -36,8 +36,7 @@ interface Product {
 
 interface Partner {
   id: string;
-  name: string;
-  partner_code: string;
+  company_name: string;
   partner_type: string;
 }
 
@@ -535,10 +534,10 @@ export default function GoodsReceiptForm({
               >
                 <option value="">Select supplier (optional)</option>
                 {partners
-                  .filter((p) => p.partner_type === 'supplier')
+                  .filter((p) => p.partner_type === 'Supplier')
                   .map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.partner_code})
+                      {p.company_name}
                     </option>
                   ))}
               </select>
@@ -581,10 +580,10 @@ export default function GoodsReceiptForm({
               >
                 <option value="">Select {linkType === 'job_work_return' ? 'partner' : 'customer'} (optional)</option>
                 {partners
-                  .filter((p) => p.partner_type === (linkType === 'job_work_return' ? 'job_work' : 'customer'))
+                  .filter((p) => p.partner_type === (linkType === 'job_work_return' ? 'Agent' : 'Customer'))
                   .map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.partner_code})
+                      {p.company_name}
                     </option>
                   ))}
               </select>

@@ -193,9 +193,9 @@ export default function InventoryBrowserModal({
 
                         {/* Product Image */}
                         <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-gray-100">
-                          {unit.products.image_url ? (
+                          {unit.products.product_images?.[0] ? (
                             <Image
-                              src={unit.products.image_url}
+                              src={unit.products.product_images[0]}
                               alt={unit.products.name}
                               width={40}
                               height={40}

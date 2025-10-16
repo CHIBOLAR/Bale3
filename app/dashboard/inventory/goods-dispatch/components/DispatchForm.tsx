@@ -6,7 +6,7 @@ import { GoodsDispatchLinkType } from '@/lib/types/inventory';
 
 interface Partner {
   id: string;
-  name: string;
+  company_name: string;
   partner_type: string;
 }
 
@@ -23,6 +23,9 @@ interface Agent {
 interface SalesOrder {
   id: string;
   order_number: string;
+  customer?: {
+    company_name: string;
+  };
 }
 
 interface JobWork {
@@ -199,6 +202,7 @@ export default function DispatchForm({
                 {salesOrders.map((order) => (
                   <option key={order.id} value={order.id}>
                     {order.order_number}
+                    {order.customer?.company_name && ` - ${order.customer.company_name}`}
                   </option>
                 ))}
               </select>
@@ -227,11 +231,36 @@ export default function DispatchForm({
             </div>
           )}
 
+          {/* Source Warehouse */}
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Building2 className="h-4 w-4 text-gray-400" />
+              Dispatch from warehouse <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.warehouse_id}
+              onChange={(e) => handleChange('warehouse_id', e.target.value)}
+              className={`w-full rounded-md border ${
+                errors.warehouse_id ? 'border-red-500' : 'border-gray-300'
+              } px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
+            >
+              <option value="">Select warehouse</option>
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </select>
+            {errors.warehouse_id && (
+              <p className="mt-1 text-xs text-red-600">{errors.warehouse_id}</p>
+            )}
+          </div>
+
           {/* Dispatch To */}
           <div>
             <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
               <User className="h-4 w-4 text-gray-400" />
-              Dispatch to
+              Dispatch to <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.dispatch_to_partner_id || ''}
@@ -243,7 +272,7 @@ export default function DispatchForm({
               <option value="">Select partner/customer</option>
               {partners.map((partner) => (
                 <option key={partner.id} value={partner.id}>
-                  {partner.name} ({partner.partner_type})
+                  {partner.company_name} ({partner.partner_type})
                 </option>
               ))}
             </select>

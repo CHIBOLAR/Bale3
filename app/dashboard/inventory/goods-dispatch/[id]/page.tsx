@@ -80,7 +80,7 @@ export default function GoodsDispatchDetailPage() {
     if (!dispatch?.items) return 0;
     return dispatch.items.reduce(
       (sum: number, item: any) =>
-        sum + (item.stock_units.size_quantity - item.stock_units.wastage),
+        sum + (item.dispatched_quantity || (item.stock_units.size_quantity - item.stock_units.wastage)),
       0
     );
   };
@@ -241,9 +241,9 @@ export default function GoodsDispatchDetailPage() {
                     <div className="flex items-center gap-3">
                       {/* Product Image */}
                       <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md bg-gray-100">
-                        {item.stock_units.products.image_url ? (
+                        {item.stock_units.products.product_images?.[0] ? (
                           <Image
-                            src={item.stock_units.products.image_url}
+                            src={item.stock_units.products.product_images[0]}
                             alt={item.stock_units.products.name}
                             width={48}
                             height={48}
@@ -269,10 +269,15 @@ export default function GoodsDispatchDetailPage() {
                       </div>
                     </div>
 
-                    {/* Size */}
+                    {/* Dispatched Quantity */}
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
-                        {item.stock_units.size_quantity - item.stock_units.wastage} mtr
+                        {item.dispatched_quantity || (item.stock_units.size_quantity - item.stock_units.wastage)} mtr
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {item.stock_units.wastage > 0 && (
+                          <span>Wastage: {item.stock_units.wastage} mtr (internal)</span>
+                        )}
                       </p>
                       <p className="text-xs text-gray-500">
                         {item.stock_units.location_description}
