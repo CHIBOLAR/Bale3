@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendStaffInviteEmail, sendUpgradeApprovalEmail } from '@/lib/email/resend';
 
 /**
  * POST /api/admin/approve-invite
@@ -120,32 +121,25 @@ export async function POST(request: NextRequest) {
     const signupLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/signup?code=${inviteCode}`;
     const inviteLink = signupLink;
 
-    // Send email using Supabase Auth
+    // Send email using Resend
     try {
       // Platform invites = Demo upgrades (existing demo users)
-      // Staff invites = New staff members (uses admin invite)
+      // Staff invites = New staff members
 
       if (inviteType === 'staff') {
         // STAFF INVITE: New staff member joining existing company
-        const { data: inviteData, error: inviteEmailError } = await supabase.auth.admin.inviteUserByEmail(
+        const emailResult = await sendStaffInviteEmail(
           email,
-          {
-            data: {
-              invite_code: inviteCode,
-              invite_link: signupLink,
-              invited_by: user.id,
-              name: metadata.name || 'there',
-            },
-            redirectTo: signupLink,
-          }
+          inviteCode,
+          metadata.name || name || 'there'
         );
 
-        if (inviteEmailError) {
-          console.error('Error sending staff invite email:', inviteEmailError);
-          console.log('⚠️ Email not sent. Please configure custom SMTP in Supabase Dashboard.');
-          console.log('📧 Staff invite link:', signupLink);
-        } else {
+        if (emailResult.success) {
           console.log('✅ Staff invite email sent successfully to:', email);
+        } else {
+          console.error('Error sending staff invite email:', emailResult.error);
+          console.log('⚠️ Email not sent. Please check Resend configuration.');
+          console.log('📧 Staff invite link:', signupLink);
         }
       } else if (inviteType === 'platform') {
         // PLATFORM INVITE: Demo user upgrading to full access
@@ -155,32 +149,26 @@ export async function POST(request: NextRequest) {
           throw new Error('Invalid platform invite: must be for demo user upgrade');
         }
 
-        // Send signup link to demo user (they'll verify via OTP)
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: email,
-          options: {
-            data: {
-              invite_code: inviteCode,
-              signup_link: signupLink,
-              is_upgrade: true,
-            },
-            shouldCreateUser: false, // User already exists (demo user)
-          },
-        });
+        // Send upgrade email to demo user
+        const emailResult = await sendUpgradeApprovalEmail(
+          email,
+          signupLink,
+          metadata.name || name || 'there'
+        );
 
-        if (otpError) {
-          console.error('Error sending upgrade notification:', otpError);
-          console.log('⚠️ Email not sent. Please configure custom SMTP in Supabase Dashboard.');
-          console.log('📧 Signup link:', signupLink);
+        if (emailResult.success) {
+          console.log('✅ Upgrade approval email sent to:', email);
         } else {
-          console.log('✅ Upgrade notification sent to:', email);
+          console.error('Error sending upgrade email:', emailResult.error);
+          console.log('⚠️ Email not sent. Please check Resend configuration.');
+          console.log('📧 Upgrade link:', signupLink);
         }
       } else {
         throw new Error(`Unknown invite type: ${inviteType}`);
       }
     } catch (emailError) {
       console.error('Error sending email:', emailError);
-      console.log('⚠️ Email sending failed. Please ensure custom SMTP is configured in Supabase Dashboard.');
+      console.log('⚠️ Email sending failed. Please check Resend API key.');
       console.log('📋 Manual action required: Send this link to the user:');
       console.log('📧', inviteLink);
     }

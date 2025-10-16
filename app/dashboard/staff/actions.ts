@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { sendStaffInviteEmail } from '@/lib/email/resend'
 
 /**
  * Generates a unique invite code
@@ -335,7 +336,7 @@ export async function toggleStaffStatus(staffId: string, currentStatus: boolean)
 }
 
 /**
- * Resends an invite email (placeholder for future email integration)
+ * Resends an invite email using Resend
  */
 export async function resendInvite(inviteId: string) {
   try {
@@ -345,25 +346,72 @@ export async function resendInvite(inviteId: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Not authenticated' }
 
-    // Get invite details
-    const { data: invite } = await supabase
+    // Get user's company to verify permissions
+    const { data: userData } = await supabase
+      .from('users')
+      .select('company_id, role, is_superadmin')
+      .eq('auth_user_id', user.id)
+      .single()
+
+    if (!userData?.company_id) return { error: 'Company not found' }
+
+    // Only admins can resend invites
+    if (userData.role !== 'admin' && !userData.is_superadmin) {
+      return { error: 'Only admins can resend invites' }
+    }
+
+    // Get invite details with metadata
+    const { data: invite, error: inviteError } = await supabase
       .from('invites')
-      .select('code, email, company_id')
+      .select('code, email, company_id, status, metadata')
       .eq('id', inviteId)
       .single()
 
-    if (!invite) return { error: 'Invite not found' }
+    if (inviteError || !invite) return { error: 'Invite not found' }
 
-    // TODO: Implement email sending via Resend or MSG91
-    // For now, just return the invite code so it can be copied
+    // Verify invite belongs to user's company
+    if (invite.company_id !== userData.company_id) {
+      return { error: 'Unauthorized' }
+    }
+
+    // Check if invite is still valid
+    if (invite.status === 'revoked') {
+      return { error: 'This invite has been revoked and cannot be resent' }
+    }
+
+    if (invite.status === 'used') {
+      return { error: 'This invite has already been used' }
+    }
+
+    // Extract name from metadata
+    const metadata = invite.metadata as any || {}
+    const recipientName = metadata.name || metadata.first_name || 'there'
+
+    // Send email using Resend
+    const emailResult = await sendStaffInviteEmail(
+      invite.email,
+      invite.code,
+      recipientName
+    )
+
+    if (!emailResult.success) {
+      console.error('Failed to resend invite:', emailResult.error)
+      return {
+        error: 'Failed to send email. Please check email configuration.',
+        inviteCode: invite.code
+      }
+    }
+
+    console.log('✅ Invite email resent successfully to:', invite.email)
 
     return {
       success: true,
-      message: 'Email sending not yet implemented. Please copy and share the invite link manually.',
+      message: 'Invite email has been resent successfully',
       inviteCode: invite.code
     }
 
   } catch (error: any) {
+    console.error('Error resending invite:', error)
     return { error: error.message }
   }
 }
