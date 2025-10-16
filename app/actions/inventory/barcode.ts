@@ -190,7 +190,73 @@ export async function getStockUnitsForQRGeneration(
       return [];
     }
 
-    return units || [];
+    if (!units || units.length === 0) return [];
+
+    // Get barcode batch info for units with QR codes
+    const unitIds = units.map(u => u.id);
+    const { data: batchItems } = await supabase
+      .from('barcode_batch_items')
+      .select(`
+        stock_unit_id,
+        barcode_batches (
+          id,
+          batch_name,
+          created_at
+        )
+      `)
+      .in('stock_unit_id', unitIds);
+
+    // Get goods receipt items with variant_combination
+    // Note: stock_units.receipt_item_id links to goods_receipt_items.id
+    const receiptItemIds = units
+      .map((u: any) => u.receipt_item_id)
+      .filter(Boolean);
+
+    let receiptItems: any[] = [];
+    if (receiptItemIds.length > 0) {
+      const { data } = await supabase
+        .from('goods_receipt_items')
+        .select(`
+          id,
+          variant_combination,
+          goods_receipts (
+            id,
+            receipt_number,
+            receipt_date,
+            issued_by_partner:partners!goods_receipts_issued_by_partner_id_fkey (
+              id,
+              company_name
+            )
+          )
+        `)
+        .in('id', receiptItemIds);
+
+      receiptItems = data || [];
+    }
+
+    // Enrich units with batch and receipt info
+    const enrichedUnits = units.map((unit: any) => {
+      const batchItem = batchItems?.find((bi: any) => bi.stock_unit_id === unit.id);
+      const receiptItem = receiptItems?.find((ri: any) => ri.id === unit.receipt_item_id);
+
+      return {
+        ...unit,
+        batch_info: batchItem ? {
+          batch_id: batchItem.barcode_batches?.id,
+          batch_name: batchItem.barcode_batches?.batch_name,
+          created_at: batchItem.barcode_batches?.created_at,
+        } : null,
+        receipt_item_info: receiptItem ? {
+          receipt_item_id: receiptItem.id,
+          receipt_number: receiptItem.goods_receipts?.receipt_number,
+          receipt_date: receiptItem.goods_receipts?.receipt_date,
+          supplier_name: receiptItem.goods_receipts?.issued_by_partner?.company_name,
+          variant_combination: receiptItem.variant_combination,
+        } : null,
+      };
+    });
+
+    return enrichedUnits;
   } catch (error) {
     console.error('Error in getStockUnitsForQRGeneration:', error);
     return [];
@@ -245,7 +311,7 @@ export async function createBarcodeBatch(
 
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id')
+      .select('id, company_id')
       .eq('auth_user_id', user.id)
       .single();
 
@@ -253,37 +319,56 @@ export async function createBarcodeBatch(
       return { success: false, error: 'Company not found' };
     }
 
-    // Get warehouse_id from first stock unit if not provided
+    console.log('User data:', { userId: userData.id, companyId: userData.company_id });
+
+    // Get warehouse_id from first stock unit (required field)
     let warehouseId = input.warehouse_id;
-    if (!warehouseId && input.stock_unit_ids.length > 0) {
-      const { data: unit } = await supabase
+    if (!warehouseId || warehouseId === '') {
+      if (input.stock_unit_ids.length === 0) {
+        return { success: false, error: 'No stock units selected' };
+      }
+
+      const { data: unit, error: unitError } = await supabase
         .from('stock_units')
         .select('warehouse_id')
         .eq('id', input.stock_unit_ids[0])
         .single();
 
-      warehouseId = unit?.warehouse_id || '';
+      if (unitError || !unit?.warehouse_id) {
+        console.error('Error fetching warehouse_id:', unitError);
+        return { success: false, error: 'Could not determine warehouse' };
+      }
+
+      warehouseId = unit.warehouse_id;
     }
 
+    console.log('Warehouse ID:', warehouseId);
+
     // Create barcode batch
+    const batchData = {
+      company_id: userData.company_id,
+      warehouse_id: warehouseId,
+      batch_name: input.batch_name,
+      layout_config: input.layout_config || {},
+      fields_selected: input.fields_selected,
+      status: 'generated', // Valid statuses: 'generated', 'printed', 'applied'
+      created_by: userData.id, // Use internal user ID, not auth user ID
+    };
+
+    console.log('Creating batch with data:', JSON.stringify(batchData, null, 2));
+
     const { data: batch, error: batchError } = await supabase
       .from('barcode_batches')
-      .insert({
-        company_id: userData.company_id,
-        warehouse_id: warehouseId,
-        batch_name: input.batch_name,
-        layout_config: input.layout_config || {},
-        fields_selected: input.fields_selected,
-        status: 'generating',
-        created_by: user.id,
-      })
+      .insert(batchData)
       .select()
       .single();
 
     if (batchError || !batch) {
-      console.error('Error creating batch:', batchError);
-      return { success: false, error: 'Failed to create batch' };
+      console.error('Error creating batch:', JSON.stringify(batchError, null, 2));
+      return { success: false, error: `Failed to create batch: ${batchError?.message || batchError?.details || 'Unknown error'}` };
     }
+
+    console.log('Batch created successfully:', batch.id);
 
     // Create barcode batch items
     const batchItems = input.stock_unit_ids.map((unitId) => ({
@@ -302,19 +387,30 @@ export async function createBarcodeBatch(
     }
 
     // Fetch stock units with full details for PDF generation
-    const { data: stockUnits } = await supabase
+    console.log('Fetching stock units for IDs:', input.stock_unit_ids);
+
+    const { data: stockUnits, error: stockUnitsError } = await supabase
       .from('stock_units')
       .select(
         `
         *,
-        products (id, name, material, color, product_number, hsn_code, gsm, sale_price)
+        products (id, name, material, color, product_number, hsn_code, gsm, selling_price_per_unit)
       `
       )
+      .eq('company_id', userData.company_id)
       .in('id', input.stock_unit_ids);
 
+    if (stockUnitsError) {
+      console.error('Error fetching stock units:', stockUnitsError);
+      return { success: false, error: `Stock units query failed: ${stockUnitsError.message}` };
+    }
+
     if (!stockUnits || stockUnits.length === 0) {
+      console.error('No stock units found for IDs:', input.stock_unit_ids);
       return { success: false, error: 'Stock units not found' };
     }
+
+    console.log(`Found ${stockUnits.length} stock units`);
 
     // Prepare label data
     const labels = stockUnits.map((unit: any) => {
@@ -343,7 +439,7 @@ export async function createBarcodeBatch(
           value = unit.products?.gsm?.toString() || '';
         } else if (fieldId === 'sale_price') {
           label = 'Price';
-          value = unit.products?.sale_price ? `₹${unit.products.sale_price}` : '';
+          value = unit.products?.selling_price_per_unit ? `₹${unit.products.selling_price_per_unit}` : '';
         }
         // Stock unit fields
         else if (fieldId === 'unit_number') {
@@ -351,19 +447,19 @@ export async function createBarcodeBatch(
           value = unit.unit_number || '';
         } else if (fieldId === 'made_on') {
           label = 'Made on';
-          value = unit.manufacture_date || '';
+          value = unit.manufacturing_date || '';
         } else if (fieldId === 'size') {
           label = 'Size';
           value = `${unit.size_quantity} m`;
         } else if (fieldId === 'wastage') {
           label = 'Wastage';
-          value = `${unit.wastage_quantity || unit.wastage || 0} m`;
+          value = `${unit.wastage || 0} m`;
         } else if (fieldId === 'quality_grade') {
           label = 'Quality';
           value = unit.quality_grade || '';
         } else if (fieldId === 'location') {
           label = 'Location';
-          value = unit.location_description || unit.location || '';
+          value = unit.location_description || '';
         }
 
         return { label, value };
@@ -376,14 +472,25 @@ export async function createBarcodeBatch(
     });
 
     // Generate PDF
-    const pdfBuffer = await generateQRCodesPDF(
-      labels,
-      input.batch_name,
-      input.layout_config || {}
-    );
+    console.log(`Generating PDF for ${labels.length} labels...`);
+    let pdfBuffer;
+    try {
+      pdfBuffer = await generateQRCodesPDF(
+        labels,
+        input.batch_name,
+        input.layout_config || {}
+      );
+      console.log(`PDF generated successfully, size: ${pdfBuffer.byteLength} bytes`);
+    } catch (pdfError) {
+      console.error('Error generating PDF:', pdfError);
+      // Note: batch already has status 'generated' from creation
+      return { success: false, error: 'Failed to generate PDF' };
+    }
 
     // Upload PDF to Supabase Storage
     const fileName = `qr-batches/${batch.id}/${batch.batch_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
+    console.log(`Uploading PDF to: ${fileName}`);
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('documents')
       .upload(fileName, pdfBuffer, {
@@ -393,28 +500,38 @@ export async function createBarcodeBatch(
 
     if (uploadError) {
       console.error('Error uploading PDF:', uploadError);
-      // Don't fail the entire operation, just mark as completed without PDF
+      // Don't fail the entire operation, just add note about upload failure
       await supabase
         .from('barcode_batches')
-        .update({ status: 'completed' })
+        .update({
+          notes: `PDF generation completed but upload failed: ${uploadError.message}`
+        })
         .eq('id', batch.id);
+      return { success: true, batchId: batch.id, error: 'PDF upload failed but batch created' };
     } else {
+      console.log('PDF uploaded successfully');
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('documents')
         .getPublicUrl(fileName);
 
-      // Update batch with PDF URL
+      console.log(`PDF URL: ${urlData.publicUrl}`);
+
+      // Update batch with PDF URL (status remains 'generated')
       await supabase
         .from('barcode_batches')
         .update({
-          status: 'completed',
           pdf_url: urlData.publicUrl,
         })
         .eq('id', batch.id);
     }
 
+    // Revalidate all relevant paths to update the UI
     revalidatePath('/dashboard/inventory/qr-codes');
+    revalidatePath('/dashboard/inventory/qr-codes/new');
+    revalidatePath(`/dashboard/inventory/qr-codes/${batch.id}`);
+
+    console.log('✅ QR code generation completed successfully!');
 
     return { success: true, batchId: batch.id };
   } catch (error) {

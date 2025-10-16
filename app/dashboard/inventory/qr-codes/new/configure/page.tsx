@@ -48,23 +48,28 @@ export default function ConfigureLabelPage() {
         stock_unit_ids: unitIds,
         layout_config: {
           paperSize: 'A4',
-          labelWidth: 100,
-          labelHeight: 60,
+          labelWidth: 65,    // Optimized: 2-3 labels per row
+          labelHeight: 40,   // Optimized: 6 labels per column
           marginTop: 10,
           marginLeft: 10,
-          spacing: 5,
-          qrSize: 40,
-          fontSize: 8,
-          labelsPerRow: 2,
-          labelsPerColumn: 5,
+          spacing: 3,
+          qrSize: 30,        // Smaller QR to fit more info
+          fontSize: 7,
         },
       });
 
       if (result.success) {
+        console.log('✅ Successfully generated QR codes!');
+        // Refresh router cache to ensure all pages show updated data
+        router.refresh();
+        // Navigate to the batch detail page
         router.push(`/dashboard/inventory/qr-codes/${result.batchId}`);
+      } else {
+        alert(`Error: ${result.error || 'Failed to generate QR codes'}`);
       }
     } catch (error) {
       console.error('Error creating batch:', error);
+      alert('An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -77,10 +82,14 @@ export default function ConfigureLabelPage() {
     product_number: '#5812397458',
     hsn_code: '12345678',
     material: 'Cotton',
+    color: 'Sky Blue',
     gsm: '120',
+    sale_price: '₹450',
     unit_number: 'GRN-120-001',
+    made_on: '2025-10-15',
     size: '10 m',
     wastage: '0.5 m',
+    quality_grade: 'A',
     location: 'A1-B2',
   };
 
@@ -170,13 +179,13 @@ export default function ConfigureLabelPage() {
               <h2 className="mb-4 text-sm font-medium text-gray-900">Label Preview</h2>
 
               {/* QR Label Preview */}
-              <div className="rounded-lg border-2 border-gray-200 bg-gray-50 p-4">
-                <div className="flex gap-4">
+              <div className="rounded-lg border-2 border-gray-200 bg-gray-50 p-3">
+                <div className="flex gap-3">
                   {/* QR Code */}
                   <div className="flex-shrink-0">
                     <QRCodeSVG
                       value={previewData.qr_code}
-                      size={100}
+                      size={80}
                       level="H"
                       includeMargin={false}
                     />
@@ -213,16 +222,34 @@ export default function ConfigureLabelPage() {
                       {previewData.material}
                     </div>
                   )}
+                  {selectedFields.has('color') && (
+                    <div>
+                      <span className="font-medium">Color: </span>
+                      {previewData.color}
+                    </div>
+                  )}
                   {selectedFields.has('gsm') && (
                     <div>
                       <span className="font-medium">GSM: </span>
                       {previewData.gsm}
                     </div>
                   )}
+                  {selectedFields.has('sale_price') && (
+                    <div>
+                      <span className="font-medium">Price: </span>
+                      {previewData.sale_price}
+                    </div>
+                  )}
                   {selectedFields.has('unit_number') && (
                     <div>
                       <span className="font-medium">Unit No: </span>
                       {previewData.unit_number}
+                    </div>
+                  )}
+                  {selectedFields.has('made_on') && (
+                    <div>
+                      <span className="font-medium">Made on: </span>
+                      {previewData.made_on}
                     </div>
                   )}
                   {selectedFields.has('size') && (
@@ -237,6 +264,12 @@ export default function ConfigureLabelPage() {
                       {previewData.wastage}
                     </div>
                   )}
+                  {selectedFields.has('quality_grade') && (
+                    <div>
+                      <span className="font-medium">Quality: </span>
+                      {previewData.quality_grade}
+                    </div>
+                  )}
                   {selectedFields.has('location') && (
                     <div>
                       <span className="font-medium">Location: </span>
@@ -249,6 +282,15 @@ export default function ConfigureLabelPage() {
               <p className="mt-4 text-xs text-gray-500">
                 This is a preview of how your label will appear. Actual labels will be generated as PDF.
               </p>
+
+              <div className="mt-4 rounded-md bg-blue-50 p-3">
+                <p className="text-xs text-blue-700">
+                  <strong>Layout:</strong> 2 labels per row × 6 per column = 12 labels per A4 page
+                </p>
+                <p className="mt-1 text-xs text-blue-600">
+                  {unitIds.length} unit{unitIds.length !== 1 ? 's' : ''} selected = ~{Math.ceil(unitIds.length / 12)} page{Math.ceil(unitIds.length / 12) !== 1 ? 's' : ''}
+                </p>
+              </div>
             </div>
           </div>
         </div>

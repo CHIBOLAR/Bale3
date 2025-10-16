@@ -37,8 +37,7 @@ export default async function QRCodesPage() {
       warehouses (id, name)
     `
     )
-    .eq('company_id', userData.company_id)
-    .is('deleted_at', null);
+    .eq('company_id', userData.company_id);
 
   // Apply warehouse filtering for staff users
   if (userData.role === 'staff' && userData.warehouse_id) {

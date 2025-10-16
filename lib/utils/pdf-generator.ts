@@ -15,6 +15,8 @@ export async function generateQRCodesPDF(
   batchName: string,
   layout: LabelLayoutConfig
 ): Promise<ArrayBuffer> {
+  console.log(`Starting PDF generation for batch: ${batchName}, ${labels.length} labels`);
+
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -24,18 +26,23 @@ export async function generateQRCodesPDF(
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
 
-  const labelWidth = layout.labelWidth || 90;
-  const labelHeight = layout.labelHeight || 50;
+  const labelWidth = layout.labelWidth || 65;
+  const labelHeight = layout.labelHeight || 40;
   const marginTop = layout.marginTop || 10;
   const marginLeft = layout.marginLeft || 10;
-  const spacing = layout.spacing || 5;
-  const qrSize = layout.qrSize || 35;
-  const fontSize = layout.fontSize || 8;
+  const spacing = layout.spacing || 3;
+  const qrSize = layout.qrSize || 30;
+  const fontSize = layout.fontSize || 7;
 
   // Calculate labels per row and column based on page size
   const labelsPerRow = Math.floor((pageWidth - 2 * marginLeft + spacing) / (labelWidth + spacing));
   const labelsPerColumn = Math.floor((pageHeight - 2 * marginTop + spacing) / (labelHeight + spacing));
   const labelsPerPage = labelsPerRow * labelsPerColumn;
+
+  console.log(`Page size: ${pageWidth}mm x ${pageHeight}mm`);
+  console.log(`Label size: ${labelWidth}mm x ${labelHeight}mm`);
+  console.log(`Layout: ${labelsPerRow} per row, ${labelsPerColumn} per column = ${labelsPerPage} per page`);
+  console.log(`Total pages needed: ${Math.ceil(labels.length / labelsPerPage)}`);
 
   // Generate QR codes as data URLs
   const qrDataUrls = await Promise.all(

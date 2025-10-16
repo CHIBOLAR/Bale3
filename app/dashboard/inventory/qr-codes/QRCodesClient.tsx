@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Share2, Download, QrCode } from 'lucide-react';
+import { Plus, Share2, Download, QrCode, Eye, CheckCircle2, Printer, Tag } from 'lucide-react';
 import { BarcodeBatchWithRelations } from '@/lib/types/inventory';
 
 interface QRCodesClientProps {
@@ -12,7 +12,8 @@ interface QRCodesClientProps {
 export default function QRCodesClient({ batches }: QRCodesClientProps) {
   const router = useRouter();
 
-  const handleShare = async (batch: BarcodeBatchWithRelations) => {
+  const handleShare = async (batch: BarcodeBatchWithRelations, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (batch.pdf_url && navigator.share) {
       try {
         await navigator.share({
@@ -26,10 +27,29 @@ export default function QRCodesClient({ batches }: QRCodesClientProps) {
     }
   };
 
-  const handleDownload = (batch: BarcodeBatchWithRelations) => {
+  const handleDownload = (batch: BarcodeBatchWithRelations, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (batch.pdf_url) {
       window.open(batch.pdf_url, '_blank');
     }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      generated: { icon: CheckCircle2, label: 'Generated', color: 'bg-green-100 text-green-700' },
+      printed: { icon: Printer, label: 'Printed', color: 'bg-blue-100 text-blue-700' },
+      applied: { icon: Tag, label: 'Applied', color: 'bg-purple-100 text-purple-700' },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.generated;
+    const Icon = config.icon;
+
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${config.color}`}>
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </span>
+    );
   };
 
   if (batches.length === 0) {
@@ -54,43 +74,96 @@ export default function QRCodesClient({ batches }: QRCodesClientProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {batches.map((batch) => (
         <div
           key={batch.id}
-          className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+          className="rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:border-gray-300 hover:shadow-md"
         >
-          <button
-            onClick={() => router.push(`/dashboard/inventory/qr-codes/${batch.id}`)}
-            className="flex-1 text-left"
-          >
-            <h3 className="font-medium text-gray-900">{batch.batch_name}</h3>
-            <div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
-              <span>{batch.items_count || 0} codes</span>
-              <span>•</span>
-              <span>Created on {new Date(batch.created_at).toLocaleDateString()}</span>
-            </div>
-          </button>
+          <div className="p-5">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-semibold text-gray-900">{batch.batch_name}</h3>
+                  {getStatusBadge(batch.status)}
+                </div>
 
-          <div className="flex items-center gap-2">
-            {batch.pdf_url && (
-              <>
-                <button
-                  onClick={() => handleShare(batch)}
-                  className="rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                  aria-label="Share"
-                >
-                  <Share2 className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => handleDownload(batch)}
-                  className="rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                  aria-label="Download"
-                >
-                  <Download className="h-5 w-5" />
-                </button>
-              </>
-            )}
+                <div className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-4">
+                  <div>
+                    <p className="text-xs text-gray-500">QR Codes</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">{batch.items_count || 0} units</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-gray-500">Warehouse</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {batch.warehouses?.name || 'N/A'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-gray-500">Created</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {new Date(batch.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-gray-500">Pages</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      ~{Math.ceil((batch.items_count || 0) / 12)} {Math.ceil((batch.items_count || 0) / 12) === 1 ? 'page' : 'pages'}
+                    </p>
+                  </div>
+                </div>
+
+                {batch.notes && (
+                  <div className="mt-3">
+                    <p className="text-xs text-amber-600">
+                      ⚠️ {batch.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
+              <button
+                onClick={() => router.push(`/dashboard/inventory/qr-codes/${batch.id}`)}
+                className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+              >
+                <Eye className="h-4 w-4" />
+                View Details
+              </button>
+
+              <div className="flex items-center gap-2">
+                {batch.pdf_url ? (
+                  <>
+                    {navigator.share && (
+                      <button
+                        onClick={(e) => handleShare(batch, e)}
+                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        Share
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => handleDownload(batch, e)}
+                      className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download PDF
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-sm text-gray-500 italic">PDF not available</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       ))}
