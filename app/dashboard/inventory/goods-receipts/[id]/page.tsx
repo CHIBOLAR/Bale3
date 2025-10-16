@@ -59,24 +59,26 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
       created_at,
       warehouses!warehouse_id (
         id,
-        name,
-        code
+        name
       ),
       partners:issued_by_partner_id (
         id,
-        name,
-        partner_code
+        company_name
       ),
       source_warehouses:issued_by_warehouse_id (
         id,
-        name,
-        code
+        name
       )
     `)
     .eq('id', id)
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
     .single();
+
+  if (receiptError) {
+    console.error('Receipt fetch error:', receiptError);
+    console.error('Error details:', JSON.stringify(receiptError, null, 2));
+  }
 
   if (receiptError || !receipt) {
     notFound();
@@ -144,10 +146,10 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
 
   const getSourceName = () => {
     if (receipt.partners) {
-      return `${receipt.partners.company_name} (${receipt.partners.partner_code})`;
+      return receipt.partners.company_name;
     }
     if (receipt.source_warehouses) {
-      return `${receipt.source_warehouses.name} (${receipt.source_warehouses.code})`;
+      return receipt.source_warehouses.name;
     }
     return '-';
   };
@@ -226,7 +228,6 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
                 <p className="mt-1 text-sm font-medium text-gray-900">
                   {receipt.warehouses?.name}
                 </p>
-                <p className="text-xs text-gray-500">{receipt.warehouses?.code}</p>
               </div>
             </div>
 

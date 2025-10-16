@@ -370,10 +370,10 @@ export default function GoodsReceiptForm({
       setSuccessMessage(`✓ Goods receipt ${receipt.receipt_number} created successfully! Redirecting...`);
       setIsSubmitting(false);
 
-      // Force a small delay to show the message, then redirect
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Force a small delay to show the message, then redirect to detail page
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      router.push('/dashboard/inventory/goods-receipts');
+      router.push(`/dashboard/inventory/goods-receipts/${receipt.id}`);
       router.refresh();
     } catch (error: any) {
       console.error('Error creating goods receipt:', error);
