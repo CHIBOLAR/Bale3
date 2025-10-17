@@ -46,10 +46,7 @@ export default function RequestUpgradePage() {
         }
         setIsDemo(userData.is_demo);
         setUserEmail(userData.email);
-        setFormData(prev => ({
-          ...prev,
-          name: `${userData.first_name} ${userData.last_name}`.trim() || '',
-        }));
+        // Don't pre-fill name for demo users - let them enter their real name
       } else {
         // No user record = demo mode (user authenticated but no database record)
         setIsDemo(true);
@@ -148,9 +145,9 @@ export default function RequestUpgradePage() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-xl p-8">
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <strong>Requesting upgrade for:</strong> {userEmail}
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-900 font-medium">
+            🚀 Ready to unlock unlimited access? Fill out the form below and we'll set up your dedicated company account within 1-2 business days.
           </p>
         </div>
 
