@@ -198,7 +198,7 @@ export async function getStockUnitsForQRGeneration(
       .from('barcode_batch_items')
       .select(`
         stock_unit_id,
-        barcode_batches (
+        barcode_batches!inner (
           id,
           batch_name,
           created_at
@@ -239,12 +239,15 @@ export async function getStockUnitsForQRGeneration(
       const batchItem = batchItems?.find((bi: any) => bi.stock_unit_id === unit.id);
       const receiptItem = receiptItems?.find((ri: any) => ri.id === unit.receipt_item_id);
 
+      // Type cast: barcode_batches is a single object (many-to-one relationship)
+      const batchInfo = batchItem?.barcode_batches as { id: string; batch_name: string; created_at: string } | null | undefined;
+
       return {
         ...unit,
-        batch_info: batchItem ? {
-          batch_id: batchItem.barcode_batches?.id,
-          batch_name: batchItem.barcode_batches?.batch_name,
-          created_at: batchItem.barcode_batches?.created_at,
+        batch_info: batchInfo ? {
+          batch_id: batchInfo.id,
+          batch_name: batchInfo.batch_name,
+          created_at: batchInfo.created_at,
         } : null,
         receipt_item_info: receiptItem ? {
           receipt_item_id: receiptItem.id,

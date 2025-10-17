@@ -20,12 +20,11 @@ const STATUS_LABELS = {
   cancelled: 'Cancelled',
 };
 
-export default async function SalesOrderDetailPage({
-  params,
-}: {
+export default async function SalesOrderDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const params = await props.params;
+  const { id } = params;
   const supabase = await createClient();
 
   // Get authenticated user
