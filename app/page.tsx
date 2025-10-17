@@ -1,43 +1,8 @@
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { signInToDemo } from '@/app/actions/auth/demo-login';
+import TryDemoButton from './components/TryDemoButton';
 
 export default function HomePage() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const router = useRouter();
-
-  const handleTryDemo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      console.log('🚀 Signing in to demo account...');
-
-      const result = await signInToDemo();
-
-      if (result.error) {
-        console.error('❌ Demo login error:', result.error);
-        throw new Error(result.error);
-      }
-
-      console.log('✅ Demo login successful, redirecting to dashboard');
-
-      // Redirect to dashboard
-      router.push('/dashboard');
-      router.refresh();
-    } catch (err: any) {
-      console.error('Error signing in to demo:', err);
-      setError(err.message || 'Failed to access demo. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen">
@@ -55,13 +20,7 @@ export default function HomePage() {
             >
               Login
             </Link>
-            <button
-              onClick={handleTryDemo}
-              disabled={loading}
-              className="px-6 py-2 bg-brand-orange text-white rounded-lg font-semibold hover:bg-brand-orange/90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Loading...' : 'Try Demo'}
-            </button>
+            <TryDemoButton variant="header" />
           </div>
         </div>
       </header>
@@ -77,19 +36,7 @@ export default function HomePage() {
             That's why we built a tool that keeps your fabric organised and lets you focus on important tasks.
           </p>
 
-          <button
-            onClick={handleTryDemo}
-            disabled={loading}
-            className="inline-block px-10 py-4 bg-brand-orange text-white rounded-lg font-bold hover:bg-brand-orange/90 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Loading Demo...' : 'Try Demo Free'}
-          </button>
-
-          {error && (
-            <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm max-w-md mx-auto">
-              {error}
-            </div>
-          )}
+          <TryDemoButton variant="primary" />
         </div>
       </section>
 
@@ -159,13 +106,7 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={handleTryDemo}
-              disabled={loading}
-              className="px-8 py-3 bg-white text-brand-blue rounded-lg font-semibold hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
-            >
-              {loading ? 'Loading...' : 'Try Demo First'}
-            </button>
+            <TryDemoButton variant="secondary" />
             <a
               href="https://wa.me/918928466864?text=Hi%2C%20I%27d%20like%20to%20request%20full%20access%20to%20Bale%20Inventory"
               target="_blank"
@@ -327,18 +268,7 @@ export default function HomePage() {
       </footer>
 
       {/* Floating Try Demo Button */}
-      <button
-        onClick={handleTryDemo}
-        disabled={loading}
-        className="fixed bottom-8 right-8 px-6 py-3 bg-brand-orange text-white rounded-full font-semibold hover:bg-brand-orange/90 transition-all shadow-lg hover:shadow-xl z-40 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <span>{loading ? 'Loading...' : 'Try Demo'}</span>
-        {!loading && (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        )}
-      </button>
+      <TryDemoButton variant="floating" />
     </div>
   );
 }
