@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import StockUnitSelector from '../components/StockUnitSelector';
 import InventoryBrowserModal from '../components/InventoryBrowserModal';
+import QRScannerModal from '../components/QRScannerModal';
 import DispatchForm, { DispatchFormData } from '../components/DispatchForm';
 import { SelectedStockUnitItem, StockUnitWithRelations } from '@/lib/types/inventory';
 import { getStockUnits, getWarehouses, getPartners, getPendingSalesOrders } from '@/app/actions/inventory/data';
@@ -55,6 +56,7 @@ export default function NewGoodsDispatchPage() {
 
   // Modal state
   const [showInventoryBrowser, setShowInventoryBrowser] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,6 +113,115 @@ export default function NewGoodsDispatchPage() {
 
   const handleUnitRemove = (unitId: string) => {
     setSelectedUnits((prev) => prev.filter((unit) => unit.id !== unitId));
+  };
+
+  const handleQRScan = (scannedData: string) => {
+    console.log('Parent: handleQRScan called with:', scannedData);
+    console.log('Parent: Available units:', availableUnits.length);
+
+    // Parse QR code format: QR-{uuid}-{unit_number}
+    // Example: QR-1ea3bca1-fc04-46ac-8d0e-0c246fa608e9-UNIT-000007
+    let unitNumber = scannedData;
+    let unitId = scannedData;
+
+    // Check if it's a formatted QR code
+    if (scannedData.startsWith('QR-')) {
+      // Extract unit number after the UUID
+      const parts = scannedData.split('-');
+      console.log('Parent: QR code parts:', parts);
+
+      if (parts.length >= 7) {
+        // Format: QR-{uuid-part1}-{uuid-part2}-{uuid-part3}-{uuid-part4}-{uuid-part5}-UNIT-{number}
+        // Join last parts after UUID to get UNIT-000007
+        unitNumber = parts.slice(6).join('-');
+        console.log('Parent: Extracted unit number from QR:', unitNumber);
+      }
+      // Also extract the UUID part (might be the ID)
+      if (parts.length >= 6) {
+        unitId = parts.slice(1, 6).join('-');
+        console.log('Parent: Extracted UUID from QR:', unitId);
+      }
+    }
+
+    console.log('Parent: Looking for match with:', {
+      original: scannedData,
+      parsedUnitNumber: unitNumber,
+      parsedUnitId: unitId
+    });
+
+    // Log first 3 units to see what data structure looks like
+    console.log('Parent: Sample units from database:', availableUnits.slice(0, 3).map(u => ({
+      id: u.id,
+      unit_number: u.unit_number,
+      product_number: u.products?.product_number
+    })));
+
+    // Find the stock unit by unit_number, id, or product_number
+    const unit = availableUnits.find(u => {
+      // Check each condition individually for debugging
+      const exactMatch = u.unit_number === scannedData;
+      const unitNumberMatch = u.unit_number === unitNumber;
+      const idMatch = u.id === scannedData;
+      const uuidMatch = u.id === unitId;
+      const productMatch = u.products?.product_number === scannedData;
+
+      const matches = exactMatch || unitNumberMatch || idMatch || uuidMatch || productMatch;
+
+      // Log every unit we're checking to find why it's not matching
+      if (u.unit_number?.includes('000011') || u.id === unitId) {
+        console.log(`Parent: Checking unit ${u.unit_number}:`, {
+          unit_id: u.id,
+          unit_number: u.unit_number,
+          product_number: u.products?.product_number,
+          checks: {
+            exactMatch: `"${u.unit_number}" === "${scannedData}" = ${exactMatch}`,
+            unitNumberMatch: `"${u.unit_number}" === "${unitNumber}" = ${unitNumberMatch}`,
+            idMatch: `"${u.id}" === "${scannedData}" = ${idMatch}`,
+            uuidMatch: `"${u.id}" === "${unitId}" = ${uuidMatch}`,
+            productMatch: `"${u.products?.product_number}" === "${scannedData}" = ${productMatch}`,
+          }
+        });
+      }
+
+      if (matches) {
+        console.log(`Parent: ✓ Match found! Unit: ${u.unit_number}, ID: ${u.id}`);
+      }
+      return matches;
+    });
+
+    if (unit) {
+      console.log('Parent: Unit found!', unit.unit_number);
+
+      // Use functional state update to check against the latest state
+      setSelectedUnits((prev) => {
+        // Check if already selected using the latest state
+        const alreadySelected = prev.some(u => u.id === unit.id);
+
+        if (alreadySelected) {
+          console.log('Parent: Unit already selected, skipping');
+          setError(`Unit ${unit.unit_number} is already selected`);
+          setTimeout(() => setError(null), 3000);
+          return prev; // Return unchanged state
+        }
+
+        console.log('Parent: Adding unit to selectedUnits');
+        const newUnit = {
+          ...unit,
+          dispatched_quantity: unit.size_quantity - unit.wastage,
+        };
+        setError(null);
+        return [...prev, newUnit]; // Add new unit
+      });
+    } else {
+      console.log('Parent: Unit NOT found for scanned data:', scannedData);
+      console.log('Parent: Tried matching:', {
+        original: scannedData,
+        parsedUnitNumber: unitNumber,
+        parsedUnitId: unitId
+      });
+      setError(`Stock unit not found for: ${scannedData}`);
+      setTimeout(() => setError(null), 3000);
+    }
   };
 
   const handleNextStep = () => {
@@ -203,10 +314,7 @@ export default function NewGoodsDispatchPage() {
                   onUnitRemove={handleUnitRemove}
                   onQuantityChange={handleQuantityChange}
                   onSelectFromInventory={() => setShowInventoryBrowser(true)}
-                  onQRScan={() => {
-                    // TODO: Implement QR scanner
-                    alert('QR scanner coming soon!');
-                  }}
+                  onQRScan={() => setShowQRScanner(true)}
                 />
 
                 {/* Next Button */}
@@ -349,6 +457,15 @@ export default function NewGoodsDispatchPage() {
           availableUnits={availableUnits}
           selectedUnitIds={selectedUnits.map((u) => u.id)}
           onUnitsSelect={handleUnitsSelect}
+        />
+
+        {/* QR Scanner Modal */}
+        <QRScannerModal
+          isOpen={showQRScanner}
+          onClose={() => setShowQRScanner(false)}
+          onScan={handleQRScan}
+          availableUnits={availableUnits}
+          scannedCount={selectedUnits.length}
         />
       </div>
     </div>
