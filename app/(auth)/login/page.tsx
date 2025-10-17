@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -12,7 +12,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
+
+  // Memoize Supabase client to prevent recreation on every render
+  const supabase = useMemo(() => createClient(), []);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +26,7 @@ export default function LoginPage() {
         email: email,
         options: {
           shouldCreateUser: false,
+          emailRedirectTo: undefined, // Disable magic link, force OTP
         },
       });
 
@@ -54,7 +57,7 @@ export default function LoginPage() {
       const { error: verifyError } = await supabase.auth.verifyOtp({
         email: email,
         token: otp,
-        type: 'email',
+        type: 'magiclink',
       });
 
       if (verifyError) throw verifyError;
@@ -81,7 +84,10 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to your Bale Inventory account
+            Sign in to your approved Bale Inventory account
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            (For users whose access request has been approved)
           </p>
         </div>
 
@@ -118,9 +124,9 @@ export default function LoginPage() {
             </button>
 
             <div className="text-center text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don't have access yet?{' '}
               <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
-                Try Demo
+                Request Access
               </Link>
             </div>
           </form>

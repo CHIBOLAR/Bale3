@@ -148,7 +148,7 @@ export async function generateStaffInvite(formData: FormData) {
         company_id: userData.company_id,
         warehouse_id: warehouseId || null,
         role: role,
-        status: 'approved', // Must be 'approved' for signup flow to work
+        status: 'pending', // Will be changed to 'accepted' when staff completes signup
         invited_by: userData.id,
         expires_at: expiresAt.toISOString(),
         metadata: {
@@ -165,6 +165,18 @@ export async function generateStaffInvite(formData: FormData) {
       // Rollback: delete the staff user if invite creation fails
       await supabase.from('users').delete().eq('id', staffUser.id)
       return { error: inviteError.message }
+    }
+
+    // Send invite email using Resend
+    const recipientName = `${firstName.trim()} ${lastName.trim()}`
+    const emailResult = await sendStaffInviteEmail(email, inviteCode, recipientName)
+
+    if (!emailResult.success) {
+      console.error('Failed to send invite email:', emailResult.error)
+      // Don't fail the invite creation, but log the error
+      // Admin can manually share the link or resend later
+    } else {
+      console.log('✅ Invite email sent successfully to:', email)
     }
 
     revalidatePath('/dashboard/staff')

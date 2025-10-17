@@ -1,16 +1,13 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { signInToDemo } from '@/app/actions/auth/demo-login';
 
 export default function HomePage() {
-  const [email, setEmail] = useState('');
-  const [businessName, setBusinessName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -18,34 +15,25 @@ export default function HomePage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess(false);
 
     try {
-      const supabase = createClient();
+      console.log('🚀 Signing in to demo account...');
 
-      console.log('📧 Sending OTP to:', email);
+      const result = await signInToDemo();
 
-      const { data, error } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          shouldCreateUser: true,
-        },
-      });
-
-      console.log('📬 Supabase response:', { data, error });
-
-      if (error) {
-        console.error('❌ Supabase error:', error);
-        throw error;
+      if (result.error) {
+        console.error('❌ Demo login error:', result.error);
+        throw new Error(result.error);
       }
 
-      console.log('✅ OTP sent successfully, redirecting to verification page');
+      console.log('✅ Demo login successful, redirecting to dashboard');
 
-      // Redirect to OTP verification page
-      router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
+      // Redirect to dashboard
+      router.push('/dashboard');
+      router.refresh();
     } catch (err: any) {
-      console.error('Error sending magic link:', err);
-      setError(err.message || 'Failed to send magic link. Please try again.');
+      console.error('Error signing in to demo:', err);
+      setError(err.message || 'Failed to access demo. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -67,12 +55,13 @@ export default function HomePage() {
             >
               Login
             </Link>
-            <a
-              href="#invite-form"
-              className="px-6 py-2 bg-brand-orange text-white rounded-lg font-semibold hover:bg-brand-orange/90 transition-all shadow-md hover:shadow-lg"
+            <button
+              onClick={handleTryDemo}
+              disabled={loading}
+              className="px-6 py-2 bg-brand-orange text-white rounded-lg font-semibold hover:bg-brand-orange/90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Try Demo
-            </a>
+              {loading ? 'Loading...' : 'Try Demo'}
+            </button>
           </div>
         </div>
       </header>
@@ -88,12 +77,19 @@ export default function HomePage() {
             That's why we built a tool that keeps your fabric organised and lets you focus on important tasks.
           </p>
 
-          <a
-            href="#invite-form"
-            className="inline-block px-10 py-4 bg-brand-orange text-white rounded-lg font-bold hover:bg-brand-orange/90 transition-all shadow-lg hover:shadow-xl"
+          <button
+            onClick={handleTryDemo}
+            disabled={loading}
+            className="inline-block px-10 py-4 bg-brand-orange text-white rounded-lg font-bold hover:bg-brand-orange/90 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Try Demo
-          </a>
+            {loading ? 'Loading Demo...' : 'Try Demo Free'}
+          </button>
+
+          {error && (
+            <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm max-w-md mx-auto">
+              {error}
+            </div>
+          )}
         </div>
       </section>
 
@@ -147,91 +143,45 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Invite Form Section */}
-      <section id="invite-form" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 md:p-10 max-w-2xl mx-auto">
-          {!success ? (
-            <form onSubmit={handleTryDemo} className="space-y-6">
-              <div className="text-center mb-6">
-                <div className="inline-block mb-4">
-                  <span className="bg-brand-orange/10 text-brand-orange px-4 py-2 rounded-full text-sm font-semibold">
-                    ₹499/month introductory price
-                  </span>
-                </div>
-                <h2 className="text-3xl font-bold text-brand-blue mb-3">
-                  Try Bale Demo
-                </h2>
-                <p className="text-gray-600">
-                  We're honest about earning. You pay for what you use, and we grow together.
-                </p>
-              </div>
+      {/* Request Full Access Section */}
+      <section id="request-access" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="bg-gradient-to-br from-brand-blue to-blue-600 rounded-2xl shadow-xl p-8 md:p-12 text-center text-white">
+          <div className="inline-block mb-4">
+            <span className="bg-white/20 text-white px-4 py-2 rounded-full text-sm font-semibold">
+              ₹499/month introductory price
+            </span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Ready to Get Your Own Account?
+          </h2>
+          <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+            Request full access with your own company workspace, unlimited products, and complete control.
+          </p>
 
-              <div className="text-left space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@company.com"
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent bg-white"
-                    disabled={loading}
-                  />
-                </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={handleTryDemo}
+              disabled={loading}
+              className="px-8 py-3 bg-white text-brand-blue rounded-lg font-semibold hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+            >
+              {loading ? 'Loading...' : 'Try Demo First'}
+            </button>
+            <a
+              href="https://wa.me/918928466864?text=Hi%2C%20I%27d%20like%20to%20request%20full%20access%20to%20Bale%20Inventory"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-8 py-3 bg-brand-orange text-white rounded-lg font-semibold hover:bg-brand-orange/90 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              Request Full Access
+            </a>
+          </div>
 
-                <div>
-                  <label htmlFor="business" className="block text-sm font-medium text-gray-700 mb-2">
-                    Business Name
-                  </label>
-                  <input
-                    id="business"
-                    type="text"
-                    value={businessName}
-                    onChange={(e) => setBusinessName(e.target.value)}
-                    placeholder="Your Fabric Business"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent bg-white"
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full px-8 py-4 bg-brand-orange text-white rounded-lg font-semibold hover:bg-brand-orange/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
-              >
-                {loading ? 'Sending...' : 'Try Demo'}
-              </button>
-            </form>
-          ) : (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-semibold mb-2">Check Your Email!</h3>
-              <p className="text-gray-600 mb-6">
-                We've sent a verification code to your inbox. Enter it to access the demo instantly.
-              </p>
-              <button
-                onClick={() => setSuccess(false)}
-                className="text-brand-blue hover:text-brand-orange font-medium"
-              >
-                Try another email
-              </button>
-            </div>
-          )}
+          <p className="mt-6 text-sm text-blue-100">
+            Already have access? <Link href="/login" className="font-semibold hover:text-white underline">Login here</Link>
+          </p>
         </div>
       </section>
 
@@ -377,15 +327,18 @@ export default function HomePage() {
       </footer>
 
       {/* Floating Try Demo Button */}
-      <a
-        href="#invite-form"
-        className="fixed bottom-8 right-8 px-6 py-3 bg-brand-orange text-white rounded-full font-semibold hover:bg-brand-orange/90 transition-all shadow-lg hover:shadow-xl z-40 flex items-center gap-2"
+      <button
+        onClick={handleTryDemo}
+        disabled={loading}
+        className="fixed bottom-8 right-8 px-6 py-3 bg-brand-orange text-white rounded-full font-semibold hover:bg-brand-orange/90 transition-all shadow-lg hover:shadow-xl z-40 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span>Try Demo</span>
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-        </svg>
-      </a>
+        <span>{loading ? 'Loading...' : 'Try Demo'}</span>
+        {!loading && (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        )}
+      </button>
     </div>
   );
 }

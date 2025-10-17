@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { isDemoUser, checkDemoLimit, isDemoActionAllowed } from '@/lib/utils/demo-restrictions'
 
 export async function createProduct(formData: FormData) {
   try {
@@ -16,15 +17,29 @@ export async function createProduct(formData: FormData) {
       return { error: 'Not authenticated' }
     }
 
-    // Get user's company_id and user id
+    // Get user's company_id, user id, and demo status
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id, id')
+      .select('company_id, id, is_demo')
       .eq('auth_user_id', user.id)
       .single()
 
     if (!userData?.company_id) {
       return { error: 'Company not found' }
+    }
+
+    // Check demo restrictions
+    if (isDemoUser(userData)) {
+      const limitCheck = await checkDemoLimit(
+        supabase,
+        userData.company_id,
+        'products',
+        'MAX_PRODUCTS'
+      );
+
+      if (!limitCheck.allowed) {
+        return { error: limitCheck.message || 'Demo limit reached for products' };
+      }
     }
 
     // Parse tags from comma-separated string to array
@@ -169,6 +184,20 @@ export async function deleteProduct(productId: string) {
 
     if (!user) {
       return { error: 'Not authenticated' }
+    }
+
+    // Check if user is demo - demo users cannot delete
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_demo')
+      .eq('auth_user_id', user.id)
+      .single()
+
+    if (isDemoUser(userData)) {
+      const actionCheck = isDemoActionAllowed('delete', 'product', true);
+      if (!actionCheck.allowed) {
+        return { error: actionCheck.message || 'Demo users cannot delete products' };
+      }
     }
 
     // Soft delete by setting deleted_at

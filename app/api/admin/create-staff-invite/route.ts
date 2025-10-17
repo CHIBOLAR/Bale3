@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendStaffInviteEmail } from '@/lib/email/resend';
 
 /**
  * POST /api/admin/create-staff-invite
@@ -129,8 +130,17 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Staff invite created:', invite.id, '| Staff:', staffUser.email);
 
-    // TODO: Send email to staff with signup link
-    // For now, return the link so admin can share it manually
+    // Send invite email using Resend
+    const recipientName = `${staffUser.first_name} ${staffUser.last_name}`;
+    const emailResult = await sendStaffInviteEmail(staffUser.email, code, recipientName);
+
+    if (!emailResult.success) {
+      console.error('Failed to send invite email:', emailResult.error);
+      // Don't fail the invite creation, but log the error
+      // Admin can manually share the link or resend later
+    } else {
+      console.log('✅ Invite email sent successfully to:', staffUser.email);
+    }
 
     return NextResponse.json({
       success: true,

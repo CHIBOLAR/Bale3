@@ -45,8 +45,8 @@ export default function SignupPage() {
         return;
       }
 
-      if (invite.status !== 'approved') {
-        setError('This invite has not been approved yet or has already been used.');
+      if (invite.status !== 'pending') {
+        setError('This invite has already been used or is no longer valid.');
         setStep('error');
         return;
       }
