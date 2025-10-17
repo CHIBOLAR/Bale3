@@ -1,7 +1,18 @@
 import { Resend } from 'resend';
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization of Resend client
+let resendClient: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resendClient) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY is not configured');
+    }
+    resendClient = new Resend(apiKey);
+  }
+  return resendClient;
+}
 
 export interface SendEmailParams {
   to: string;
@@ -25,6 +36,7 @@ export async function sendEmail({
       return { success: false, error: 'Email service not configured' };
     }
 
+    const resend = getResendClient();
     const { data, error } = await resend.emails.send({
       from,
       to,
