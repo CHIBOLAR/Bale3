@@ -23,8 +23,9 @@ const STATUS_LABELS = {
 export default async function SalesOrderDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const supabase = await createClient();
 
   // Get authenticated user
@@ -48,7 +49,7 @@ export default async function SalesOrderDetailPage({
   }
 
   // Fetch order data
-  const order = await getSalesOrder(params.id);
+  const order = await getSalesOrder(id);
 
   if (!order) {
     redirect('/dashboard/sales-orders');

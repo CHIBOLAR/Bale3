@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import StaffDetailClient from './StaffDetailClient'
 
-export default async function StaffDetailPage({ params }: { params: { id: string } }) {
+export default async function StaffDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const supabase = await createClient()
 
   // Get authenticated user
@@ -45,7 +46,7 @@ export default async function StaffDetailPage({ params }: { params: { id: string
         location
       )
     `)
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('company_id', userData.company_id)
     .single()
 
