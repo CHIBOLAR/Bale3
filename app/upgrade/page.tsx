@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
+// Prevent static generation - this page needs runtime environment variables
+export const dynamic = 'force-dynamic';
+
 function UpgradeContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

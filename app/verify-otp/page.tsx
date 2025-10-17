@@ -5,6 +5,9 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
+// Prevent static generation - this page needs runtime environment variables
+export const dynamic = 'force-dynamic';
+
 function VerifyOTPContent() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
