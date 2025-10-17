@@ -41,7 +41,7 @@ async function setupDemoUser() {
     process.exit(1)
   }
 
-  const existingUser = existingUsers.users.find(u => u.email === DEMO_EMAIL)
+  const existingUser = existingUsers.users.find((u: any) => u.email === DEMO_EMAIL)
 
   let authUserId: string
 

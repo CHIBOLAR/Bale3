@@ -84,6 +84,14 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  // Transform partners, source_warehouses, and warehouses from array to single object if needed
+  const transformedReceipt = {
+    ...receipt,
+    partners: Array.isArray(receipt.partners) ? receipt.partners[0] : receipt.partners,
+    source_warehouses: Array.isArray(receipt.source_warehouses) ? receipt.source_warehouses[0] : receipt.source_warehouses,
+    warehouses: Array.isArray(receipt.warehouses) ? receipt.warehouses[0] : receipt.warehouses,
+  };
+
   // Fetch goods receipt items with product details
   const { data: receiptItems } = await supabase
     .from('goods_receipt_items')
@@ -145,11 +153,11 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
   };
 
   const getSourceName = () => {
-    if (receipt.partners) {
-      return receipt.partners.company_name;
+    if (transformedReceipt.partners) {
+      return transformedReceipt.partners.company_name;
     }
-    if (receipt.source_warehouses) {
-      return receipt.source_warehouses.name;
+    if (transformedReceipt.source_warehouses) {
+      return transformedReceipt.source_warehouses.name;
     }
     return '-';
   };
@@ -199,13 +207,13 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">{receipt.receipt_number}</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{transformedReceipt.receipt_number}</h1>
                 <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
-                  {formatLinkType(receipt.link_type)}
+                  {formatLinkType(transformedReceipt.link_type)}
                 </span>
               </div>
               <p className="mt-1 text-sm text-gray-600">
-                Created on {new Date(receipt.created_at).toLocaleDateString('en-US', {
+                Created on {new Date(transformedReceipt.created_at).toLocaleDateString('en-US', {
                   month: 'long',
                   day: 'numeric',
                   year: 'numeric',
@@ -226,7 +234,7 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
               <div>
                 <p className="text-xs font-medium text-gray-500">Warehouse</p>
                 <p className="mt-1 text-sm font-medium text-gray-900">
-                  {receipt.warehouses?.name}
+                  {transformedReceipt.warehouses?.name}
                 </p>
               </div>
             </div>
@@ -238,7 +246,7 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-500">
-                  {receipt.link_type === 'purchase' ? 'Partner' : 'Source Warehouse'}
+                  {transformedReceipt.link_type === 'purchase' ? 'Partner' : 'Source Warehouse'}
                 </p>
                 <p className="mt-1 text-sm font-medium text-gray-900">{getSourceName()}</p>
               </div>
@@ -252,7 +260,7 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
               <div>
                 <p className="text-xs font-medium text-gray-500">Receipt Date</p>
                 <p className="mt-1 text-sm font-medium text-gray-900">
-                  {new Date(receipt.receipt_date).toLocaleDateString('en-US', {
+                  {new Date(transformedReceipt.receipt_date).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
@@ -262,7 +270,7 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
             </div>
 
             {/* Invoice */}
-            {receipt.invoice_number && (
+            {transformedReceipt.invoice_number && (
               <div className="flex items-start gap-3">
                 <div className="rounded-lg bg-orange-50 p-2">
                   <FileText className="h-5 w-5 text-orange-600" />
@@ -270,11 +278,11 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
                 <div>
                   <p className="text-xs font-medium text-gray-500">Invoice</p>
                   <p className="mt-1 text-sm font-medium text-gray-900">
-                    {receipt.invoice_number}
+                    {transformedReceipt.invoice_number}
                   </p>
-                  {receipt.invoice_amount && (
+                  {transformedReceipt.invoice_amount && (
                     <p className="text-xs text-gray-500">
-                      ₹{receipt.invoice_amount.toLocaleString()}
+                      ₹{transformedReceipt.invoice_amount.toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -283,18 +291,18 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps) {
           </div>
 
           {/* Additional Details */}
-          {(receipt.transport_details || receipt.notes) && (
+          {(transformedReceipt.transport_details || transformedReceipt.notes) && (
             <div className="mt-6 space-y-3 border-t border-gray-200 pt-6">
-              {receipt.transport_details && (
+              {transformedReceipt.transport_details && (
                 <div>
                   <p className="text-xs font-medium text-gray-500">Transport Details</p>
-                  <p className="mt-1 text-sm text-gray-700">{receipt.transport_details}</p>
+                  <p className="mt-1 text-sm text-gray-700">{transformedReceipt.transport_details}</p>
                 </div>
               )}
-              {receipt.notes && (
+              {transformedReceipt.notes && (
                 <div>
                   <p className="text-xs font-medium text-gray-500">Notes</p>
-                  <p className="mt-1 text-sm text-gray-700">{receipt.notes}</p>
+                  <p className="mt-1 text-sm text-gray-700">{transformedReceipt.notes}</p>
                 </div>
               )}
             </div>

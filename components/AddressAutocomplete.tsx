@@ -42,7 +42,7 @@ export default function AddressAutocomplete({
   const [suggestions, setSuggestions] = useState<GeoapifyFeature[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   // Close suggestions when clicking outside

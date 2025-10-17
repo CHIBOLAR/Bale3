@@ -120,7 +120,7 @@ export async function createGoodsDispatch(
         dispatch_date: formData.dispatch_date,
         due_date: formData.due_date || null,
         invoice_number: formData.invoice_number || null,
-        invoice_amount: formData.invoice_amount ? parseFloat(formData.invoice_amount) : null,
+        invoice_amount: formData.invoice_amount ? formData.invoice_amount : null,
         transport_details: formData.transport_details || null,
         status: formData.status || 'pending',
         notes: formData.notes || null,

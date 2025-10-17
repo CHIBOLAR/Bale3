@@ -41,10 +41,10 @@ export default async function NewGoodsReceiptPage() {
       .order('name'),
     supabase
       .from('partners')
-      .select('id, name, partner_code, partner_type')
+      .select('id, company_name, partner_code, partner_type')
       .eq('company_id', userData.company_id)
       .is('deleted_at', null)
-      .order('name'),
+      .order('company_name'),
     supabase
       .from('goods_receipts')
       .select(`

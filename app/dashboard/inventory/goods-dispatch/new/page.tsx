@@ -244,6 +244,8 @@ export default function NewGoodsDispatchPage() {
     try {
       const dispatchData = {
         ...formData,
+        // Convert invoice_amount from string to number
+        invoice_amount: formData.invoice_amount ? parseFloat(formData.invoice_amount) : undefined,
         stock_unit_ids: selectedUnits.map((unit) => unit.id),
         // Pass dispatched quantities for each unit
         dispatched_quantities: selectedUnits.map((unit) => ({

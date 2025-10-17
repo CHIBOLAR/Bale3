@@ -35,6 +35,7 @@ export interface StockUnitWithRelations extends StockUnit {
     material: string;
     color: string;
     product_number: string;
+    product_images: string[] | null;
   };
   warehouses: {
     id: string;
@@ -342,6 +343,7 @@ export interface BarcodeBatch {
   fields_selected: string[]; // Array of field names to display on label
   pdf_url: string | null;
   status: BarcodeBatchStatus;
+  notes: string | null;
   created_at: string;
   updated_at: string;
   created_by: string;

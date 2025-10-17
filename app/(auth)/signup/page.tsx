@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function SignupPage() {
+function SignupContent() {
   const [step, setStep] = useState<'loading' | 'send-otp' | 'verify-otp' | 'error'>('loading');
   const [inviteCode, setInviteCode] = useState('');
   const [email, setEmail] = useState('');

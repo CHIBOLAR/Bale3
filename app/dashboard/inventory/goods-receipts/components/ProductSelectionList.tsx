@@ -13,6 +13,7 @@ interface Product {
   color: string;
   product_number: string;
   product_images?: string[];
+  measuring_unit: string;
 }
 
 interface ProductSelectionListProps {

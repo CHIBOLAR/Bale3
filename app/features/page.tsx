@@ -201,7 +201,7 @@ export default function FeaturesPage() {
                   <div key={featureIndex} className="bg-white p-6 rounded-xl border border-gray-100">
                     <div className="flex items-start justify-between mb-3">
                       <h3 className="text-xl font-bold text-gray-900">{feature.title}</h3>
-                      {feature.comingSoon && (
+                      {'comingSoon' in feature && feature.comingSoon && (
                         <span className="inline-block px-3 py-1 bg-brand-orange/10 text-brand-orange text-xs font-semibold rounded-full whitespace-nowrap ml-2">
                           Coming Soon
                         </span>

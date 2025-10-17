@@ -49,11 +49,11 @@ export default function StockUnitDetailPage() {
 
   const getStatusBadge = (status: StockUnitStatus) => {
     const styles: Record<StockUnitStatus, string> = {
-      in_stock: 'bg-green-100 text-green-800',
+      received: 'bg-yellow-100 text-yellow-800',
+      available: 'bg-green-100 text-green-800',
       reserved: 'bg-blue-100 text-blue-800',
       dispatched: 'bg-purple-100 text-purple-800',
-      sold: 'bg-gray-100 text-gray-800',
-      damaged: 'bg-red-100 text-red-800',
+      removed: 'bg-red-100 text-red-800',
     };
 
     return (

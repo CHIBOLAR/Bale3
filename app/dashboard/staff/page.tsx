@@ -26,7 +26,7 @@ export default async function StaffPage() {
   }
 
   // Fetch all staff members for the company (including those who haven't signed up yet)
-  const { data: staffMembers, error: staffError } = await supabase
+  const { data: staffMembersRaw, error: staffError } = await supabase
     .from('users')
     .select(`
       id,
@@ -49,8 +49,16 @@ export default async function StaffPage() {
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
+  // Transform warehouses from array to single object
+  const staffMembers = (staffMembersRaw || []).map((member: any) => ({
+    ...member,
+    warehouses: Array.isArray(member.warehouses)
+      ? member.warehouses[0]
+      : member.warehouses
+  }))
+
   // Fetch pending invites for this company
-  const { data: pendingInvites, error: invitesError } = await supabase
+  const { data: pendingInvitesRaw, error: invitesError } = await supabase
     .from('invites')
     .select(`
       id,
@@ -72,10 +80,18 @@ export default async function StaffPage() {
     .in('status', ['pending', 'accepted'])
     .order('created_at', { ascending: false })
 
+  // Transform warehouses from array to single object
+  const pendingInvites = (pendingInvitesRaw || []).map((invite: any) => ({
+    ...invite,
+    warehouses: Array.isArray(invite.warehouses)
+      ? invite.warehouses[0]
+      : invite.warehouses
+  }))
+
   return (
     <StaffClient
-      staffMembers={staffMembers || []}
-      pendingInvites={pendingInvites || []}
+      staffMembers={staffMembers}
+      pendingInvites={pendingInvites}
       isDemo={userData.is_demo}
     />
   )

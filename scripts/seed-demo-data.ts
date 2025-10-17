@@ -245,7 +245,7 @@ async function seedDemoData() {
     // Check if partners already exist, if not create them
     const { data: existingPartners } = await supabase
       .from('partners')
-      .select('email')
+      .select('id, email, partner_type')
       .eq('company_id', companyId);
 
     const existingEmails = new Set(existingPartners?.map(p => p.email) || []);

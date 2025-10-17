@@ -25,7 +25,7 @@ export default async function StaffDetailPage({ params }: { params: Promise<{ id
   }
 
   // Fetch staff member details
-  const { data: staffMember, error } = await supabase
+  const { data: staffMemberRaw, error } = await supabase
     .from('users')
     .select(`
       id,
@@ -50,8 +50,16 @@ export default async function StaffDetailPage({ params }: { params: Promise<{ id
     .eq('company_id', userData.company_id)
     .single()
 
-  if (error || !staffMember) {
+  if (error || !staffMemberRaw) {
     notFound()
+  }
+
+  // Transform the warehouses array to a single object
+  const staffMember = {
+    ...staffMemberRaw,
+    warehouses: Array.isArray(staffMemberRaw.warehouses)
+      ? staffMemberRaw.warehouses[0]
+      : staffMemberRaw.warehouses
   }
 
   // Fetch all warehouses for edit form

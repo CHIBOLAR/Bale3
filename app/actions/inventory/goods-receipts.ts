@@ -294,10 +294,15 @@ export async function getGoodsReceipt(receiptId: string) {
       .eq('receipt_id', receiptId)
       .eq('company_id', userData.company_id);
 
-    return {
+    // Transform partners and issued_warehouse from array to single object if needed
+    const transformedReceipt = {
       ...receipt,
+      partners: Array.isArray(receipt.partners) ? receipt.partners[0] : receipt.partners,
+      issued_warehouse: Array.isArray(receipt.issued_warehouse) ? receipt.issued_warehouse[0] : receipt.issued_warehouse,
       items: items || [],
     };
+
+    return transformedReceipt;
   } catch (error) {
     console.error('Error in getGoodsReceipt:', error);
     return null;
@@ -380,7 +385,14 @@ export async function getGoodsReceipts(filters?: {
       return [];
     }
 
-    return data || [];
+    // Transform partners and source_warehouses from array to single object if needed
+    const transformedData = (data || []).map((receipt: any) => ({
+      ...receipt,
+      partners: Array.isArray(receipt.partners) ? receipt.partners[0] : receipt.partners,
+      source_warehouses: Array.isArray(receipt.source_warehouses) ? receipt.source_warehouses[0] : receipt.source_warehouses,
+    }));
+
+    return transformedData;
   } catch (error) {
     console.error('Error in getGoodsReceipts:', error);
     return [];

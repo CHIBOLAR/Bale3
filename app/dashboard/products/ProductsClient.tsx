@@ -30,12 +30,12 @@ export default function ProductsClient({ products, canCreateProduct }: ProductsC
 
   // Extract unique materials and colors for filters
   const materials = useMemo(() => {
-    const unique = new Set(products.map(p => p.material).filter(Boolean))
+    const unique = new Set(products.map(p => p.material).filter(Boolean) as string[])
     return Array.from(unique).sort()
   }, [products])
 
   const colors = useMemo(() => {
-    const unique = new Set(products.map(p => p.color).filter(Boolean))
+    const unique = new Set(products.map(p => p.color).filter(Boolean) as string[])
     return Array.from(unique).sort()
   }, [products])
 

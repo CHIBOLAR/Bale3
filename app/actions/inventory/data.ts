@@ -29,7 +29,7 @@ export async function getProducts() {
 
     const { data, error } = await supabase
       .from('products')
-      .select('id, name, material, color, product_number, product_images')
+      .select('id, name, material, color, product_number, product_images, measuring_unit')
       .eq('company_id', userData.company_id)
       .is('deleted_at', null)
       .order('name');
@@ -179,7 +179,7 @@ export async function getStockUnits(filters?: {
       .select(
         `
         *,
-        products (id, name, material, color, product_number),
+        products (id, name, material, color, product_number, product_images),
         warehouses (id, name)
       `
       )
@@ -268,7 +268,13 @@ export async function getPendingSalesOrders() {
       return [];
     }
 
-    return data || [];
+    // Transform customer from array to single object if needed
+    const transformedData = (data || []).map((order: any) => ({
+      ...order,
+      customer: Array.isArray(order.customer) ? order.customer[0] : order.customer
+    }));
+
+    return transformedData;
   } catch (error) {
     console.error('Error in getPendingSalesOrders:', error);
     return [];
