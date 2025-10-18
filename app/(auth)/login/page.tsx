@@ -167,6 +167,7 @@ function LoginForm() {
       }
 
       // No upgrade needed - normal login redirect
+      console.log('ℹ️ No approved upgrade request found, proceeding with normal login');
       router.refresh();
       window.location.href = '/dashboard';
     } catch (err: any) {
