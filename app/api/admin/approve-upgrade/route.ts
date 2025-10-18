@@ -153,13 +153,25 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
 
   // CRITICAL: Get the CURRENT authenticated user's auth_user_id
   // This is NOT the same as upgradeRequest.auth_user_id (old demo auth)
+  console.log('🔐 Getting current authenticated user...');
   const {
     data: { user: currentAuthUser },
+    error: authError,
   } = await supabase.auth.getUser();
 
-  if (!currentAuthUser) {
+  if (authError) {
+    console.error('❌ Auth error getting user:', authError);
+    console.error('❌ Auth error details:', JSON.stringify(authError, null, 2));
     return NextResponse.json(
-      { error: 'Not authenticated' },
+      { error: `Authentication failed: ${authError.message}` },
+      { status: 401 }
+    );
+  }
+
+  if (!currentAuthUser) {
+    console.error('❌ No authenticated user found');
+    return NextResponse.json(
+      { error: 'Not authenticated - no user session' },
       { status: 401 }
     );
   }

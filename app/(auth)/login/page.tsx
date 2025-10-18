@@ -89,6 +89,26 @@ function LoginForm() {
 
       console.log('✅ OTP verified successfully');
 
+      // Wait for session to be fully established and cookies to be set
+      console.log('⏳ Waiting for session to be established...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Verify session is active
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔐 Session check after OTP:', session ? 'Active' : 'No session');
+
+      if (session) {
+        console.log('🔐 Session access token present:', session.access_token ? 'YES' : 'NO');
+        console.log('🔐 Session refresh token present:', session.refresh_token ? 'YES' : 'NO');
+      }
+
+      if (!session) {
+        console.error('❌ No session after OTP verification');
+        setError('Session not established. Please try again.');
+        setLoading(false);
+        return;
+      }
+
       // Check if user has approved upgrade request
       console.log('🔍 Checking for approved upgrade request for email:', normalizedEmail);
       const { data: upgradeRequest, error: upgradeQueryError } = await supabase
@@ -108,7 +128,10 @@ function LoginForm() {
           console.log('🚀 Calling auto-upgrade API with requestId:', upgradeRequest.id);
           const response = await fetch('/api/admin/approve-upgrade', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include', // Ensure cookies are sent with request
             body: JSON.stringify({
               requestId: upgradeRequest.id,
               autoUpgrade: true, // Flag to indicate this is auto-upgrade on login
