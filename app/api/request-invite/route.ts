@@ -132,7 +132,9 @@ export async function POST(request: NextRequest) {
     console.log('🔵 Creating new upgrade request...');
 
     const newRequest = {
-      auth_user_id: authUser.id,
+      // CRITICAL: For demo users, use NULL for auth_user_id to avoid unique constraint violation
+      // Demo users all share the same auth_user_id, so we identify them by email instead
+      auth_user_id: isDemo ? null : authUser.id,
       email: email.trim().toLowerCase(),
       name: name.trim(),
       phone: phone?.trim() || null,
@@ -148,15 +150,23 @@ export async function POST(request: NextRequest) {
       .insert(newRequest);
 
     if (insertError) {
-      console.error('Error creating upgrade request:', insertError);
+      console.error('🔴 Error creating upgrade request:', insertError);
 
       // Check for specific database errors
       if (insertError.code === '23505') {
-        // Unique constraint violation - duplicate email
-        return NextResponse.json(
-          { error: 'This email address has already been used for an upgrade request.' },
-          { status: 400 }
-        );
+        // Unique constraint violation
+        if (insertError.message?.includes('auth_user_id')) {
+          return NextResponse.json(
+            { error: 'Your account already has a pending upgrade request. Please check your existing request or contact support.' },
+            { status: 400 }
+          );
+        } else {
+          // Duplicate email
+          return NextResponse.json(
+            { error: 'This email address has already been used for an upgrade request.' },
+            { status: 400 }
+          );
+        }
       }
 
       return NextResponse.json(
