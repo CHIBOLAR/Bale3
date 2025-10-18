@@ -151,11 +151,28 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
     );
   }
 
-  // Check if user already has a full account
+  // CRITICAL: Get the CURRENT authenticated user's auth_user_id
+  // This is NOT the same as upgradeRequest.auth_user_id (old demo auth)
+  const {
+    data: { user: currentAuthUser },
+  } = await supabase.auth.getUser();
+
+  if (!currentAuthUser) {
+    return NextResponse.json(
+      { error: 'Not authenticated' },
+      { status: 401 }
+    );
+  }
+
+  console.log('🔄 Processing auto-upgrade for:', upgradeRequest.email);
+  console.log('📧 Current auth user:', currentAuthUser.email, '| Auth ID:', currentAuthUser.id);
+  console.log('📧 Upgrade request email:', upgradeRequest.email, '| Old demo Auth ID:', upgradeRequest.auth_user_id);
+
+  // Check if CURRENT user already has a full account
   const { data: existingUser } = await supabase
     .from('users')
     .select('id, is_demo')
-    .eq('auth_user_id', upgradeRequest.auth_user_id)
+    .eq('auth_user_id', currentAuthUser.id)  // Use CURRENT auth user, not old demo auth
     .maybeSingle();
 
   if (existingUser && !existingUser.is_demo) {
@@ -164,8 +181,6 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
       { status: 400 }
     );
   }
-
-  console.log('🔄 Processing auto-upgrade for:', upgradeRequest.email);
 
   // 1. Create new company
   const userName = upgradeRequest?.name || 'User';
@@ -199,11 +214,11 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
   let finalUserId: string;
 
   if (existingUser) {
-    // Update existing demo user
+    // Update existing user record (linked to CURRENT auth session)
     const { error: updateError } = await supabase
       .from('users')
       .update({
-        email: upgradeRequest?.email || 'user@example.com', // Update to real email
+        email: upgradeRequest?.email || 'user@example.com',
         company_id: newCompany.id,
         is_demo: false,
         role: 'admin',
@@ -227,11 +242,11 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
     finalUserId = existingUser.id;
     console.log('✅ Updated existing user to full access');
   } else {
-    // Create new user record
+    // Create new user record (linked to CURRENT auth session, NOT old demo auth)
     const { data: newUser, error: createError } = await supabase
       .from('users')
       .insert({
-        auth_user_id: upgradeRequest?.auth_user_id,
+        auth_user_id: currentAuthUser.id,  // ✅ CRITICAL: Use CURRENT auth user, not old demo auth
         email: upgradeRequest?.email || 'user@example.com',
         first_name: firstName,
         last_name: lastName,
@@ -262,7 +277,7 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
   const { error: warehouseError } = await supabase.from('warehouses').insert({
     company_id: newCompany.id,
     name: 'Main Warehouse',
-    created_by: upgradeRequest?.auth_user_id,
+    created_by: currentAuthUser.id,  // ✅ Use CURRENT auth user
   });
 
   if (warehouseError) {
