@@ -54,8 +54,8 @@ export default function InviteRequestsClient({
       // Remove from list (no longer pending)
       setRequests((prev) => prev.filter((req) => req.id !== request.id));
 
-      // Show success modal
-      alert(`🎉 Upgrade Complete!\n\nUser: ${request.email}\nCompany: ${data.company.name}\n\nThe user has been upgraded instantly and can now log in with full access.`);
+      // Show success modal with new two-step flow info
+      alert(`✅ Upgrade Request Approved!\n\nUser: ${request.name} (${request.email})\nStatus: Approval email sent\n\n📧 Next Steps:\n1. User will receive an approval email at ${request.email}\n2. User logs in with OTP using that email\n3. Account will be auto-upgraded with company creation\n\nLogin link: ${data.loginLink || 'Sent via email'}`);
 
       router.refresh();
     } catch (error: any) {
