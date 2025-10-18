@@ -19,10 +19,12 @@ export default async function OverviewPage() {
     .eq('auth_user_id', user.id)
     .single();
 
-  const isDemo = !userData;
+  // Check if user is demo (either has is_demo flag or no user record)
+  const isDemo = userData?.is_demo === true || !userData;
   let companyId = userData?.company_id;
 
-  if (isDemo) {
+  // For demo users without proper user record, fallback to demo company
+  if (isDemo && !userData) {
     const { data: demoCompany } = await supabase
       .from('companies')
       .select('id')

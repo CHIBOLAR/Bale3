@@ -15,15 +15,15 @@ export default async function DashboardPage() {
     .eq('auth_user_id', user?.id)
     .single();
 
-  // If no user record, user is in demo mode
-  const isDemo = !userData;
+  // Check if user is demo (either has is_demo flag or no user record)
+  const isDemo = userData?.is_demo === true || !userData;
 
   let companyId = userData?.company_id;
   let companyName = userData?.company?.name;
   let firstName = userData?.first_name;
 
-  // For demo users, get demo company
-  if (isDemo) {
+  // For demo users without proper user record, fallback to demo company
+  if (isDemo && !userData) {
     const { data: demoCompany } = await supabase
       .from('companies')
       .select('id, name')
