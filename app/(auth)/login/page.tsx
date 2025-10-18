@@ -205,7 +205,7 @@ function LoginForm() {
 
             <div className="text-center text-sm text-gray-600">
               Don't have access yet?{' '}
-              <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link href="/dashboard/request-upgrade" className="text-blue-600 hover:text-blue-700 font-medium">
                 Request Access
               </Link>
             </div>
