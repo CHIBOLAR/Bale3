@@ -137,6 +137,101 @@ export default function RequestUpgradePage() {
     );
   }
 
+  // Show approved request - redirect to login
+  if (existingRequest && existingRequest.status === 'approved') {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold mb-4 text-green-600">✅ Upgrade Approved!</h2>
+            <p className="text-gray-600 mb-6 text-lg">
+              Great news! Your upgrade request has been approved by our team.
+            </p>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <h3 className="font-semibold text-blue-900 mb-3 text-lg">🚀 Next Steps to Activate:</h3>
+            <ol className="space-y-3 text-sm text-blue-800">
+              <li className="flex items-start">
+                <span className="font-bold mr-2">1.</span>
+                <span>Log out of your demo account (click the logout button)</span>
+              </li>
+              <li className="flex items-start">
+                <span className="font-bold mr-2">2.</span>
+                <span>Go to the login page and enter this email:</span>
+              </li>
+              <li className="bg-white rounded px-3 py-2 ml-5 font-mono text-blue-900 border border-blue-300">
+                {existingRequest.email}
+              </li>
+              <li className="flex items-start">
+                <span className="font-bold mr-2">3.</span>
+                <span>Request an OTP verification code</span>
+              </li>
+              <li className="flex items-start">
+                <span className="font-bold mr-2">4.</span>
+                <span>Enter the OTP code from your email</span>
+              </li>
+              <li className="flex items-start">
+                <span className="font-bold mr-2">5.</span>
+                <span><strong>Your account will be automatically upgraded!</strong> You'll get your own company and full access.</span>
+              </li>
+            </ol>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-sm text-yellow-800">
+            <strong>⚠️ Important:</strong> You must log in with the email <strong>{existingRequest.email}</strong> (not your demo account) to activate your upgrade.
+          </div>
+
+          <div className="bg-gray-50 rounded-lg p-6 mb-6 space-y-3">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Name:</span>
+              <span className="text-sm text-gray-900">{existingRequest.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Email:</span>
+              <span className="text-sm text-gray-900">{existingRequest.email}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Company:</span>
+              <span className="text-sm text-gray-900">{existingRequest.company}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Phone:</span>
+              <span className="text-sm text-gray-900">{existingRequest.phone}</span>
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-4">
+            <button
+              onClick={handleCancelRequest}
+              disabled={loading}
+              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? 'Cancelling...' : 'Cancel & Submit New Request'}
+            </button>
+            <Link
+              href={`/login?email=${encodeURIComponent(existingRequest.email)}`}
+              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center"
+            >
+              Proceed to Login
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Show existing request status
   if (existingRequest && existingRequest.status === 'pending') {
     return (

@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     // Check if already requested
     const { data: existingRequest } = await supabase
       .from('upgrade_requests')
-      .select('id, status')
+      .select('id, status, email')
       .eq('auth_user_id', authUser.id)
       .maybeSingle();
 
@@ -68,15 +68,16 @@ export async function POST(request: NextRequest) {
         );
       } else if (existingRequest.status === 'approved') {
         return NextResponse.json(
-          { error: 'Your upgrade has been approved. Please log out and log back in.' },
+          { error: `Your upgrade has been approved! Please log out, then log in using this email: ${existingRequest.email}. Your account will be automatically upgraded on login.` },
           { status: 400 }
         );
-      } else if (existingRequest.status === 'rejected') {
-        // Allow re-request if previously rejected
+      } else if (existingRequest.status === 'rejected' || existingRequest.status === 'cancelled') {
+        // Allow re-request if previously rejected or cancelled
         const { error: updateError } = await supabase
           .from('upgrade_requests')
           .update({
             name: name.trim(),
+            email: email.trim().toLowerCase(),  // Update email in case they want to change it
             phone: phone?.trim() || null,
             company: company?.trim() || null,
             message: message?.trim() || null,
@@ -93,11 +94,16 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        console.log('✅ Upgrade request resubmitted:', authUser.email);
+        console.log('✅ Upgrade request resubmitted:', email);
         return NextResponse.json({
           success: true,
           message: 'Your upgrade request has been resubmitted! Our team will review it and you\'ll receive an email once approved.',
         }, { status: 200 });
+      } else if (existingRequest.status === 'completed') {
+        return NextResponse.json(
+          { error: 'Your account has already been upgraded. You have full access!' },
+          { status: 400 }
+        );
       }
     }
 
