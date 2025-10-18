@@ -111,10 +111,11 @@ async function handleAdminApproval(supabase: any, upgradeRequest: any) {
   console.log('✅ Admin approved upgrade request for:', upgradeRequest.email);
 
   // Send email with login link
-  const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/login?email=${encodeURIComponent(upgradeRequest.email)}`;
+  const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/login?email=${encodeURIComponent(upgradeRequest.email || '')}`;
 
   const subject = '🎉 Your Bale Inventory Upgrade is Approved!';
-  const html = generateUpgradeApprovalEmailHTML(loginLink, upgradeRequest.name || 'there');
+  const recipientName = upgradeRequest?.name || 'there';
+  const html = generateUpgradeApprovalEmailHTML(loginLink, recipientName);
 
   try {
     await sendEmail({
@@ -167,7 +168,8 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
   console.log('🔄 Processing auto-upgrade for:', upgradeRequest.email);
 
   // 1. Create new company
-  const companyName = upgradeRequest.company || `${upgradeRequest.name}'s Company`;
+  const userName = upgradeRequest?.name || 'User';
+  const companyName = upgradeRequest?.company || `${userName}'s Company`;
 
   const { data: newCompany, error: companyError } = await supabase
     .from('companies')
@@ -189,7 +191,7 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
   console.log('✅ Created company:', newCompany.name);
 
   // 2. Parse name into first/last
-  const nameParts = upgradeRequest.name.trim().split(' ');
+  const nameParts = (userName || 'User').trim().split(' ');
   const firstName = nameParts[0] || 'User';
   const lastName = nameParts.slice(1).join(' ') || '';
 
@@ -201,13 +203,13 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
     const { error: updateError } = await supabase
       .from('users')
       .update({
-        email: upgradeRequest.email, // Update to real email
+        email: upgradeRequest?.email || 'user@example.com', // Update to real email
         company_id: newCompany.id,
         is_demo: false,
         role: 'admin',
         first_name: firstName,
         last_name: lastName,
-        phone_number: upgradeRequest.phone || '',
+        phone_number: upgradeRequest?.phone || '',
         updated_at: new Date().toISOString(),
       })
       .eq('id', existingUser.id);
@@ -229,11 +231,11 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
     const { data: newUser, error: createError } = await supabase
       .from('users')
       .insert({
-        auth_user_id: upgradeRequest.auth_user_id,
-        email: upgradeRequest.email,
+        auth_user_id: upgradeRequest?.auth_user_id,
+        email: upgradeRequest?.email || 'user@example.com',
         first_name: firstName,
         last_name: lastName,
-        phone_number: upgradeRequest.phone || '',
+        phone_number: upgradeRequest?.phone || '',
         company_id: newCompany.id,
         role: 'admin',
         is_demo: false,
@@ -260,7 +262,7 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
   const { error: warehouseError } = await supabase.from('warehouses').insert({
     company_id: newCompany.id,
     name: 'Main Warehouse',
-    created_by: upgradeRequest.auth_user_id,
+    created_by: upgradeRequest?.auth_user_id,
   });
 
   if (warehouseError) {
