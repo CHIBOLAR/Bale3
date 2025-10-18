@@ -8,6 +8,7 @@ import Link from 'next/link';
 export default function RequestUpgradePage() {
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     phone: '',
     company: '',
     message: '',
@@ -17,6 +18,7 @@ export default function RequestUpgradePage() {
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState<boolean | null>(null);
   const [userEmail, setUserEmail] = useState('');
+  const [existingRequest, setExistingRequest] = useState<any>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -36,7 +38,7 @@ export default function RequestUpgradePage() {
         .from('users')
         .select('is_demo, first_name, last_name, email')
         .eq('auth_user_id', user.id)
-        .maybeSingle(); // Use maybeSingle() instead of single() to handle no record
+        .maybeSingle();
 
       if (userData) {
         if (!userData.is_demo) {
@@ -46,11 +48,21 @@ export default function RequestUpgradePage() {
         }
         setIsDemo(userData.is_demo);
         setUserEmail(userData.email);
-        // Don't pre-fill name for demo users - let them enter their real name
       } else {
-        // No user record = demo mode (user authenticated but no database record)
+        // No user record = demo mode
         setIsDemo(true);
         setUserEmail(user.email || '');
+      }
+
+      // Check for existing upgrade request
+      const { data: request } = await supabase
+        .from('upgrade_requests')
+        .select('*')
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
+
+      if (request) {
+        setExistingRequest(request);
       }
     };
 
@@ -88,10 +100,134 @@ export default function RequestUpgradePage() {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleCancelRequest = async () => {
+    if (!confirm('Are you sure you want to cancel your upgrade request?')) {
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('upgrade_requests')
+        .delete()
+        .eq('id', existingRequest.id);
+
+      if (deleteError) throw deleteError;
+
+      setExistingRequest(null);
+      alert('Your upgrade request has been cancelled.');
+    } catch (err: any) {
+      console.error('Error cancelling request:', err);
+      setError(err.message || 'Failed to cancel request. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (isDemo === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Show existing request status
+  if (existingRequest && existingRequest.status === 'pending') {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold mb-4">Request Pending</h2>
+            <p className="text-gray-600 mb-6">
+              Your upgrade request is being reviewed by our team. We'll send an upgrade link to your email once approved.
+            </p>
+          </div>
+
+          <div className="bg-gray-50 rounded-lg p-6 mb-6 space-y-3">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Name:</span>
+              <span className="text-sm text-gray-900">{existingRequest.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Email:</span>
+              <span className="text-sm text-gray-900">{existingRequest.email}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Company:</span>
+              <span className="text-sm text-gray-900">{existingRequest.company}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Submitted:</span>
+              <span className="text-sm text-gray-900">{new Date(existingRequest.created_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-4">
+            <Link
+              href="/dashboard"
+              className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors text-center"
+            >
+              Back to Dashboard
+            </Link>
+            <button
+              onClick={handleCancelRequest}
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? 'Cancelling...' : 'Cancel Request'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (existingRequest && existingRequest.status === 'rejected') {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold mb-4 text-red-600">Request Rejected</h2>
+            <p className="text-gray-600 mb-6">
+              Unfortunately, your upgrade request was not approved. You can submit a new request below.
+            </p>
+          </div>
+
+          <div className="bg-red-50 rounded-lg p-6 mb-6">
+            <p className="text-sm text-red-800">
+              <strong>Previous request email:</strong> {existingRequest.email}
+            </p>
+            <p className="text-sm text-red-600 mt-2">
+              Please ensure all information is accurate when resubmitting.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setExistingRequest(null)}
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Submit New Request
+          </button>
+        </div>
       </div>
     );
   }
@@ -108,10 +244,10 @@ export default function RequestUpgradePage() {
           <h2 className="text-3xl font-bold mb-4">Request Submitted!</h2>
           <p className="text-gray-600 mb-6">
             Thank you for your interest in upgrading to official access. Our team will review your request
-            and get back to you within 1-2 business days.
+            and send an upgrade link to <strong>{formData.email}</strong> once approved.
           </p>
           <p className="text-sm text-gray-500 mb-8">
-            Once approved, your account will be upgraded INSTANTLY and you'll receive a confirmation email. You can continue using the demo in the meantime.
+            You'll receive the upgrade link via email within 1-2 business days. You can continue using the demo in the meantime.
           </p>
           <Link
             href="/dashboard"
@@ -168,6 +304,25 @@ export default function RequestUpgradePage() {
               placeholder="Rajesh Kumar"
               disabled={loading}
             />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Your Email Address *
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="your.email@gmail.com"
+              disabled={loading}
+            />
+            <p className="text-sm text-gray-500 mt-1">We'll send the upgrade confirmation to this email</p>
           </div>
 
           {/* Phone */}

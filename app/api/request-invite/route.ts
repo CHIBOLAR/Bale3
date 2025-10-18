@@ -8,12 +8,19 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, company, message } = await request.json();
+    const { name, email, phone, company, message } = await request.json();
 
     // Validation
     if (!name) {
       return NextResponse.json(
         { error: 'Name is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Email is required' },
         { status: 400 }
       );
     }
@@ -94,12 +101,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create new upgrade request
+    // Create new upgrade request (use submitted email, not auth session email)
     const { error: insertError } = await supabase
       .from('upgrade_requests')
       .insert({
         auth_user_id: authUser.id,
-        email: authUser.email || '',
+        email: email.trim().toLowerCase(),
         name: name.trim(),
         phone: phone?.trim() || null,
         company: company?.trim() || null,
