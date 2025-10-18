@@ -95,7 +95,7 @@ export default function HomePage() {
         <div className="bg-gradient-to-br from-brand-blue to-blue-600 rounded-2xl shadow-xl p-8 md:p-12 text-center text-white">
           <div className="inline-block mb-4">
             <span className="bg-white/20 text-white px-4 py-2 rounded-full text-sm font-semibold">
-              ₹499/month introductory price
+              ₹999/month introductory price
             </span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">

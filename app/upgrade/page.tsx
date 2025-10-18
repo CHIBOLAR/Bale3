@@ -14,38 +14,133 @@ function UpgradeContent() {
   const [success, setSuccess] = useState(false);
   const [companyName, setCompanyName] = useState('');
   const [isDemo, setIsDemo] = useState<boolean | null>(null);
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [authStep, setAuthStep] = useState<'checking' | 'need-otp' | 'verify-otp' | 'authenticated'>('checking');
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
 
   useEffect(() => {
-    // Check if user is logged in and is demo user
-    const checkUser = async () => {
+    // Validate invite token and check authentication
+    const init = async () => {
+      const token = searchParams.get('token');
+
+      if (!token) {
+        setError('Invalid upgrade link. Missing token.');
+        setAuthStep('authenticated');
+        return;
+      }
+
+      // First, check if user is already logged in
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) {
-        setError('You must be logged in to upgrade your account');
-        return;
-      }
+      if (user) {
+        // User is logged in, check if they're a demo user
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_demo, first_name, email')
+          .eq('auth_user_id', user.id)
+          .single();
 
-      const { data: userData } = await supabase
-        .from('users')
-        .select('is_demo, first_name')
-        .eq('auth_user_id', user.id)
-        .single();
+        if (userData) {
+          setEmail(userData.email);
+          setIsDemo(userData.is_demo);
+          if (!userData.is_demo) {
+            setError('Your account is already upgraded to official status!');
+          }
+          setAuthStep('authenticated');
+        }
+      } else {
+        // User is NOT logged in, get email from invite token
+        const { data: invite } = await supabase
+          .from('invites')
+          .select('email')
+          .eq('code', token.toUpperCase())
+          .single();
 
-      if (userData) {
-        setIsDemo(userData.is_demo);
-        if (!userData.is_demo) {
-          setError('Your account is already upgraded to official status!');
+        if (invite?.email) {
+          setEmail(invite.email);
+          setAuthStep('need-otp');
+        } else {
+          setError('Invalid upgrade link. Please check your invitation email.');
+          setAuthStep('authenticated');
         }
       }
     };
 
-    checkUser();
+    init();
   }, []);
+
+  const handleSendOTP = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: false,
+        },
+      });
+
+      if (otpError) {
+        // If rate limited, assume OTP was already sent
+        if (otpError.message?.includes('security') || otpError.message?.includes('seconds')) {
+          setAuthStep('verify-otp');
+          return;
+        }
+        throw otpError;
+      }
+
+      setAuthStep('verify-otp');
+    } catch (err: any) {
+      console.error('Error sending OTP:', err);
+      setError(err.message || 'Failed to send verification code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: email,
+        token: otp,
+        type: 'email',
+      });
+
+      if (verifyError) throw verifyError;
+
+      // Check if user is demo
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_demo')
+          .eq('auth_user_id', user.id)
+          .single();
+
+        if (userData) {
+          setIsDemo(userData.is_demo);
+        }
+      }
+
+      setAuthStep('authenticated');
+      // Automatically trigger upgrade after successful authentication
+      setTimeout(() => handleUpgrade(), 500);
+    } catch (err: any) {
+      console.error('Error verifying OTP:', err);
+      setError(err.message || 'Invalid verification code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUpgrade = async () => {
     setLoading(true);
@@ -114,7 +209,127 @@ function UpgradeContent() {
     );
   }
 
-  // Error state (not logged in or already upgraded)
+  // Checking state
+  if (authStep === 'checking') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Validating upgrade link...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // OTP Send Step
+  if (authStep === 'need-otp') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Verify Your Email</h1>
+            <p className="text-gray-600">
+              We need to verify your email before upgrading your account
+            </p>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-blue-800">
+              <strong>Email:</strong> {email}
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              We'll send a 6-digit verification code to this email
+            </p>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={handleSendOTP}
+            disabled={loading}
+            className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+          >
+            {loading ? 'Sending Code...' : 'Send Verification Code'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // OTP Verify Step
+  if (authStep === 'verify-otp') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Check Your Email</h1>
+            <p className="text-gray-600">
+              We sent a 6-digit code to <strong>{email}</strong>
+            </p>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="mb-6">
+            <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
+              Verification Code
+            </label>
+            <input
+              id="otp"
+              type="text"
+              inputMode="numeric"
+              required
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="block w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="000000"
+              maxLength={6}
+              autoComplete="one-time-code"
+            />
+          </div>
+
+          <button
+            onClick={handleVerifyOTP}
+            disabled={loading || otp.length !== 6}
+            className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg mb-4"
+          >
+            {loading ? 'Verifying & Upgrading...' : 'Verify Code'}
+          </button>
+
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setAuthStep('need-otp')}
+              disabled={loading}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
+            >
+              Resend Code
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state (already upgraded)
   if (error && isDemo === false) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-4">
@@ -137,8 +352,8 @@ function UpgradeContent() {
     );
   }
 
-  // Error state (not logged in)
-  if (error && isDemo === null) {
+  // Error state (invalid link)
+  if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
@@ -152,16 +367,13 @@ function UpgradeContent() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
+          <h2 className="text-2xl font-bold mb-4">Invalid Link</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <p className="text-sm text-gray-500 mb-6">
-            Please log in to your demo account first, then click the upgrade link again.
-          </p>
           <Link
-            href="/login"
+            href="/"
             className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
-            Log In
+            Go to Homepage
           </Link>
         </div>
       </div>
