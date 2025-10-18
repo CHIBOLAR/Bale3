@@ -27,17 +27,27 @@ export default async function InviteRequestsPage() {
   }
 
   // Fetch pending upgrade requests from the new table
+  console.log('🔍 Fetching upgrade requests as superadmin:', userData?.is_superadmin, '| User ID:', user.id);
+
   const { data: upgradeRequests, error } = await supabase
     .from('upgrade_requests')
     .select('*')
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
 
+  console.log('📨 Upgrade requests query result:', {
+    count: upgradeRequests?.length || 0,
+    error: error ? JSON.stringify(error) : null,
+    requests: upgradeRequests,
+  });
+
   if (error) {
-    console.error('Error fetching upgrade requests:', error);
+    console.error('❌ Error fetching upgrade requests:', error);
+    console.error('❌ Error details:', JSON.stringify(error, null, 2));
   }
 
   const accessRequests = upgradeRequests || [];
+  console.log('✅ Displaying', accessRequests.length, 'requests to superadmin');
 
   return (
     <div className="px-4 py-6 sm:px-0">
