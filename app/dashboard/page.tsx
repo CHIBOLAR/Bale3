@@ -5,7 +5,7 @@ import QuickActions from './QuickActions';
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { upgraded?: string };
+  searchParams: Promise<{ upgraded?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -13,7 +13,8 @@ export default async function DashboardPage({
   } = await supabase.auth.getUser();
 
   // Check if user just upgraded
-  const justUpgraded = searchParams.upgraded === 'true';
+  const params = await searchParams;
+  const justUpgraded = params.upgraded === 'true';
 
   // Check if user has a full account
   const { data: userData } = await supabase
