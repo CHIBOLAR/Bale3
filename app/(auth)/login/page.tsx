@@ -75,27 +75,37 @@ function LoginForm() {
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
+      console.log('🔐 Verifying OTP for email:', normalizedEmail);
       const { error: verifyError } = await supabase.auth.verifyOtp({
         email: normalizedEmail,
         token: otp,
         type: 'email',
       });
 
-      if (verifyError) throw verifyError;
+      if (verifyError) {
+        console.error('❌ OTP verification failed:', verifyError);
+        throw verifyError;
+      }
+
+      console.log('✅ OTP verified successfully');
 
       // Check if user has approved upgrade request
-      const { data: upgradeRequest } = await supabase
+      console.log('🔍 Checking for approved upgrade request for email:', normalizedEmail);
+      const { data: upgradeRequest, error: upgradeQueryError } = await supabase
         .from('upgrade_requests')
         .select('id, status, name, company')
         .eq('email', normalizedEmail)
         .eq('status', 'approved')
         .maybeSingle();
 
+      console.log('🔍 Upgrade request query result:', { upgradeRequest, upgradeQueryError });
+
       if (upgradeRequest) {
         // User has approved upgrade - process it
-        console.log('✅ Approved upgrade found, processing...');
+        console.log('✅ Approved upgrade found, processing...', upgradeRequest);
 
         try {
+          console.log('🚀 Calling auto-upgrade API with requestId:', upgradeRequest.id);
           const response = await fetch('/api/admin/approve-upgrade', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -105,9 +115,11 @@ function LoginForm() {
             }),
           });
 
+          console.log('📨 API Response status:', response.status, response.statusText);
+
           if (!response.ok) {
             const errorData = await response.json();
-            console.error('❌ Upgrade processing failed:', errorData.error);
+            console.error('❌ Upgrade processing failed:', errorData.error, errorData);
             setError(`Upgrade failed: ${errorData.error}. Please contact support.`);
             setLoading(false);
             return;
