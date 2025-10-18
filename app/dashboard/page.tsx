@@ -2,11 +2,18 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import QuickActions from './QuickActions';
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { upgraded?: string };
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Check if user just upgraded
+  const justUpgraded = searchParams.upgraded === 'true';
 
   // Check if user has a full account
   const { data: userData } = await supabase
@@ -120,6 +127,41 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      {/* Upgrade Success Banner */}
+      {justUpgraded && !isDemo && (
+        <div className="mb-6 bg-gradient-to-r from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center">
+                <svg
+                  className="h-6 w-6 text-green-200 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <h3 className="text-lg font-semibold">🎉 Account Upgraded Successfully!</h3>
+              </div>
+              <p className="mt-2 text-sm text-green-100">
+                Welcome to your full access account! All demo restrictions have been removed. You now have your own private company workspace with unlimited access to all features.
+              </p>
+              <div className="mt-3 bg-green-800/30 rounded-md p-3">
+                <p className="text-sm font-medium text-green-50">✓ Your own private company created</p>
+                <p className="text-sm font-medium text-green-50">✓ Unlimited products, partners, and orders</p>
+                <p className="text-sm font-medium text-green-50">✓ Team collaboration enabled</p>
+                <p className="text-sm font-medium text-green-50">✓ Full data control and management</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Demo Banner */}
       {isDemo && (
         <div className="mb-6 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white">

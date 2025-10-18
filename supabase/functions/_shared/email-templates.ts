@@ -37,9 +37,9 @@ export function generateOTPEmail(props: EmailTemplateProps): string {
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .header { background: #026AA2; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
           .content { padding: 30px; background-color: #f9fafb; border: 1px solid #e5e7eb; }
-          .otp-code { background: #e0e7ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2563eb; font-family: monospace; }
+          .otp-code { background: #FEFBF4; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #026AA2; border: 2px solid #026AA2; }
           .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
           .warning { background: #fef3c7; border: 1px solid #fbbf24; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 14px; color: #92400e; }
         </style>
@@ -96,7 +96,7 @@ export function generateMagicLinkEmail(props: EmailTemplateProps): string {
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .header { background: #026AA2; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
           .content { padding: 30px; background-color: #f9fafb; border: 1px solid #e5e7eb; }
           .button { display: inline-block; padding: 16px 32px; background-color: #2563eb; color: white !important; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
           .button:hover { background-color: #1e40af; }

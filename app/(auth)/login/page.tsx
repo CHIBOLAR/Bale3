@@ -108,20 +108,31 @@ function LoginForm() {
           if (!response.ok) {
             const errorData = await response.json();
             console.error('❌ Upgrade processing failed:', errorData.error);
-            // Don't throw - allow user to continue to dashboard even if upgrade fails
+            setError(`Upgrade failed: ${errorData.error}. Please contact support.`);
+            setLoading(false);
+            return;
           } else {
-            console.log('✅ Upgrade processed successfully');
+            const data = await response.json();
+            console.log('✅ Upgrade processed successfully:', data);
+
+            // Upgrade complete - redirect to dashboard with success flag
+            // The API response means database transaction is already committed
+            router.refresh();
+
+            // Use window.location for a full page reload to ensure fresh data
+            window.location.href = '/dashboard?upgraded=true';
+            return;
           }
         } catch (upgradeError: any) {
           console.error('❌ Upgrade processing error:', upgradeError);
-          // Don't throw - allow user to continue to dashboard even if upgrade fails
+          setError(`Upgrade error: ${upgradeError.message}. Please contact support.`);
+          setLoading(false);
+          return;
         }
       }
 
-      // Refresh the router to update auth state, then redirect
+      // No upgrade needed - normal login redirect
       router.refresh();
-
-      // Use window.location for a full page reload with the new session
       window.location.href = '/dashboard';
     } catch (err: any) {
       console.error('Error verifying OTP:', err);
