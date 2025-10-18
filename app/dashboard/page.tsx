@@ -157,6 +157,14 @@ export default async function DashboardPage({
                 <p className="text-sm font-medium text-green-50">✓ Team collaboration enabled</p>
                 <p className="text-sm font-medium text-green-50">✓ Full data control and management</p>
               </div>
+              <div className="mt-4">
+                <Link
+                  href="/dashboard/account-status"
+                  className="inline-flex items-center px-4 py-2 bg-white text-green-600 rounded-md font-medium hover:bg-green-50 transition-colors"
+                >
+                  View Full Access Details →
+                </Link>
+              </div>
             </div>
           </div>
         </div>
