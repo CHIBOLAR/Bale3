@@ -10,6 +10,8 @@ export async function POST(request: NextRequest) {
   try {
     const { name, email, phone, company, message } = await request.json();
 
+    console.log('🔵 Upgrade request received:', { name, email, phone, company });
+
     // Validation
     if (!name) {
       return NextResponse.json(
@@ -31,6 +33,8 @@ export async function POST(request: NextRequest) {
     const {
       data: { user: authUser },
     } = await supabase.auth.getUser();
+
+    console.log('🔵 Auth user:', authUser?.id, authUser?.email);
 
     if (!authUser) {
       return NextResponse.json(
@@ -55,14 +59,27 @@ export async function POST(request: NextRequest) {
 
     const isDemo = existingUser?.is_demo || !existingUser;
 
+    console.log('🔵 User status:', { isDemo, existingUserId: existingUser?.id, isDemoFlag: existingUser?.is_demo });
+
     // Check if already requested
     // CRITICAL: For demo users, check by EMAIL only (they share same auth_user_id)
     // For regular users, check by auth_user_id
-    const { data: existingRequest } = await supabase
+    const checkField = isDemo ? 'email' : 'auth_user_id';
+    const checkValue = isDemo ? email.trim().toLowerCase() : authUser.id;
+
+    console.log('🔵 Checking existing request by:', checkField, '=', checkValue);
+
+    const { data: existingRequest, error: queryError } = await supabase
       .from('upgrade_requests')
       .select('id, status, email')
-      .eq(isDemo ? 'email' : 'auth_user_id', isDemo ? email.trim().toLowerCase() : authUser.id)
+      .eq(checkField, checkValue)
       .maybeSingle();
+
+    if (queryError) {
+      console.error('🔴 Error querying existing request:', queryError);
+    }
+
+    console.log('🔵 Existing request:', existingRequest ? { id: existingRequest.id, status: existingRequest.status, email: existingRequest.email } : 'none');
 
     if (existingRequest) {
       if (existingRequest.status === 'pending') {
@@ -93,7 +110,7 @@ export async function POST(request: NextRequest) {
         if (updateError) {
           console.error('Error updating upgrade request:', updateError);
           return NextResponse.json(
-            { error: 'Failed to submit request' },
+            { error: `Failed to update request: ${updateError.message || 'Unknown error'}` },
             { status: 500 }
           );
         }
@@ -112,22 +129,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new upgrade request (use submitted email, not auth session email)
+    console.log('🔵 Creating new upgrade request...');
+
+    const newRequest = {
+      auth_user_id: authUser.id,
+      email: email.trim().toLowerCase(),
+      name: name.trim(),
+      phone: phone?.trim() || null,
+      company: company?.trim() || null,
+      message: message?.trim() || null,
+      status: 'pending',
+    };
+
+    console.log('🔵 Insert data:', newRequest);
+
     const { error: insertError } = await supabase
       .from('upgrade_requests')
-      .insert({
-        auth_user_id: authUser.id,
-        email: email.trim().toLowerCase(),
-        name: name.trim(),
-        phone: phone?.trim() || null,
-        company: company?.trim() || null,
-        message: message?.trim() || null,
-        status: 'pending',
-      });
+      .insert(newRequest);
 
     if (insertError) {
       console.error('Error creating upgrade request:', insertError);
+
+      // Check for specific database errors
+      if (insertError.code === '23505') {
+        // Unique constraint violation - duplicate email
+        return NextResponse.json(
+          { error: 'This email address has already been used for an upgrade request.' },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
-        { error: 'Failed to submit request' },
+        { error: `Failed to submit request: ${insertError.message || 'Unknown error'}` },
         { status: 500 }
       );
     }
