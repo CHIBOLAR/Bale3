@@ -34,24 +34,29 @@ function LoginForm() {
     setLoading(true);
     setError(null);
 
+    // Normalize email: trim whitespace and convert to lowercase
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
       const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: email,
+        email: normalizedEmail,
         options: {
           shouldCreateUser: true,  // Allow new users to sign up with OTP
-          emailRedirectTo: undefined, // Disable magic link, force OTP
+          // Omit emailRedirectTo entirely to use OTP-only (no magic link)
         },
       });
 
       if (otpError) {
         // If rate limited, assume OTP was already sent
         if (otpError.message?.includes('security') || otpError.message?.includes('seconds')) {
+          setEmail(normalizedEmail); // Update state with normalized email
           setStep('otp');
           return;
         }
         throw otpError;
       }
 
+      setEmail(normalizedEmail); // Update state with normalized email
       setStep('otp');
     } catch (err: any) {
       console.error('Error sending OTP:', err);
@@ -66,9 +71,12 @@ function LoginForm() {
     setLoading(true);
     setError(null);
 
+    // Ensure email is normalized (should already be from handleSendOTP)
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
       const { error: verifyError } = await supabase.auth.verifyOtp({
-        email: email,
+        email: normalizedEmail,
         token: otp,
         type: 'email',
       });
@@ -79,7 +87,7 @@ function LoginForm() {
       const { data: upgradeRequest } = await supabase
         .from('upgrade_requests')
         .select('id, status, name, company')
-        .eq('email', email.toLowerCase())
+        .eq('email', normalizedEmail)
         .eq('status', 'approved')
         .maybeSingle();
 
@@ -87,21 +95,27 @@ function LoginForm() {
         // User has approved upgrade - process it
         console.log('✅ Approved upgrade found, processing...');
 
-        const response = await fetch('/api/admin/approve-upgrade', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            requestId: upgradeRequest.id,
-            autoUpgrade: true, // Flag to indicate this is auto-upgrade on login
-          }),
-        });
+        try {
+          const response = await fetch('/api/admin/approve-upgrade', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              requestId: upgradeRequest.id,
+              autoUpgrade: true, // Flag to indicate this is auto-upgrade on login
+            }),
+          });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to process upgrade');
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('❌ Upgrade processing failed:', errorData.error);
+            // Don't throw - allow user to continue to dashboard even if upgrade fails
+          } else {
+            console.log('✅ Upgrade processed successfully');
+          }
+        } catch (upgradeError: any) {
+          console.error('❌ Upgrade processing error:', upgradeError);
+          // Don't throw - allow user to continue to dashboard even if upgrade fails
         }
-
-        console.log('✅ Upgrade processed successfully');
       }
 
       // Refresh the router to update auth state, then redirect
