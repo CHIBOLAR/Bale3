@@ -109,14 +109,17 @@ export default function RequestUpgradePage() {
     setError('');
 
     try {
-      const { error: deleteError } = await supabase
+      const { error: updateError } = await supabase
         .from('upgrade_requests')
-        .delete()
+        .update({
+          status: 'cancelled',
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', existingRequest.id);
 
-      if (deleteError) throw deleteError;
+      if (updateError) throw updateError;
 
-      setExistingRequest(null);
+      setExistingRequest({ ...existingRequest, status: 'cancelled' });
       alert('Your upgrade request has been cancelled.');
     } catch (err: any) {
       console.error('Error cancelling request:', err);
@@ -196,6 +199,33 @@ export default function RequestUpgradePage() {
     );
   }
 
+  if (existingRequest && existingRequest.status === 'cancelled') {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold mb-4 text-gray-600">Request Cancelled</h2>
+            <p className="text-gray-600 mb-6">
+              You cancelled your upgrade request. You can submit a new request below.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setExistingRequest(null)}
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Submit New Request
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (existingRequest && existingRequest.status === 'rejected') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
@@ -210,6 +240,13 @@ export default function RequestUpgradePage() {
             <p className="text-gray-600 mb-6">
               Unfortunately, your upgrade request was not approved. You can submit a new request below.
             </p>
+            {existingRequest.rejection_reason && (
+              <div className="bg-red-50 rounded-lg p-4 mb-4">
+                <p className="text-sm text-red-800">
+                  <strong>Reason:</strong> {existingRequest.rejection_reason}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="bg-red-50 rounded-lg p-6 mb-6">
