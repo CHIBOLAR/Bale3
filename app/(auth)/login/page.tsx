@@ -104,9 +104,11 @@ function LoginForm() {
         console.log('✅ Upgrade processed successfully');
       }
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Refresh the router to update auth state, then redirect
       router.refresh();
+
+      // Use window.location for a full page reload with the new session
+      window.location.href = '/dashboard';
     } catch (err: any) {
       console.error('Error verifying OTP:', err);
       setError(err.message || 'Invalid verification code. Please try again.');
