@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 interface UpgradeRequest {
   id: string;
@@ -29,6 +30,47 @@ export default function InviteRequestsClient({
   const router = useRouter();
   const [requests, setRequests] = useState(initialRequests);
   const [loading, setLoading] = useState<string | null>(null);
+  const supabase = createClient();
+
+  // Auto-refresh when new requests come in using Supabase Realtime
+  useEffect(() => {
+    // Subscribe to new pending upgrade requests
+    const channel = supabase
+      .channel('upgrade_requests_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'upgrade_requests',
+          filter: 'status=eq.pending',
+        },
+        (payload) => {
+          console.log('📨 Upgrade request change detected:', payload);
+
+          if (payload.eventType === 'INSERT') {
+            // New request added
+            setRequests((prev) => [payload.new as UpgradeRequest, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            // Request updated (e.g., resubmitted)
+            setRequests((prev) =>
+              prev.map((req) =>
+                req.id === payload.new.id ? (payload.new as UpgradeRequest) : req
+              )
+            );
+          } else if (payload.eventType === 'DELETE') {
+            // Request deleted or status changed
+            setRequests((prev) => prev.filter((req) => req.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase]);
 
   const handleApprove = async (request: UpgradeRequest) => {
     const company = request.company || `${request.name}'s Company`;
