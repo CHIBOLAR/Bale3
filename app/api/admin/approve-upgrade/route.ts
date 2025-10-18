@@ -1,14 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendEmail } from '@/lib/email/resend';
 
 /**
  * POST /api/admin/approve-upgrade
- * Super admin approves an upgrade request
- * Creates user record, company, and marks request as approved
+ * Two modes:
+ * 1. Admin approval: Mark as approved + send email with login link
+ * 2. Auto-upgrade on login: Create company + user after successful OTP login
  */
 export async function POST(request: NextRequest) {
   try {
-    const { requestId } = await request.json();
+    const { requestId, autoUpgrade } = await request.json();
 
     if (!requestId) {
       return NextResponse.json(
@@ -18,31 +20,6 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient();
-
-    // Verify current user is super admin
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
-
-    if (!authUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { data: adminUser } = await supabase
-      .from('users')
-      .select('id, role, is_demo, is_superadmin')
-      .eq('auth_user_id', authUser.id)
-      .maybeSingle();
-
-    if (!adminUser || adminUser.role !== 'admin' || adminUser.is_demo || !adminUser.is_superadmin) {
-      return NextResponse.json(
-        { error: 'Forbidden: Super admin access required' },
-        { status: 403 }
-      );
-    }
 
     // Get the upgrade request
     const { data: upgradeRequest, error: requestError } = await supabase
@@ -58,166 +35,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate request is pending
-    if (upgradeRequest.status !== 'pending') {
-      return NextResponse.json(
-        { error: `Request has already been ${upgradeRequest.status}` },
-        { status: 400 }
-      );
+    // MODE 1: Auto-upgrade on login (after OTP verification)
+    if (autoUpgrade) {
+      return await handleAutoUpgrade(supabase, upgradeRequest);
     }
 
-    // Check if user already has a full account
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id, is_demo')
-      .eq('auth_user_id', upgradeRequest.auth_user_id)
-      .maybeSingle();
+    // MODE 2: Admin approval (mark as approved + send email)
+    return await handleAdminApproval(supabase, upgradeRequest);
 
-    if (existingUser && !existingUser.is_demo) {
-      return NextResponse.json(
-        { error: 'User already has full access' },
-        { status: 400 }
-      );
-    }
-
-    console.log('🔄 Processing upgrade approval for:', upgradeRequest.email);
-
-    // 1. Create new company
-    const companyName = upgradeRequest.company || `${upgradeRequest.name}'s Company`;
-
-    const { data: newCompany, error: companyError } = await supabase
-      .from('companies')
-      .insert({
-        name: companyName,
-        is_demo: false,
-      })
-      .select()
-      .single();
-
-    if (companyError || !newCompany) {
-      console.error('Error creating company:', companyError);
-      return NextResponse.json(
-        { error: 'Failed to create company' },
-        { status: 500 }
-      );
-    }
-
-    console.log('✅ Created company:', newCompany.name);
-
-    // 2. Parse name into first/last
-    const nameParts = upgradeRequest.name.trim().split(' ');
-    const firstName = nameParts[0] || 'User';
-    const lastName = nameParts.slice(1).join(' ') || '';
-
-    // 3. Create or update user record
-    let finalUserId: string;
-
-    if (existingUser) {
-      // Update existing demo user
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          company_id: newCompany.id,
-          is_demo: false,
-          role: 'admin',
-          first_name: firstName,
-          last_name: lastName,
-          phone_number: upgradeRequest.phone || '',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingUser.id);
-
-      if (updateError) {
-        console.error('Error updating user:', updateError);
-        // Rollback: delete company
-        await supabase.from('companies').delete().eq('id', newCompany.id);
-        return NextResponse.json(
-          { error: 'Failed to upgrade user' },
-          { status: 500 }
-        );
-      }
-
-      finalUserId = existingUser.id;
-      console.log('✅ Updated existing user to full access');
-    } else {
-      // Create new user record
-      const { data: newUser, error: createError } = await supabase
-        .from('users')
-        .insert({
-          auth_user_id: upgradeRequest.auth_user_id,
-          email: upgradeRequest.email,
-          first_name: firstName,
-          last_name: lastName,
-          phone_number: upgradeRequest.phone || '',
-          company_id: newCompany.id,
-          role: 'admin',
-          is_demo: false,
-          is_active: true,
-        })
-        .select('id')
-        .single();
-
-      if (createError || !newUser) {
-        console.error('Error creating user:', createError);
-        // Rollback: delete company
-        await supabase.from('companies').delete().eq('id', newCompany.id);
-        return NextResponse.json(
-          { error: 'Failed to create user record' },
-          { status: 500 }
-        );
-      }
-
-      finalUserId = newUser.id;
-      console.log('✅ Created new user with full access');
-    }
-
-    // 4. Create default warehouse
-    const { error: warehouseError } = await supabase.from('warehouses').insert({
-      company_id: newCompany.id,
-      name: 'Main Warehouse',
-      created_by: upgradeRequest.auth_user_id,
-    });
-
-    if (warehouseError) {
-      console.error('Error creating warehouse:', warehouseError);
-      // Non-critical, continue
-    } else {
-      console.log('✅ Created default warehouse');
-    }
-
-    // 5. Mark upgrade request as approved
-    const { error: approveError } = await supabase
-      .from('upgrade_requests')
-      .update({
-        status: 'approved',
-        approved_at: new Date().toISOString(),
-        approved_by: adminUser.id,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', requestId);
-
-    if (approveError) {
-      console.error('Error marking request as approved:', approveError);
-      // Non-critical, user is already upgraded
-    }
-
-    console.log('🎉 UPGRADE COMPLETE |', upgradeRequest.email, '|', newCompany.name);
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: `User ${upgradeRequest.email} has been upgraded successfully!`,
-        user: {
-          id: finalUserId,
-          email: upgradeRequest.email,
-        },
-        company: {
-          id: newCompany.id,
-          name: newCompany.name,
-        },
-      },
-      { status: 200 }
-    );
   } catch (error) {
     console.error('Error in approve-upgrade:', error);
     return NextResponse.json(
@@ -225,4 +50,340 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Admin marks request as approved and sends email with login link
+ */
+async function handleAdminApproval(supabase: any, upgradeRequest: any) {
+  // Verify current user is super admin
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (!authUser) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  const { data: adminUser } = await supabase
+    .from('users')
+    .select('id, role, is_demo, is_superadmin')
+    .eq('auth_user_id', authUser.id)
+    .maybeSingle();
+
+  if (!adminUser || adminUser.role !== 'admin' || adminUser.is_demo || !adminUser.is_superadmin) {
+    return NextResponse.json(
+      { error: 'Forbidden: Super admin access required' },
+      { status: 403 }
+    );
+  }
+
+  // Validate request is pending
+  if (upgradeRequest.status !== 'pending') {
+    return NextResponse.json(
+      { error: `Request has already been ${upgradeRequest.status}` },
+      { status: 400 }
+    );
+  }
+
+  // Mark as approved
+  const { error: approveError } = await supabase
+    .from('upgrade_requests')
+    .update({
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      approved_by: adminUser.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', upgradeRequest.id);
+
+  if (approveError) {
+    console.error('Error marking request as approved:', approveError);
+    return NextResponse.json(
+      { error: 'Failed to approve request' },
+      { status: 500 }
+    );
+  }
+
+  console.log('✅ Admin approved upgrade request for:', upgradeRequest.email);
+
+  // Send email with login link
+  const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/login?email=${encodeURIComponent(upgradeRequest.email)}`;
+
+  const subject = '🎉 Your Bale Inventory Upgrade is Approved!';
+  const html = generateUpgradeApprovalEmailHTML(loginLink, upgradeRequest.name || 'there');
+
+  try {
+    await sendEmail({
+      to: upgradeRequest.email,
+      subject,
+      html,
+    });
+    console.log('✅ Upgrade approval email sent to:', upgradeRequest.email);
+  } catch (emailError) {
+    console.error('Error sending email:', emailError);
+    // Non-critical, continue
+  }
+
+  return NextResponse.json(
+    {
+      success: true,
+      message: `Upgrade approved! Email sent to ${upgradeRequest.email}`,
+      loginLink,
+    },
+    { status: 200 }
+  );
+}
+
+/**
+ * Auto-upgrade: Create company + user after successful login
+ */
+async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
+  // Verify request is approved
+  if (upgradeRequest.status !== 'approved') {
+    return NextResponse.json(
+      { error: 'Request is not approved yet' },
+      { status: 400 }
+    );
+  }
+
+  // Check if user already has a full account
+  const { data: existingUser } = await supabase
+    .from('users')
+    .select('id, is_demo')
+    .eq('auth_user_id', upgradeRequest.auth_user_id)
+    .maybeSingle();
+
+  if (existingUser && !existingUser.is_demo) {
+    return NextResponse.json(
+      { error: 'User already has full access' },
+      { status: 400 }
+    );
+  }
+
+  console.log('🔄 Processing auto-upgrade for:', upgradeRequest.email);
+
+  // 1. Create new company
+  const companyName = upgradeRequest.company || `${upgradeRequest.name}'s Company`;
+
+  const { data: newCompany, error: companyError } = await supabase
+    .from('companies')
+    .insert({
+      name: companyName,
+      is_demo: false,
+    })
+    .select()
+    .single();
+
+  if (companyError || !newCompany) {
+    console.error('Error creating company:', companyError);
+    return NextResponse.json(
+      { error: 'Failed to create company' },
+      { status: 500 }
+    );
+  }
+
+  console.log('✅ Created company:', newCompany.name);
+
+  // 2. Parse name into first/last
+  const nameParts = upgradeRequest.name.trim().split(' ');
+  const firstName = nameParts[0] || 'User';
+  const lastName = nameParts.slice(1).join(' ') || '';
+
+  // 3. Create or update user record
+  let finalUserId: string;
+
+  if (existingUser) {
+    // Update existing demo user
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        email: upgradeRequest.email, // Update to real email
+        company_id: newCompany.id,
+        is_demo: false,
+        role: 'admin',
+        first_name: firstName,
+        last_name: lastName,
+        phone_number: upgradeRequest.phone || '',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existingUser.id);
+
+    if (updateError) {
+      console.error('Error updating user:', updateError);
+      // Rollback: delete company
+      await supabase.from('companies').delete().eq('id', newCompany.id);
+      return NextResponse.json(
+        { error: 'Failed to upgrade user' },
+        { status: 500 }
+      );
+    }
+
+    finalUserId = existingUser.id;
+    console.log('✅ Updated existing user to full access');
+  } else {
+    // Create new user record
+    const { data: newUser, error: createError } = await supabase
+      .from('users')
+      .insert({
+        auth_user_id: upgradeRequest.auth_user_id,
+        email: upgradeRequest.email,
+        first_name: firstName,
+        last_name: lastName,
+        phone_number: upgradeRequest.phone || '',
+        company_id: newCompany.id,
+        role: 'admin',
+        is_demo: false,
+        is_active: true,
+      })
+      .select('id')
+      .single();
+
+    if (createError || !newUser) {
+      console.error('Error creating user:', createError);
+      // Rollback: delete company
+      await supabase.from('companies').delete().eq('id', newCompany.id);
+      return NextResponse.json(
+        { error: 'Failed to create user record' },
+        { status: 500 }
+      );
+    }
+
+    finalUserId = newUser.id;
+    console.log('✅ Created new user with full access');
+  }
+
+  // 4. Create default warehouse
+  const { error: warehouseError } = await supabase.from('warehouses').insert({
+    company_id: newCompany.id,
+    name: 'Main Warehouse',
+    created_by: upgradeRequest.auth_user_id,
+  });
+
+  if (warehouseError) {
+    console.error('Error creating warehouse:', warehouseError);
+    // Non-critical, continue
+  } else {
+    console.log('✅ Created default warehouse');
+  }
+
+  // 5. Mark request as completed
+  await supabase
+    .from('upgrade_requests')
+    .update({
+      status: 'completed',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', upgradeRequest.id);
+
+  console.log('🎉 AUTO-UPGRADE COMPLETE |', upgradeRequest.email, '|', newCompany.name);
+
+  return NextResponse.json(
+    {
+      success: true,
+      message: 'Account upgraded successfully!',
+      user: {
+        id: finalUserId,
+        email: upgradeRequest.email,
+      },
+      company: {
+        id: newCompany.id,
+        name: newCompany.name,
+      },
+    },
+    { status: 200 }
+  );
+}
+
+/**
+ * Generate HTML for upgrade approval email
+ */
+function generateUpgradeApprovalEmailHTML(loginLink: string, recipientName: string): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { padding: 30px; background-color: #f9fafb; border: 1px solid #e5e7eb; }
+          .button { display: inline-block; padding: 16px 32px; background-color: #2563eb; color: white !important; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+          .button:hover { background-color: #1e40af; }
+          .features { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .feature-item { display: flex; align-items: start; margin: 15px 0; }
+          .checkmark { color: #10b981; margin-right: 10px; font-size: 20px; }
+          .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+          .steps { background: #fff7ed; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b; }
+          .step { margin: 10px 0; padding-left: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 style="margin: 0;">🎉 Access Approved!</h1>
+          </div>
+          <div class="content">
+            <h2>Hi ${recipientName}!</h2>
+            <p>Great news! Your request for full access to Bale Inventory has been <strong>approved</strong>.</p>
+
+            <div class="steps">
+              <h3 style="margin-top: 0; color: #f59e0b;">Next Steps:</h3>
+              <div class="step">1. Log out of your demo account (if you're still logged in)</div>
+              <div class="step">2. Click the button below to log in with your email</div>
+              <div class="step">3. Enter the OTP code we'll send to your email</div>
+              <div class="step">4. Your account will be automatically upgraded!</div>
+            </div>
+
+            <div style="text-align: center;">
+              <a href="${loginLink}" class="button">Login to Activate Your Account</a>
+            </div>
+
+            <div class="features">
+              <h3>What you'll get:</h3>
+              <div class="feature-item">
+                <span class="checkmark">✓</span>
+                <div>
+                  <strong>Your Own Company</strong><br>
+                  <span style="color: #6b7280;">Dedicated company account with complete data isolation</span>
+                </div>
+              </div>
+              <div class="feature-item">
+                <span class="checkmark">✓</span>
+                <div>
+                  <strong>Full Access</strong><br>
+                  <span style="color: #6b7280;">Create, edit, and delete inventory, orders, and partners</span>
+                </div>
+              </div>
+              <div class="feature-item">
+                <span class="checkmark">✓</span>
+                <div>
+                  <strong>Team Collaboration</strong><br>
+                  <span style="color: #6b7280;">Invite team members with different roles</span>
+                </div>
+              </div>
+              <div class="feature-item">
+                <span class="checkmark">✓</span>
+                <div>
+                  <strong>Priority Support</strong><br>
+                  <span style="color: #6b7280;">Direct support channel for your queries</span>
+                </div>
+              </div>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+              <strong>Note:</strong> This is a regular login link (not a magic link). You'll need to verify your email with an OTP code.
+            </p>
+          </div>
+          <div class="footer">
+            <p>This is an automated message from Bale Inventory.</p>
+            <p>Built for Indian textile traders.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
 }

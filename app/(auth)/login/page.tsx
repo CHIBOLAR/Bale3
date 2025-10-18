@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 // Prevent static generation - this page needs runtime environment variables
 export const dynamic = 'force-dynamic';
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'email' | 'otp'>('email');
@@ -18,6 +20,14 @@ export default function LoginPage() {
 
   // Memoize Supabase client to prevent recreation on every render
   const supabase = useMemo(() => createClient(), []);
+
+  // Pre-fill email from query parameter
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setEmail(decodeURIComponent(emailParam));
+    }
+  }, [searchParams]);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +74,35 @@ export default function LoginPage() {
       });
 
       if (verifyError) throw verifyError;
+
+      // Check if user has approved upgrade request
+      const { data: upgradeRequest } = await supabase
+        .from('upgrade_requests')
+        .select('id, status, name, company')
+        .eq('email', email.toLowerCase())
+        .eq('status', 'approved')
+        .maybeSingle();
+
+      if (upgradeRequest) {
+        // User has approved upgrade - process it
+        console.log('✅ Approved upgrade found, processing...');
+
+        const response = await fetch('/api/admin/approve-upgrade', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestId: upgradeRequest.id,
+            autoUpgrade: true, // Flag to indicate this is auto-upgrade on login
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to process upgrade');
+        }
+
+        console.log('✅ Upgrade processed successfully');
+      }
 
       // Redirect to dashboard
       router.push('/dashboard');
@@ -203,5 +242,13 @@ export default function LoginPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="text-gray-600">Loading...</div></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
