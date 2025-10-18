@@ -53,11 +53,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isDemo = existingUser?.is_demo || !existingUser;
+
     // Check if already requested
+    // CRITICAL: For demo users, check by EMAIL only (they share same auth_user_id)
+    // For regular users, check by auth_user_id
     const { data: existingRequest } = await supabase
       .from('upgrade_requests')
       .select('id, status, email')
-      .eq('auth_user_id', authUser.id)
+      .eq(isDemo ? 'email' : 'auth_user_id', isDemo ? email.trim().toLowerCase() : authUser.id)
       .maybeSingle();
 
     if (existingRequest) {
