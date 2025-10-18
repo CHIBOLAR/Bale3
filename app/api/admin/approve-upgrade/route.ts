@@ -169,23 +169,30 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
   console.log('📧 Upgrade request email:', upgradeRequest.email, '| Old demo Auth ID:', upgradeRequest.auth_user_id);
 
   // Check if CURRENT user already has a full account
-  const { data: existingUser } = await supabase
+  console.log('🔍 Checking for existing user with auth_user_id:', currentAuthUser.id);
+  const { data: existingUser, error: userCheckError } = await supabase
     .from('users')
-    .select('id, is_demo')
+    .select('id, is_demo, email, company_id')
     .eq('auth_user_id', currentAuthUser.id)  // Use CURRENT auth user, not old demo auth
     .maybeSingle();
 
+  console.log('🔍 Existing user check result:', { existingUser, userCheckError });
+
   if (existingUser && !existingUser.is_demo) {
+    console.log('⚠️ User already has full access, aborting upgrade');
     return NextResponse.json(
       { error: 'User already has full access' },
       { status: 400 }
     );
   }
 
+  console.log('✅ User eligible for upgrade. Existing user:', existingUser ? 'YES (will update)' : 'NO (will create new)');
+
   // 1. Create new company
   const userName = upgradeRequest?.name || 'User';
   const companyName = upgradeRequest?.company || `${userName}'s Company`;
 
+  console.log('🏢 Creating company:', companyName, '| is_demo: false');
   const { data: newCompany, error: companyError } = await supabase
     .from('companies')
     .insert({
@@ -196,14 +203,15 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
     .single();
 
   if (companyError || !newCompany) {
-    console.error('Error creating company:', companyError);
+    console.error('❌ Error creating company:', companyError);
+    console.error('❌ Company error details:', JSON.stringify(companyError, null, 2));
     return NextResponse.json(
       { error: 'Failed to create company' },
       { status: 500 }
     );
   }
 
-  console.log('✅ Created company:', newCompany.name);
+  console.log('✅ Created company:', newCompany.name, '| ID:', newCompany.id, '| is_demo:', newCompany.is_demo);
 
   // 2. Parse name into first/last
   const nameParts = (userName || 'User').trim().split(' ');
@@ -215,6 +223,7 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
 
   if (existingUser) {
     // Update existing user record (linked to CURRENT auth session)
+    console.log('🔄 Updating existing user:', existingUser.id, '| Setting is_demo: false');
     const { error: updateError } = await supabase
       .from('users')
       .update({
@@ -230,7 +239,8 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
       .eq('id', existingUser.id);
 
     if (updateError) {
-      console.error('Error updating user:', updateError);
+      console.error('❌ Error updating user:', updateError);
+      console.error('❌ Update error details:', JSON.stringify(updateError, null, 2));
       // Rollback: delete company
       await supabase.from('companies').delete().eq('id', newCompany.id);
       return NextResponse.json(
@@ -240,9 +250,10 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
     }
 
     finalUserId = existingUser.id;
-    console.log('✅ Updated existing user to full access');
+    console.log('✅ Updated existing user to full access | ID:', finalUserId, '| is_demo: false');
   } else {
     // Create new user record (linked to CURRENT auth session, NOT old demo auth)
+    console.log('➕ Creating new user | auth_user_id:', currentAuthUser.id, '| is_demo: false');
     const { data: newUser, error: createError } = await supabase
       .from('users')
       .insert({
@@ -260,7 +271,8 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
       .single();
 
     if (createError || !newUser) {
-      console.error('Error creating user:', createError);
+      console.error('❌ Error creating user:', createError);
+      console.error('❌ Create error details:', JSON.stringify(createError, null, 2));
       // Rollback: delete company
       await supabase.from('companies').delete().eq('id', newCompany.id);
       return NextResponse.json(
@@ -270,7 +282,7 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
     }
 
     finalUserId = newUser.id;
-    console.log('✅ Created new user with full access');
+    console.log('✅ Created new user with full access | ID:', finalUserId, '| is_demo: false');
   }
 
   // 4. Create default warehouse
