@@ -183,9 +183,9 @@ async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest
   console.log('📧 Current auth user:', currentAuthUser.email, '| Auth ID:', currentAuthUser.id);
   console.log('📧 Upgrade request email:', upgradeRequest.email, '| Old demo Auth ID:', upgradeRequest.auth_user_id);
 
-  // Check if CURRENT user already has a full account
+  // Check if CURRENT user already has a full account (use service role to bypass RLS)
   console.log('🔍 Checking for existing user with auth_user_id:', currentAuthUser.id);
-  const { data: existingUser, error: userCheckError } = await supabase
+  const { data: existingUser, error: userCheckError } = await adminClient
     .from('users')
     .select('id, is_demo, email, company_id')
     .eq('auth_user_id', currentAuthUser.id)  // Use CURRENT auth user, not old demo auth
@@ -203,12 +203,12 @@ async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest
 
   console.log('✅ User eligible for upgrade. Existing user:', existingUser ? 'YES (will update)' : 'NO (will create new)');
 
-  // 1. Create new company
+  // 1. Create new company (use service role to bypass RLS)
   const userName = upgradeRequest?.name || 'User';
   const companyName = upgradeRequest?.company || `${userName}'s Company`;
 
   console.log('🏢 Creating company:', companyName, '| is_demo: false');
-  const { data: newCompany, error: companyError } = await supabase
+  const { data: newCompany, error: companyError } = await adminClient
     .from('companies')
     .insert({
       name: companyName,
@@ -237,9 +237,9 @@ async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest
   let finalUserId: string;
 
   if (existingUser) {
-    // Update existing user record (linked to CURRENT auth session)
+    // Update existing user record (linked to CURRENT auth session, use service role)
     console.log('🔄 Updating existing user:', existingUser.id, '| Setting is_demo: false');
-    const { error: updateError } = await supabase
+    const { error: updateError } = await adminClient
       .from('users')
       .update({
         email: upgradeRequest?.email || 'user@example.com',
@@ -256,8 +256,8 @@ async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest
     if (updateError) {
       console.error('❌ Error updating user:', updateError);
       console.error('❌ Update error details:', JSON.stringify(updateError, null, 2));
-      // Rollback: delete company
-      await supabase.from('companies').delete().eq('id', newCompany.id);
+      // Rollback: delete company (use service role)
+      await adminClient.from('companies').delete().eq('id', newCompany.id);
       return NextResponse.json(
         { error: 'Failed to upgrade user' },
         { status: 500 }
@@ -267,9 +267,9 @@ async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest
     finalUserId = existingUser.id;
     console.log('✅ Updated existing user to full access | ID:', finalUserId, '| is_demo: false');
   } else {
-    // Create new user record (linked to CURRENT auth session, NOT old demo auth)
+    // Create new user record (linked to CURRENT auth session, use service role)
     console.log('➕ Creating new user | auth_user_id:', currentAuthUser.id, '| is_demo: false');
-    const { data: newUser, error: createError } = await supabase
+    const { data: newUser, error: createError } = await adminClient
       .from('users')
       .insert({
         auth_user_id: currentAuthUser.id,  // ✅ CRITICAL: Use CURRENT auth user, not old demo auth
@@ -288,8 +288,8 @@ async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest
     if (createError || !newUser) {
       console.error('❌ Error creating user:', createError);
       console.error('❌ Create error details:', JSON.stringify(createError, null, 2));
-      // Rollback: delete company
-      await supabase.from('companies').delete().eq('id', newCompany.id);
+      // Rollback: delete company (use service role)
+      await adminClient.from('companies').delete().eq('id', newCompany.id);
       return NextResponse.json(
         { error: 'Failed to create user record' },
         { status: 500 }
@@ -300,8 +300,8 @@ async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest
     console.log('✅ Created new user with full access | ID:', finalUserId, '| is_demo: false');
   }
 
-  // 4. Create default warehouse
-  const { error: warehouseError } = await supabase.from('warehouses').insert({
+  // 4. Create default warehouse (use service role)
+  const { error: warehouseError } = await adminClient.from('warehouses').insert({
     company_id: newCompany.id,
     name: 'Main Warehouse',
     created_by: currentAuthUser.id,  // ✅ Use CURRENT auth user
