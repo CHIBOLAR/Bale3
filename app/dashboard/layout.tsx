@@ -17,11 +17,12 @@ export default async function DashboardLayout({
   }
 
   // Get user details from database
+  // Use maybeSingle() to handle new users who don't have a record yet
   const { data: userData } = await supabase
     .from('users')
     .select('*, company:companies(name)')
     .eq('auth_user_id', user.id)
-    .single();
+    .maybeSingle();
 
   return (
     <div className="min-h-screen bg-brand-cream">
