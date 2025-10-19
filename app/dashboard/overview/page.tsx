@@ -17,7 +17,7 @@ export default async function OverviewPage() {
     .from('users')
     .select('*, company:companies(*)')
     .eq('auth_user_id', user.id)
-    .single();
+    .maybeSingle();
 
   // Check if user is demo (either has is_demo flag or no user record)
   const isDemo = userData?.is_demo === true || !userData;
