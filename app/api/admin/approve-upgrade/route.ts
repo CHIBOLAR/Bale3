@@ -101,7 +101,7 @@ async function handleAdminApproval(supabase: any, adminClient: any, upgradeReque
   // First, try to find existing auth user by email
   const { data: existingAuthUsers } = await adminClient.auth.admin.listUsers();
   const existingAuthUser = existingAuthUsers?.users?.find(
-    (u) => u.email?.toLowerCase() === upgradeRequest.email.toLowerCase()
+    (u: any) => u.email?.toLowerCase() === upgradeRequest.email.toLowerCase()
   );
 
   if (existingAuthUser) {
