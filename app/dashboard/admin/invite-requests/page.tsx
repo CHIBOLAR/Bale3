@@ -28,6 +28,11 @@ export default async function InviteRequestsPage() {
 
   // Fetch pending upgrade requests from the new table
   console.log('🔍 Fetching upgrade requests as superadmin:', userData?.is_superadmin, '| User ID:', user.id);
+  console.log('🔍 Auth user email:', user.email);
+
+  // Test if is_superadmin() function works
+  const { data: testData, error: testError } = await supabase.rpc('is_superadmin');
+  console.log('🧪 is_superadmin() test result:', testData, 'error:', testError);
 
   const { data: upgradeRequests, error } = await supabase
     .from('upgrade_requests')
@@ -38,12 +43,18 @@ export default async function InviteRequestsPage() {
   console.log('📨 Upgrade requests query result:', {
     count: upgradeRequests?.length || 0,
     error: error ? JSON.stringify(error) : null,
+    errorCode: error?.code,
+    errorMessage: error?.message,
+    errorDetails: error?.details,
+    errorHint: error?.hint,
     requests: upgradeRequests,
   });
 
   if (error) {
     console.error('❌ Error fetching upgrade requests:', error);
     console.error('❌ Error details:', JSON.stringify(error, null, 2));
+    console.error('❌ Error code:', error.code);
+    console.error('❌ Error message:', error.message);
   }
 
   const accessRequests = upgradeRequests || [];

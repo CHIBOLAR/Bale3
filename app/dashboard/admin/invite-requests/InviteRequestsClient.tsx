@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 
 interface UpgradeRequest {
   id: string;
-  auth_user_id: string;
+  auth_user_id: string | null;
   email: string;
   name: string;
   phone?: string | null;
