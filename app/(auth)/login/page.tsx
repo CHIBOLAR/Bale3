@@ -109,65 +109,8 @@ function LoginForm() {
         return;
       }
 
-      // Check if user has approved upgrade request
-      console.log('🔍 Checking for approved upgrade request for email:', normalizedEmail);
-      const { data: upgradeRequest, error: upgradeQueryError } = await supabase
-        .from('upgrade_requests')
-        .select('id, status, name, company')
-        .eq('email', normalizedEmail)
-        .eq('status', 'approved')
-        .maybeSingle();
-
-      console.log('🔍 Upgrade request query result:', { upgradeRequest, upgradeQueryError });
-
-      if (upgradeRequest) {
-        // User has approved upgrade - process it
-        console.log('✅ Approved upgrade found, processing...', upgradeRequest);
-
-        try {
-          console.log('🚀 Calling auto-upgrade API with requestId:', upgradeRequest.id);
-          const response = await fetch('/api/admin/approve-upgrade', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include', // Ensure cookies are sent with request
-            body: JSON.stringify({
-              requestId: upgradeRequest.id,
-              autoUpgrade: true, // Flag to indicate this is auto-upgrade on login
-            }),
-          });
-
-          console.log('📨 API Response status:', response.status, response.statusText);
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('❌ Upgrade processing failed:', errorData.error, errorData);
-            setError(`Upgrade failed: ${errorData.error}. Please contact support.`);
-            setLoading(false);
-            return;
-          } else {
-            const data = await response.json();
-            console.log('✅ Upgrade processed successfully:', data);
-
-            // Upgrade complete - redirect to dashboard with success flag
-            // The API response means database transaction is already committed
-            router.refresh();
-
-            // Use window.location for a full page reload to ensure fresh data
-            window.location.href = '/dashboard?upgraded=true';
-            return;
-          }
-        } catch (upgradeError: any) {
-          console.error('❌ Upgrade processing error:', upgradeError);
-          setError(`Upgrade error: ${upgradeError.message}. Please contact support.`);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // No upgrade needed - normal login redirect
-      console.log('ℹ️ No approved upgrade request found, proceeding with normal login');
+      // Login successful - redirect to dashboard
+      console.log('✅ Login successful, redirecting to dashboard');
       router.refresh();
       window.location.href = '/dashboard';
     } catch (err: any) {
@@ -200,10 +143,7 @@ function LoginForm() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to your approved Bale Inventory account
-          </p>
-          <p className="mt-1 text-xs text-gray-500">
-            (For users whose access request has been approved)
+            Sign in to your Bale Inventory account
           </p>
         </div>
 

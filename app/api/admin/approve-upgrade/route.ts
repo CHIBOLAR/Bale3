@@ -4,13 +4,16 @@ import { sendEmail } from '@/lib/email/resend';
 
 /**
  * POST /api/admin/approve-upgrade
- * Two modes:
- * 1. Admin approval: Mark as approved + send email with login link
- * 2. Auto-upgrade on login: Create company + user after successful OTP login
+ * Admin approves upgrade request and immediately creates full account:
+ * 1. Create auth user in Supabase Auth
+ * 2. Create company
+ * 3. Create user record
+ * 4. Create default warehouse
+ * 5. Send email with login link
  */
 export async function POST(request: NextRequest) {
   try {
-    const { requestId, autoUpgrade } = await request.json();
+    const { requestId } = await request.json();
 
     if (!requestId) {
       return NextResponse.json(
@@ -20,10 +23,9 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient();
-
-    // Use service role to fetch upgrade request (bypasses RLS)
-    // We verify admin permissions in handleAdminApproval
     const adminClient = createServiceRoleClient();
+
+    // Fetch upgrade request
     const { data: upgradeRequest, error: requestError } = await adminClient
       .from('upgrade_requests')
       .select('*')
@@ -38,12 +40,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // MODE 1: Auto-upgrade on login (after OTP verification)
-    if (autoUpgrade) {
-      return await handleAutoUpgrade(supabase, adminClient, upgradeRequest);
-    }
-
-    // MODE 2: Admin approval (mark as approved + send email)
     return await handleAdminApproval(supabase, adminClient, upgradeRequest);
 
   } catch (error) {
@@ -56,7 +52,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Admin marks request as approved and sends email with login link
+ * Admin approves request and immediately creates full account
  */
 async function handleAdminApproval(supabase: any, adminClient: any, upgradeRequest: any) {
   // Verify current user is super admin
@@ -92,122 +88,34 @@ async function handleAdminApproval(supabase: any, adminClient: any, upgradeReque
     );
   }
 
-  // Mark as approved using service role (bypasses RLS)
-  const { error: approveError } = await adminClient
-    .from('upgrade_requests')
-    .update({
-      status: 'approved',
-      approved_at: new Date().toISOString(),
-      approved_by: adminUser.id,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', upgradeRequest.id);
+  console.log('🔄 Creating full account for:', upgradeRequest.email);
 
-  if (approveError) {
-    console.error('Error marking request as approved:', approveError);
+  // 1. Create auth user in Supabase Auth using Admin API
+  console.log('👤 Creating auth user...');
+  const { data: newAuthUser, error: authError } = await adminClient.auth.admin.createUser({
+    email: upgradeRequest.email,
+    email_confirm: true, // Auto-confirm email
+    user_metadata: {
+      name: upgradeRequest.name,
+      company: upgradeRequest.company,
+    },
+  });
+
+  if (authError || !newAuthUser.user) {
+    console.error('❌ Error creating auth user:', authError);
     return NextResponse.json(
-      { error: 'Failed to approve request' },
+      { error: 'Failed to create auth user' },
       { status: 500 }
     );
   }
 
-  console.log('✅ Admin approved upgrade request for:', upgradeRequest.email);
+  console.log('✅ Created auth user:', newAuthUser.user.email, '| ID:', newAuthUser.user.id);
 
-  // Send email with login link
-  const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/login?email=${encodeURIComponent(upgradeRequest.email || '')}`;
-
-  const subject = '🎉 Your Bale Inventory Upgrade is Approved!';
-  const recipientName = upgradeRequest?.name || 'there';
-  const html = generateUpgradeApprovalEmailHTML(loginLink, recipientName);
-
-  try {
-    await sendEmail({
-      to: upgradeRequest.email,
-      subject,
-      html,
-    });
-    console.log('✅ Upgrade approval email sent to:', upgradeRequest.email);
-  } catch (emailError) {
-    console.error('Error sending email:', emailError);
-    // Non-critical, continue
-  }
-
-  return NextResponse.json(
-    {
-      success: true,
-      message: `Upgrade approved! Email sent to ${upgradeRequest.email}`,
-      loginLink,
-    },
-    { status: 200 }
-  );
-}
-
-/**
- * Auto-upgrade: Create company + user after successful login
- */
-async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest: any) {
-  // Verify request is approved
-  if (upgradeRequest.status !== 'approved') {
-    return NextResponse.json(
-      { error: 'Request is not approved yet' },
-      { status: 400 }
-    );
-  }
-
-  // CRITICAL: Get the CURRENT authenticated user's auth_user_id
-  // This is NOT the same as upgradeRequest.auth_user_id (old demo auth)
-  console.log('🔐 Getting current authenticated user...');
-  const {
-    data: { user: currentAuthUser },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError) {
-    console.error('❌ Auth error getting user:', authError);
-    console.error('❌ Auth error details:', JSON.stringify(authError, null, 2));
-    return NextResponse.json(
-      { error: `Authentication failed: ${authError.message}` },
-      { status: 401 }
-    );
-  }
-
-  if (!currentAuthUser) {
-    console.error('❌ No authenticated user found');
-    return NextResponse.json(
-      { error: 'Not authenticated - no user session' },
-      { status: 401 }
-    );
-  }
-
-  console.log('🔄 Processing auto-upgrade for:', upgradeRequest.email);
-  console.log('📧 Current auth user:', currentAuthUser.email, '| Auth ID:', currentAuthUser.id);
-  console.log('📧 Upgrade request email:', upgradeRequest.email, '| Old demo Auth ID:', upgradeRequest.auth_user_id);
-
-  // Check if CURRENT user already has a full account (use service role to bypass RLS)
-  console.log('🔍 Checking for existing user with auth_user_id:', currentAuthUser.id);
-  const { data: existingUser, error: userCheckError } = await adminClient
-    .from('users')
-    .select('id, is_demo, email, company_id')
-    .eq('auth_user_id', currentAuthUser.id)  // Use CURRENT auth user, not old demo auth
-    .maybeSingle();
-
-  console.log('🔍 Existing user check result:', { existingUser, userCheckError });
-
-  if (existingUser && !existingUser.is_demo) {
-    console.log('⚠️ User already has full access, aborting upgrade');
-    return NextResponse.json(
-      { error: 'User already has full access' },
-      { status: 400 }
-    );
-  }
-
-  console.log('✅ User eligible for upgrade. Existing user:', existingUser ? 'YES (will update)' : 'NO (will create new)');
-
-  // 1. Create new company (use service role to bypass RLS)
+  // 2. Create company
   const userName = upgradeRequest?.name || 'User';
   const companyName = upgradeRequest?.company || `${userName}'s Company`;
 
-  console.log('🏢 Creating company:', companyName, '| is_demo: false');
+  console.log('🏢 Creating company:', companyName);
   const { data: newCompany, error: companyError } = await adminClient
     .from('companies')
     .insert({
@@ -219,118 +127,109 @@ async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest
 
   if (companyError || !newCompany) {
     console.error('❌ Error creating company:', companyError);
-    console.error('❌ Company error details:', JSON.stringify(companyError, null, 2));
+    // Rollback: delete auth user
+    await adminClient.auth.admin.deleteUser(newAuthUser.user.id);
     return NextResponse.json(
       { error: 'Failed to create company' },
       { status: 500 }
     );
   }
 
-  console.log('✅ Created company:', newCompany.name, '| ID:', newCompany.id, '| is_demo:', newCompany.is_demo);
+  console.log('✅ Created company:', newCompany.name, '| ID:', newCompany.id);
 
-  // 2. Parse name into first/last
+  // 3. Create user record
   const nameParts = (userName || 'User').trim().split(' ');
   const firstName = nameParts[0] || 'User';
   const lastName = nameParts.slice(1).join(' ') || '';
 
-  // 3. Create or update user record
-  let finalUserId: string;
+  console.log('👤 Creating user record...');
+  const { data: newUser, error: userError } = await adminClient
+    .from('users')
+    .insert({
+      auth_user_id: newAuthUser.user.id,
+      email: upgradeRequest.email,
+      first_name: firstName,
+      last_name: lastName,
+      phone_number: upgradeRequest?.phone || '',
+      company_id: newCompany.id,
+      role: 'admin',
+      is_demo: false,
+      is_active: true,
+    })
+    .select('id')
+    .single();
 
-  if (existingUser) {
-    // Update existing user record (linked to CURRENT auth session, use service role)
-    console.log('🔄 Updating existing user:', existingUser.id, '| Setting is_demo: false');
-    const { error: updateError } = await adminClient
-      .from('users')
-      .update({
-        email: upgradeRequest?.email || 'user@example.com',
-        company_id: newCompany.id,
-        is_demo: false,
-        role: 'admin',
-        first_name: firstName,
-        last_name: lastName,
-        phone_number: upgradeRequest?.phone || '',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existingUser.id);
-
-    if (updateError) {
-      console.error('❌ Error updating user:', updateError);
-      console.error('❌ Update error details:', JSON.stringify(updateError, null, 2));
-      // Rollback: delete company (use service role)
-      await adminClient.from('companies').delete().eq('id', newCompany.id);
-      return NextResponse.json(
-        { error: 'Failed to upgrade user' },
-        { status: 500 }
-      );
-    }
-
-    finalUserId = existingUser.id;
-    console.log('✅ Updated existing user to full access | ID:', finalUserId, '| is_demo: false');
-  } else {
-    // Create new user record (linked to CURRENT auth session, use service role)
-    console.log('➕ Creating new user | auth_user_id:', currentAuthUser.id, '| is_demo: false');
-    const { data: newUser, error: createError } = await adminClient
-      .from('users')
-      .insert({
-        auth_user_id: currentAuthUser.id,  // ✅ CRITICAL: Use CURRENT auth user, not old demo auth
-        email: upgradeRequest?.email || 'user@example.com',
-        first_name: firstName,
-        last_name: lastName,
-        phone_number: upgradeRequest?.phone || '',
-        company_id: newCompany.id,
-        role: 'admin',
-        is_demo: false,
-        is_active: true,
-      })
-      .select('id')
-      .single();
-
-    if (createError || !newUser) {
-      console.error('❌ Error creating user:', createError);
-      console.error('❌ Create error details:', JSON.stringify(createError, null, 2));
-      // Rollback: delete company (use service role)
-      await adminClient.from('companies').delete().eq('id', newCompany.id);
-      return NextResponse.json(
-        { error: 'Failed to create user record' },
-        { status: 500 }
-      );
-    }
-
-    finalUserId = newUser.id;
-    console.log('✅ Created new user with full access | ID:', finalUserId, '| is_demo: false');
+  if (userError || !newUser) {
+    console.error('❌ Error creating user:', userError);
+    // Rollback: delete company and auth user
+    await adminClient.from('companies').delete().eq('id', newCompany.id);
+    await adminClient.auth.admin.deleteUser(newAuthUser.user.id);
+    return NextResponse.json(
+      { error: 'Failed to create user record' },
+      { status: 500 }
+    );
   }
 
-  // 4. Create default warehouse (use service role)
+  console.log('✅ Created user record | ID:', newUser.id);
+
+  // 4. Create default warehouse
+  console.log('🏭 Creating default warehouse...');
   const { error: warehouseError } = await adminClient.from('warehouses').insert({
     company_id: newCompany.id,
     name: 'Main Warehouse',
-    created_by: currentAuthUser.id,  // ✅ Use CURRENT auth user
+    created_by: newAuthUser.user.id,
   });
 
   if (warehouseError) {
-    console.error('Error creating warehouse:', warehouseError);
+    console.error('⚠️ Error creating warehouse:', warehouseError);
     // Non-critical, continue
   } else {
     console.log('✅ Created default warehouse');
   }
 
-  // 5. Mark request as completed (use service role to bypass RLS)
-  await adminClient
+  // 5. Mark request as completed
+  const { error: updateError } = await adminClient
     .from('upgrade_requests')
     .update({
       status: 'completed',
+      approved_at: new Date().toISOString(),
+      approved_by: adminUser.id,
       updated_at: new Date().toISOString(),
     })
     .eq('id', upgradeRequest.id);
 
-  console.log('🎉 AUTO-UPGRADE COMPLETE |', upgradeRequest.email, '|', newCompany.name);
+  if (updateError) {
+    console.error('⚠️ Error updating upgrade request:', updateError);
+    // Non-critical, continue
+  }
+
+  console.log('🎉 ACCOUNT CREATED SUCCESSFULLY |', upgradeRequest.email, '|', newCompany.name);
+
+  // 6. Send email with login link
+  const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/login?email=${encodeURIComponent(upgradeRequest.email || '')}`;
+
+  const subject = '🎉 Your Bale Inventory Account is Ready!';
+  const recipientName = upgradeRequest?.name || 'there';
+  const html = generateAccountCreatedEmailHTML(loginLink, recipientName);
+
+  try {
+    await sendEmail({
+      to: upgradeRequest.email,
+      subject,
+      html,
+    });
+    console.log('✅ Account creation email sent to:', upgradeRequest.email);
+  } catch (emailError) {
+    console.error('⚠️ Error sending email:', emailError);
+    // Non-critical, continue
+  }
 
   return NextResponse.json(
     {
       success: true,
-      message: 'Account upgraded successfully!',
+      message: `Account created successfully! Email sent to ${upgradeRequest.email}`,
       user: {
-        id: finalUserId,
+        id: newUser.id,
         email: upgradeRequest.email,
       },
       company: {
@@ -343,9 +242,9 @@ async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest
 }
 
 /**
- * Generate HTML for upgrade approval email
+ * Generate HTML for account creation email
  */
-function generateUpgradeApprovalEmailHTML(loginLink: string, recipientName: string): string {
+function generateAccountCreatedEmailHTML(loginLink: string, recipientName: string): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -368,26 +267,26 @@ function generateUpgradeApprovalEmailHTML(loginLink: string, recipientName: stri
       <body>
         <div class="container">
           <div class="header">
-            <h1 style="margin: 0;">🎉 Access Approved!</h1>
+            <h1 style="margin: 0;">🎉 Your Account is Ready!</h1>
           </div>
           <div class="content">
             <h2>Hi ${recipientName}!</h2>
-            <p>Great news! Your request for full access to Bale Inventory has been <strong>approved</strong>.</p>
+            <p>Great news! Your Bale Inventory account has been <strong>created and activated</strong>.</p>
 
             <div class="steps">
-              <h3 style="margin-top: 0; color: #f59e0b;">Next Steps:</h3>
-              <div class="step">1. Log out of your demo account (if you're still logged in)</div>
-              <div class="step">2. Click the button below to log in with your email</div>
-              <div class="step">3. Enter the OTP code we'll send to your email</div>
-              <div class="step">4. Your account will be automatically upgraded!</div>
+              <h3 style="margin-top: 0; color: #f59e0b;">How to Access Your Account:</h3>
+              <div class="step">1. Click the login button below</div>
+              <div class="step">2. Enter your email address</div>
+              <div class="step">3. Check your email for a 6-digit OTP code</div>
+              <div class="step">4. Enter the code and you're in!</div>
             </div>
 
             <div style="text-align: center;">
-              <a href="${loginLink}" class="button">Login to Activate Your Account</a>
+              <a href="${loginLink}" class="button">Login to Your Account</a>
             </div>
 
             <div class="features">
-              <h3>What you'll get:</h3>
+              <h3>What you get:</h3>
               <div class="feature-item">
                 <span class="checkmark">✓</span>
                 <div>
