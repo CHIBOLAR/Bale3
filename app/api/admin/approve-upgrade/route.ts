@@ -10,6 +10,8 @@ import { sendEmail } from '@/lib/email/resend';
  * 3. Create user record
  * 4. Create default warehouse
  * 5. Send email with login link
+ *
+ * This creates the complete account instantly when admin approves.
  */
 export async function POST(request: NextRequest) {
   try {
