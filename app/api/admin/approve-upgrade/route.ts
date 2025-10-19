@@ -89,6 +89,8 @@ async function handleAdminApproval(supabase: any, adminClient: any, upgradeReque
   }
 
   console.log('🔄 Creating full account for:', upgradeRequest.email);
+  console.log('🔑 Service role key present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+  console.log('🌐 Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
 
   // 1. Create auth user in Supabase Auth using Admin API
   console.log('👤 Creating auth user...');
@@ -101,10 +103,21 @@ async function handleAdminApproval(supabase: any, adminClient: any, upgradeReque
     },
   });
 
-  if (authError || !newAuthUser.user) {
+  if (authError) {
     console.error('❌ Error creating auth user:', authError);
+    console.error('❌ Auth error message:', authError.message);
+    console.error('❌ Auth error details:', JSON.stringify(authError, null, 2));
     return NextResponse.json(
-      { error: 'Failed to create auth user' },
+      { error: `Failed to create auth user: ${authError.message}` },
+      { status: 500 }
+    );
+  }
+
+  if (!newAuthUser?.user) {
+    console.error('❌ No user returned from createUser');
+    console.error('❌ newAuthUser data:', JSON.stringify(newAuthUser, null, 2));
+    return NextResponse.json(
+      { error: 'Failed to create auth user: No user data returned' },
       { status: 500 }
     );
   }
