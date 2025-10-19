@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email/resend';
 
@@ -21,14 +21,17 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Get the upgrade request
-    const { data: upgradeRequest, error: requestError } = await supabase
+    // Use service role to fetch upgrade request (bypasses RLS)
+    // We verify admin permissions in handleAdminApproval
+    const adminClient = createServiceRoleClient();
+    const { data: upgradeRequest, error: requestError } = await adminClient
       .from('upgrade_requests')
       .select('*')
       .eq('id', requestId)
       .single();
 
     if (requestError || !upgradeRequest) {
+      console.error('Error fetching upgrade request:', requestError);
       return NextResponse.json(
         { error: 'Upgrade request not found' },
         { status: 404 }
@@ -37,11 +40,11 @@ export async function POST(request: NextRequest) {
 
     // MODE 1: Auto-upgrade on login (after OTP verification)
     if (autoUpgrade) {
-      return await handleAutoUpgrade(supabase, upgradeRequest);
+      return await handleAutoUpgrade(supabase, adminClient, upgradeRequest);
     }
 
     // MODE 2: Admin approval (mark as approved + send email)
-    return await handleAdminApproval(supabase, upgradeRequest);
+    return await handleAdminApproval(supabase, adminClient, upgradeRequest);
 
   } catch (error) {
     console.error('Error in approve-upgrade:', error);
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
 /**
  * Admin marks request as approved and sends email with login link
  */
-async function handleAdminApproval(supabase: any, upgradeRequest: any) {
+async function handleAdminApproval(supabase: any, adminClient: any, upgradeRequest: any) {
   // Verify current user is super admin
   const {
     data: { user: authUser },
@@ -89,8 +92,8 @@ async function handleAdminApproval(supabase: any, upgradeRequest: any) {
     );
   }
 
-  // Mark as approved
-  const { error: approveError } = await supabase
+  // Mark as approved using service role (bypasses RLS)
+  const { error: approveError } = await adminClient
     .from('upgrade_requests')
     .update({
       status: 'approved',
@@ -142,7 +145,7 @@ async function handleAdminApproval(supabase: any, upgradeRequest: any) {
 /**
  * Auto-upgrade: Create company + user after successful login
  */
-async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
+async function handleAutoUpgrade(supabase: any, adminClient: any, upgradeRequest: any) {
   // Verify request is approved
   if (upgradeRequest.status !== 'approved') {
     return NextResponse.json(
@@ -311,8 +314,8 @@ async function handleAutoUpgrade(supabase: any, upgradeRequest: any) {
     console.log('✅ Created default warehouse');
   }
 
-  // 5. Mark request as completed
-  await supabase
+  // 5. Mark request as completed (use service role to bypass RLS)
+  await adminClient
     .from('upgrade_requests')
     .update({
       status: 'completed',
