@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import InviteRequestsClient from './InviteRequestsClient';
 
@@ -26,15 +26,12 @@ export default async function InviteRequestsPage() {
     redirect('/dashboard');
   }
 
-  // Fetch pending upgrade requests from the new table
+  // Fetch pending upgrade requests using service role (bypasses RLS)
+  // This is safe because we've already verified the user is a superadmin above
   console.log('🔍 Fetching upgrade requests as superadmin:', userData?.is_superadmin, '| User ID:', user.id);
-  console.log('🔍 Auth user email:', user.email);
 
-  // Test if is_superadmin() function works
-  const { data: testData, error: testError } = await supabase.rpc('is_superadmin');
-  console.log('🧪 is_superadmin() test result:', testData, 'error:', testError);
-
-  const { data: upgradeRequests, error } = await supabase
+  const adminClient = createServiceRoleClient();
+  const { data: upgradeRequests, error } = await adminClient
     .from('upgrade_requests')
     .select('*')
     .eq('status', 'pending')
