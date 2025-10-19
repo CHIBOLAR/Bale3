@@ -94,37 +94,53 @@ async function handleAdminApproval(supabase: any, adminClient: any, upgradeReque
   console.log('🔑 Service role key present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
   console.log('🌐 Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
 
-  // 1. Create auth user in Supabase Auth using Admin API
-  console.log('👤 Creating auth user...');
-  const { data: newAuthUser, error: authError } = await adminClient.auth.admin.createUser({
-    email: upgradeRequest.email,
-    email_confirm: true, // Auto-confirm email
-    user_metadata: {
-      name: upgradeRequest.name,
-      company: upgradeRequest.company,
-    },
-  });
+  // 1. Get or create auth user in Supabase Auth
+  console.log('👤 Checking for existing auth user...');
+  let authUserId: string;
 
-  if (authError) {
-    console.error('❌ Error creating auth user:', authError);
-    console.error('❌ Auth error message:', authError.message);
-    console.error('❌ Auth error details:', JSON.stringify(authError, null, 2));
-    return NextResponse.json(
-      { error: `Failed to create auth user: ${authError.message}` },
-      { status: 500 }
-    );
+  // First, try to find existing auth user by email
+  const { data: existingAuthUsers } = await adminClient.auth.admin.listUsers();
+  const existingAuthUser = existingAuthUsers?.users?.find(
+    (u) => u.email?.toLowerCase() === upgradeRequest.email.toLowerCase()
+  );
+
+  if (existingAuthUser) {
+    console.log('✅ Found existing auth user:', existingAuthUser.email, '| ID:', existingAuthUser.id);
+    authUserId = existingAuthUser.id;
+  } else {
+    // Create new auth user if doesn't exist
+    console.log('👤 Creating new auth user...');
+    const { data: newAuthUser, error: authError } = await adminClient.auth.admin.createUser({
+      email: upgradeRequest.email,
+      email_confirm: true,
+      user_metadata: {
+        name: upgradeRequest.name,
+        company: upgradeRequest.company,
+      },
+    });
+
+    if (authError) {
+      console.error('❌ Error creating auth user:', authError);
+      console.error('❌ Auth error message:', authError.message);
+      console.error('❌ Auth error details:', JSON.stringify(authError, null, 2));
+      return NextResponse.json(
+        { error: `Failed to create auth user: ${authError.message}` },
+        { status: 500 }
+      );
+    }
+
+    if (!newAuthUser?.user) {
+      console.error('❌ No user returned from createUser');
+      console.error('❌ newAuthUser data:', JSON.stringify(newAuthUser, null, 2));
+      return NextResponse.json(
+        { error: 'Failed to create auth user: No user data returned' },
+        { status: 500 }
+      );
+    }
+
+    authUserId = newAuthUser.user.id;
+    console.log('✅ Created new auth user:', newAuthUser.user.email, '| ID:', authUserId);
   }
-
-  if (!newAuthUser?.user) {
-    console.error('❌ No user returned from createUser');
-    console.error('❌ newAuthUser data:', JSON.stringify(newAuthUser, null, 2));
-    return NextResponse.json(
-      { error: 'Failed to create auth user: No user data returned' },
-      { status: 500 }
-    );
-  }
-
-  console.log('✅ Created auth user:', newAuthUser.user.email, '| ID:', newAuthUser.user.id);
 
   // 2. Create company
   const userName = upgradeRequest?.name || 'User';
@@ -142,8 +158,7 @@ async function handleAdminApproval(supabase: any, adminClient: any, upgradeReque
 
   if (companyError || !newCompany) {
     console.error('❌ Error creating company:', companyError);
-    // Rollback: delete auth user
-    await adminClient.auth.admin.deleteUser(newAuthUser.user.id);
+    // Note: We don't delete auth user on rollback if it existed before
     return NextResponse.json(
       { error: 'Failed to create company' },
       { status: 500 }
@@ -152,47 +167,89 @@ async function handleAdminApproval(supabase: any, adminClient: any, upgradeReque
 
   console.log('✅ Created company:', newCompany.name, '| ID:', newCompany.id);
 
-  // 3. Create user record
+  // 3. Create or update user record
   const nameParts = (userName || 'User').trim().split(' ');
   const firstName = nameParts[0] || 'User';
   const lastName = nameParts.slice(1).join(' ') || '';
 
-  console.log('👤 Creating user record...');
-  const { data: newUser, error: userError } = await adminClient
+  // Check if user record already exists for this auth user
+  console.log('🔍 Checking for existing user record with auth_user_id:', authUserId);
+  const { data: existingUser } = await adminClient
     .from('users')
-    .insert({
-      auth_user_id: newAuthUser.user.id,
-      email: upgradeRequest.email,
-      first_name: firstName,
-      last_name: lastName,
-      phone_number: upgradeRequest?.phone || '',
-      company_id: newCompany.id,
-      role: 'admin',
-      is_demo: false,
-      is_active: true,
-    })
-    .select('id')
-    .single();
+    .select('id, is_demo, company_id')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle();
 
-  if (userError || !newUser) {
-    console.error('❌ Error creating user:', userError);
-    // Rollback: delete company and auth user
-    await adminClient.from('companies').delete().eq('id', newCompany.id);
-    await adminClient.auth.admin.deleteUser(newAuthUser.user.id);
-    return NextResponse.json(
-      { error: 'Failed to create user record' },
-      { status: 500 }
-    );
+  let finalUserId: string;
+
+  if (existingUser) {
+    // Update existing demo user to full access
+    console.log('🔄 Updating existing user record:', existingUser.id, '| Setting is_demo: false');
+    const { error: updateError } = await adminClient
+      .from('users')
+      .update({
+        email: upgradeRequest.email,
+        company_id: newCompany.id,
+        is_demo: false,
+        role: 'admin',
+        first_name: firstName,
+        last_name: lastName,
+        phone_number: upgradeRequest?.phone || '',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existingUser.id);
+
+    if (updateError) {
+      console.error('❌ Error updating user:', updateError);
+      // Rollback: delete company
+      await adminClient.from('companies').delete().eq('id', newCompany.id);
+      return NextResponse.json(
+        { error: 'Failed to upgrade user record' },
+        { status: 500 }
+      );
+    }
+
+    finalUserId = existingUser.id;
+    console.log('✅ Updated user record to full access | ID:', finalUserId);
+  } else {
+    // Create new user record
+    console.log('👤 Creating new user record...');
+    const { data: newUser, error: userError } = await adminClient
+      .from('users')
+      .insert({
+        auth_user_id: authUserId,
+        email: upgradeRequest.email,
+        first_name: firstName,
+        last_name: lastName,
+        phone_number: upgradeRequest?.phone || '',
+        company_id: newCompany.id,
+        role: 'admin',
+        is_demo: false,
+        is_active: true,
+      })
+      .select('id')
+      .single();
+
+    if (userError || !newUser) {
+      console.error('❌ Error creating user:', userError);
+      // Rollback: delete company
+      await adminClient.from('companies').delete().eq('id', newCompany.id);
+      return NextResponse.json(
+        { error: 'Failed to create user record' },
+        { status: 500 }
+      );
+    }
+
+    finalUserId = newUser.id;
+    console.log('✅ Created user record | ID:', finalUserId);
   }
-
-  console.log('✅ Created user record | ID:', newUser.id);
 
   // 4. Create default warehouse
   console.log('🏭 Creating default warehouse...');
   const { error: warehouseError } = await adminClient.from('warehouses').insert({
     company_id: newCompany.id,
     name: 'Main Warehouse',
-    created_by: newAuthUser.user.id,
+    created_by: authUserId,
   });
 
   if (warehouseError) {
@@ -244,7 +301,7 @@ async function handleAdminApproval(supabase: any, adminClient: any, upgradeReque
       success: true,
       message: `Account created successfully! Email sent to ${upgradeRequest.email}`,
       user: {
-        id: newUser.id,
+        id: finalUserId,
         email: upgradeRequest.email,
       },
       company: {
