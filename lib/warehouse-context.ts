@@ -20,7 +20,7 @@ export async function setActiveWarehouse(warehouseId: string | null) {
   const { data: userData } = await supabase
     .from('users')
     .select('warehouse_id')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   // Only admins (users without assigned warehouse) can switch warehouses
@@ -61,7 +61,7 @@ export async function getActiveWarehouse(): Promise<string | null> {
   const { data: userData } = await supabase
     .from('users')
     .select('warehouse_id')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   // Staff users are locked to their assigned warehouse
@@ -92,7 +92,7 @@ export async function getAvailableWarehouses() {
   const { data: userData } = await supabase
     .from('users')
     .select('company_id, warehouse_id')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   if (!userData) {
@@ -143,7 +143,7 @@ export async function isAdminUser(): Promise<boolean> {
   const { data: userData } = await supabase
     .from('users')
     .select('warehouse_id')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   return !userData?.warehouse_id
