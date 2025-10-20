@@ -49,12 +49,14 @@ export default async function DashboardStats({ companyId }: { companyId: string 
       quantity_received,
       product_id,
       stock_unit_id,
-      stock_units!inner(warehouse_id),
-      products!inner(measuring_unit),
+      stock_units!inner(
+        warehouse_id,
+        products!inner(measuring_unit, company_id)
+      ),
       receipt_id,
       goods_receipts!inner(created_at)
     `)
-    .eq('products.company_id', companyId)
+    .eq('stock_units.products.company_id', companyId)
     .gte('goods_receipts.created_at', firstDayOfMonth)
     .lte('goods_receipts.created_at', lastDayOfMonth);
 
@@ -64,7 +66,7 @@ export default async function DashboardStats({ companyId }: { companyId: string 
       id,
       name,
       product_number,
-      minimum_stock_threshold,
+      min_stock_threshold,
       stock_units!inner(id, status, warehouse_id)
     `)
     .eq('company_id', companyId)
@@ -114,7 +116,7 @@ export default async function DashboardStats({ companyId }: { companyId: string 
   // Calculate total received this month (in m/kg)
   const totalReceived = receivedData?.reduce((sum: number, item: any) => {
     const quantity = item.quantity_received || 0;
-    const unit = item.products?.measuring_unit;
+    const unit = item.stock_units?.products?.measuring_unit;
     // Convert Yards to Meters
     if (unit === 'Yards') {
       return sum + (quantity * 0.9144);
@@ -132,7 +134,7 @@ export default async function DashboardStats({ companyId }: { companyId: string 
       ...product,
       currentStock: product.stock_units?.length || 0,
     }))
-    .filter((product) => product.currentStock < (product.minimum_stock_threshold || 0))
+    .filter((product) => product.currentStock < (product.min_stock_threshold || 0))
     .slice(0, 5);
 
   return (
@@ -244,7 +246,7 @@ export default async function DashboardStats({ companyId }: { companyId: string 
                   <p className="text-sm text-gray-600">{product.product_number}</p>
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-sm text-red-700">Current: {product.currentStock}</span>
-                    <span className="text-sm text-gray-600">Min: {product.minimum_stock_threshold}</span>
+                    <span className="text-sm text-gray-600">Min: {product.min_stock_threshold}</span>
                   </div>
                 </Link>
               ))}
