@@ -76,7 +76,8 @@ export default async function DashboardStats({ companyId }: { companyId: string 
 
   // Apply warehouse filter if a specific warehouse is selected
   if (activeWarehouseId) {
-    salesOrdersQuery = salesOrdersQuery.eq('fulfillment_warehouse_id', activeWarehouseId);
+    // Don't filter sales orders by warehouse - they're customer-centric, not warehouse-specific
+    // Sales orders can have null fulfillment_warehouse_id and should always be visible
     jobWorksQuery = jobWorksQuery.eq('warehouse_id', activeWarehouseId);
     dispatchedQuery = dispatchedQuery.eq('stock_units.warehouse_id', activeWarehouseId);
     receivedQuery = receivedQuery.eq('stock_units.warehouse_id', activeWarehouseId);
