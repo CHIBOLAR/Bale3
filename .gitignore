@@ -67,3 +67,5 @@ bale-backend/
 Bale NEW/
 bale-frontend/
 migrations_temp/
+nul
+supabase/nul

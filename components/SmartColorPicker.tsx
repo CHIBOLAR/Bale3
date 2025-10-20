@@ -13,27 +13,28 @@ interface Color {
 
 interface SmartColorPickerProps {
   value?: string // Color name
-  hexValue?: string // Hex code
-  pantoneValue?: string // Pantone code
-  onChange: (colorName: string, hexCode: string, pantoneCode?: string) => void
+  codeValue?: string // Color code (hex or Pantone)
+  onChange: (colorName: string, colorCode: string) => void
   required?: boolean
 }
 
 export default function SmartColorPicker({
   value = '',
-  hexValue = '#000000',
-  pantoneValue = '',
+  codeValue = '',
   onChange,
   required = false
 }: SmartColorPickerProps) {
   const [colorName, setColorName] = useState(value)
-  const [hexCode, setHexCode] = useState(hexValue)
-  const [pantoneCode, setPantoneCode] = useState(pantoneValue)
+  const [colorCode, setColorCode] = useState(codeValue)
   const [suggestions, setSuggestions] = useState<Color[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const colorPickerRef = useRef<HTMLInputElement>(null)
+
+  // Detect if the code is a hex or Pantone
+  const isHexCode = colorCode.startsWith('#')
+  const displayHex = isHexCode ? colorCode : '#000000'
 
   // Fetch color suggestions as user types
   useEffect(() => {
@@ -78,9 +79,10 @@ export default function SmartColorPicker({
 
   const selectColor = (color: Color) => {
     setColorName(color.name)
-    setHexCode(color.hex_code)
-    setPantoneCode(color.pantone_code || '')
-    onChange(color.name, color.hex_code, color.pantone_code || undefined)
+    // Prefer Pantone code if available, otherwise use hex
+    const code = color.pantone_code || color.hex_code
+    setColorCode(code)
+    onChange(color.name, code)
     setShowSuggestions(false)
 
     // Increment usage count
@@ -99,25 +101,19 @@ export default function SmartColorPicker({
   const handleColorNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value
     setColorName(newName)
-    onChange(newName, hexCode, pantoneCode)
+    onChange(newName, colorCode)
   }
 
-  const handleHexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newHex = e.target.value
-    setHexCode(newHex)
-    onChange(colorName, newHex, pantoneCode)
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCode = e.target.value
+    setColorCode(newCode)
+    onChange(colorName, newCode)
   }
 
   const handleColorPickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newHex = e.target.value
-    setHexCode(newHex)
-    onChange(colorName, newHex, pantoneCode)
-  }
-
-  const handlePantoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newPantone = e.target.value
-    setPantoneCode(newPantone)
-    onChange(colorName, hexCode, newPantone)
+    setColorCode(newHex)
+    onChange(colorName, newHex)
   }
 
   return (
@@ -125,7 +121,7 @@ export default function SmartColorPicker({
       {/* Color Name Input */}
       <div className="relative">
         <label htmlFor="color-name" className="block text-sm font-medium text-gray-700 mb-2">
-          Color Name {required && <span className="text-red-500">*</span>}
+          Color Name <span className="text-xs text-gray-500">(Optional)</span>
         </label>
         <input
           ref={inputRef}
@@ -135,7 +131,6 @@ export default function SmartColorPicker({
           onChange={handleColorNameChange}
           onFocus={() => colorName.length >= 2 && setShowSuggestions(true)}
           placeholder="e.g., Sky Blue, Forest Green"
-          required={required}
           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
         />
 
@@ -174,55 +169,41 @@ export default function SmartColorPicker({
         </p>
       </div>
 
-      {/* Hex Code Input with Color Picker */}
+      {/* Color Code Input (Hex or Pantone) */}
       <div>
-        <label htmlFor="hex-code" className="block text-sm font-medium text-gray-700 mb-2">
-          Hex Color Code {required && <span className="text-red-500">*</span>}
+        <label htmlFor="color-code" className="block text-sm font-medium text-gray-700 mb-2">
+          Color Code (Hex or Pantone) {required && <span className="text-red-500">*</span>}
         </label>
         <div className="flex gap-3">
           <div className="flex-1">
             <input
-              id="hex-code"
+              id="color-code"
               type="text"
-              value={hexCode}
-              onChange={handleHexChange}
-              placeholder="#000000"
-              pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+              value={colorCode}
+              onChange={handleCodeChange}
+              placeholder="#000000 or PANTONE 185 C"
               required={required}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue font-mono"
             />
           </div>
-          <div className="relative">
-            <input
-              ref={colorPickerRef}
-              type="color"
-              value={hexCode}
-              onChange={handleColorPickerChange}
-              className="h-[42px] w-20 cursor-pointer rounded-lg border-2 border-gray-300 hover:border-brand-blue transition-colors"
-              title="Pick a color"
-            />
-          </div>
+          {/* Show color picker only if it's a hex code */}
+          {isHexCode && (
+            <div className="relative">
+              <input
+                ref={colorPickerRef}
+                type="color"
+                value={displayHex}
+                onChange={handleColorPickerChange}
+                className="h-[42px] w-20 cursor-pointer rounded-lg border-2 border-gray-300 hover:border-brand-blue transition-colors"
+                title="Pick a color"
+              />
+            </div>
+          )}
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          Enter a hex color code or click the color box to pick a color
-        </p>
-      </div>
-
-      {/* Pantone Code Input */}
-      <div>
-        <label htmlFor="pantone-code" className="block text-sm font-medium text-gray-700 mb-2">
-          Pantone Code <span className="text-xs text-gray-500">(Optional)</span>
-        </label>
-        <input
-          id="pantone-code"
-          type="text"
-          value={pantoneCode}
-          onChange={handlePantoneChange}
-          placeholder="e.g., 19-4052 TCX"
-          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue font-mono"
-        />
-        <p className="mt-1 text-xs text-gray-500">
-          Enter a Pantone color code for textile matching (e.g., 19-1664 TCX for Red)
+          {isHexCode
+            ? 'Hex color code (e.g., #FF5733) - Click color box to pick'
+            : 'Pantone code (e.g., PANTONE 185 C) or enter hex code starting with #'}
         </p>
       </div>
 
@@ -230,17 +211,19 @@ export default function SmartColorPicker({
       <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
         <div
           className="w-16 h-16 rounded-xl border-2 border-gray-300 shadow-md flex-shrink-0"
-          style={{ backgroundColor: hexCode }}
+          style={{ backgroundColor: displayHex }}
         />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900">{colorName || 'No color name'}</p>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-xs text-gray-600 font-mono">{hexCode}</p>
-            {pantoneCode && (
-              <p className="text-xs text-brand-blue font-mono">• {pantoneCode}</p>
+            <p className="text-xs text-gray-600 font-mono">{colorCode || 'No color code'}</p>
+            {!isHexCode && colorCode && (
+              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Pantone</span>
             )}
           </div>
-          <p className="text-xs text-gray-500 mt-1">This is how the color will appear</p>
+          <p className="text-xs text-gray-500 mt-1">
+            {isHexCode ? 'Hex color preview' : 'Pantone codes cannot be previewed'}
+          </p>
         </div>
       </div>
     </div>

@@ -15,8 +15,7 @@ interface Product {
   show_on_catalog: boolean | null
   material: string | null
   color: string | null
-  color_hex: string | null
-  color_pantone: string | null
+  color_code: string | null
   gsm: number | null
   thread_count_cm: number | null
   tags: string[] | null
@@ -45,18 +44,16 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
   const [showOnCatalog, setShowOnCatalog] = useState(product?.show_on_catalog ?? true)
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false)
   const [colorName, setColorName] = useState(product?.color || '')
-  const [colorHex, setColorHex] = useState(product?.color_hex || '#000000')
-  const [colorPantone, setColorPantone] = useState(product?.color_pantone || '')
+  const [colorCode, setColorCode] = useState(product?.color_code || '')
   const [uploadedImages, setUploadedImages] = useState<string[]>(product?.product_images || [])
   const [uploading, setUploading] = useState(false)
   const [productNumber, setProductNumber] = useState(product?.product_number || '')
   const [generatingNumber, setGeneratingNumber] = useState(false)
 
   // Handle color change from SmartColorPicker
-  const handleColorChange = (name: string, hex: string, pantone?: string) => {
+  const handleColorChange = (name: string, code: string) => {
     setColorName(name)
-    setColorHex(hex)
-    setColorPantone(pantone || '')
+    setColorCode(code)
   }
 
   // Handle image upload
@@ -159,9 +156,9 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    // Validate color is provided
-    if (!colorName || !colorHex) {
-      setError('Please provide a color for the product')
+    // Validate color code is provided (name is optional)
+    if (!colorCode) {
+      setError('Please provide a color code for the product')
       return
     }
 
@@ -179,8 +176,7 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
 
     // Add color data to form
     formData.set('color', colorName)
-    formData.set('color_hex', colorHex)
-    formData.set('color_pantone', colorPantone)
+    formData.set('color_code', colorCode)
 
     // Add uploaded images to form data
     formData.set('product_images', uploadedImages.join(','))
@@ -336,8 +332,7 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
               {/* Smart Color Picker */}
               <SmartColorPicker
                 value={colorName}
-                hexValue={colorHex}
-                pantoneValue={colorPantone}
+                codeValue={colorCode}
                 onChange={handleColorChange}
                 required
               />
