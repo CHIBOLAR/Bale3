@@ -130,12 +130,24 @@ Deno.serve(async (req: Request) => {
     }
 
     // Send email via Resend
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
+    console.log('📤 Attempting to send email with Resend:');
+    console.log('  From:', fromEmail);
+    console.log('  To:', email);
+    console.log('  Subject:', emailContent.subject);
+    console.log('  Resend API Key present:', !!Deno.env.get('RESEND_API_KEY'));
+    console.log('  Resend API Key starts with:', Deno.env.get('RESEND_API_KEY')?.substring(0, 10));
+
     const { data, error } = await resend.emails.send({
-      from: Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev',
+      from: fromEmail,
       to: email,
       subject: emailContent.subject,
       html: emailContent.html,
     });
+
+    console.log('📨 Resend API Response:');
+    console.log('  Data:', JSON.stringify(data));
+    console.log('  Error:', JSON.stringify(error));
 
     if (error) {
       console.error('❌ Resend error:', error);
