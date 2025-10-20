@@ -32,13 +32,7 @@ export default function SmartColorPicker({
   const [pantoneSuggestions, setPantoneSuggestions] = useState<PantoneColor[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showPantoneSuggestions, setShowPantoneSuggestions] = useState(false)
-  const [showCamera, setShowCamera] = useState(false)
-  const [capturing, setCapturing] = useState(false)
-  const [processing, setProcessing] = useState(false)
 
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const pantoneInputRef = useRef<HTMLInputElement>(null)
   const colorPickerRef = useRef<HTMLInputElement>(null)
@@ -156,99 +150,6 @@ export default function SmartColorPicker({
 
   const openColorPicker = () => {
     colorPickerRef.current?.click()
-  }
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' } // Use back camera on mobile
-      })
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        streamRef.current = stream
-        setShowCamera(true)
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error)
-      alert('Unable to access camera. Please check permissions.')
-    }
-  }
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
-      streamRef.current = null
-    }
-    setShowCamera(false)
-  }
-
-  const capturePhoto = async () => {
-    if (!videoRef.current || !canvasRef.current) return
-
-    setCapturing(true)
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    const context = canvas.getContext('2d')
-
-    if (!context) return
-
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-
-    // Draw current video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-    // Extract dominant color
-    const dominantColor = extractDominantColor(context, canvas.width, canvas.height)
-
-    setHexCode(dominantColor)
-    setCapturing(false)
-    setProcessing(true)
-
-    // Check if color exists or create new one
-    await saveOrFindColor(colorName || 'Captured Color', dominantColor, pantoneCode || null)
-
-    stopCamera()
-    setProcessing(false)
-  }
-
-  const extractDominantColor = (
-    context: CanvasRenderingContext2D,
-    width: number,
-    height: number
-  ): string => {
-    // Get image data from center region (avoid edges)
-    const centerX = width / 4
-    const centerY = height / 4
-    const centerWidth = width / 2
-    const centerHeight = height / 2
-
-    const imageData = context.getImageData(centerX, centerY, centerWidth, centerHeight)
-    const data = imageData.data
-
-    // Calculate average color
-    let r = 0, g = 0, b = 0
-    const pixelCount = data.length / 4
-
-    for (let i = 0; i < data.length; i += 4) {
-      r += data[i]
-      g += data[i + 1]
-      b += data[i + 2]
-    }
-
-    r = Math.round(r / pixelCount)
-    g = Math.round(g / pixelCount)
-    b = Math.round(b / pixelCount)
-
-    // Convert to hex
-    const hex = '#' + [r, g, b]
-      .map(x => x.toString(16).padStart(2, '0'))
-      .join('')
-      .toUpperCase()
-
-    return hex
   }
 
   const saveOrFindColor = async (name: string, hex: string, pantone: string | null = null) => {
@@ -445,108 +346,11 @@ export default function SmartColorPicker({
               </div>
             )}
           </div>
-
-          {/* Camera Button - Coming Soon */}
-          <div className="relative group">
-            <button
-              type="button"
-              disabled
-              className="px-4 py-2.5 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed transition-all flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="hidden sm:inline">Capture</span>
-            </button>
-            {/* Coming Soon Tooltip */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-              Coming Soon
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
-            </div>
-          </div>
         </div>
         <p className="mt-1 text-xs text-gray-500">
           Type a color name or click the color box to pick manually
         </p>
       </div>
-
-      {/* Camera View Modal */}
-      {showCamera && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Capture Color from Fabric</h3>
-              <button
-                type="button"
-                onClick={stopCamera}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Video Preview */}
-            <div className="relative bg-gray-900 rounded-lg overflow-hidden">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full h-auto"
-              />
-
-              {/* Capture Reticle */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-48 h-48 border-4 border-white border-dashed rounded-lg opacity-75" />
-              </div>
-
-              {processing && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                  <div className="text-white text-center">
-                    <svg className="animate-spin h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p>Processing color...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <canvas ref={canvasRef} className="hidden" />
-
-            <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={capturePhoto}
-                disabled={capturing || processing}
-                className="flex-1 px-6 py-3 bg-brand-orange text-white rounded-lg font-semibold hover:bg-brand-orange/90 focus:ring-4 focus:ring-brand-orange/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {capturing ? 'Capturing...' : 'Capture Color'}
-              </button>
-              <button
-                type="button"
-                onClick={stopCamera}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-
-            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs text-blue-800">
-                <strong>Tip:</strong> Point the camera at your fabric sample and center it in the dashed box for best results.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

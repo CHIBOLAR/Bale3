@@ -33,13 +33,19 @@ export default async function ProductsPage() {
     )
   }
 
-  // Fetch all products for this company
+  // Fetch all products with stock count (with pagination for performance)
+  // For now, fetch all products but limit to reasonable number
+  // TODO: Add pagination UI when product count exceeds 100
   const { data: products, error: productsError } = await supabase
     .from('products')
-    .select('*')
+    .select(`
+      *,
+      stock_units!left(id, status)
+    `, { count: 'exact' })
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+    .limit(1000) // Limit to 1000 products for performance
 
   if (productsError) {
     return (

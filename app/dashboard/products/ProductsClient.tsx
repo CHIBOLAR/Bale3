@@ -15,6 +15,7 @@ interface Product {
   selling_price_per_unit: number | null
   tags: string[] | null
   show_on_catalog: boolean | null
+  stock_units?: Array<{ id: string; status: string }> | null
 }
 
 interface ProductsClientProps {
@@ -26,7 +27,6 @@ export default function ProductsClient({ products, canCreateProduct }: ProductsC
   const [searchTerm, setSearchTerm] = useState('')
   const [materialFilter, setMaterialFilter] = useState<string>('all')
   const [colorFilter, setColorFilter] = useState<string>('all')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   // Extract unique materials and colors for filters
   const materials = useMemo(() => {
@@ -39,9 +39,9 @@ export default function ProductsClient({ products, canCreateProduct }: ProductsC
     return Array.from(unique).sort()
   }, [products])
 
-  // Filter products
+  // Filter and sort products
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
+    const filtered = products.filter(product => {
       // Search filter
       const matchesSearch = !searchTerm ||
         product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -55,6 +55,13 @@ export default function ProductsClient({ products, canCreateProduct }: ProductsC
       const matchesColor = colorFilter === 'all' || product.color === colorFilter
 
       return matchesSearch && matchesMaterial && matchesColor
+    })
+
+    // Sort by stock quantity (highest first)
+    return filtered.sort((a, b) => {
+      const aStockCount = a.stock_units?.filter(u => u.status === 'in_stock' || u.status === 'available').length || 0
+      const bStockCount = b.stock_units?.filter(u => u.status === 'in_stock' || u.status === 'available').length || 0
+      return bStockCount - aStockCount
     })
   }, [products, searchTerm, materialFilter, colorFilter])
 
@@ -111,36 +118,6 @@ export default function ProductsClient({ products, canCreateProduct }: ProductsC
                 <option key={color} value={color}>{color}</option>
               ))}
             </select>
-          </div>
-
-          {/* View Toggle */}
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-white text-brand-blue shadow-sm'
-                  : 'text-gray-600 hover:text-brand-blue'
-              }`}
-              title="Grid view"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-2 rounded-md transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-white text-brand-blue shadow-sm'
-                  : 'text-gray-600 hover:text-brand-blue'
-              }`}
-              title="List view"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -201,7 +178,7 @@ export default function ProductsClient({ products, canCreateProduct }: ProductsC
 
       {/* Products Display */}
       {filteredProducts.length > 0 ? (
-        <div className={viewMode === 'grid' ? 'grid gap-4 md:gap-6' : 'space-y-4'}>
+        <div className="grid gap-4 md:gap-6">
           {filteredProducts.map((product) => (
             <Link
               key={product.id}
@@ -265,6 +242,15 @@ export default function ProductsClient({ products, canCreateProduct }: ProductsC
                         <span className="text-gray-500">Price:</span>
                         <span className="text-brand-blue font-semibold">
                           ₹{product.selling_price_per_unit}/{product.measuring_unit}
+                        </span>
+                      </div>
+                    )}
+
+                    {product.stock_units && product.stock_units.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500">In Stock:</span>
+                        <span className="text-gray-900 font-medium">
+                          {product.stock_units.filter(u => u.status === 'in_stock' || u.status === 'available').length} units
                         </span>
                       </div>
                     )}
