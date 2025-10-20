@@ -31,9 +31,20 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Check if there are any Supabase auth cookies before attempting to get user
+  // This prevents unnecessary token refresh attempts that cause noisy error logs
+  const authCookies = request.cookies.getAll().filter(cookie =>
+    cookie.name.startsWith('sb-') &&
+    (cookie.name.includes('auth-token') || cookie.name.includes('access-token'))
+  )
+
+  let user = null
+
+  if (authCookies.length > 0) {
+    // Only attempt to get user if auth cookies exist
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    user = authUser
+  }
 
   // Protect dashboard routes
   if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
