@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { isDemoUser, checkDemoLimit, isDemoActionAllowed } from '@/lib/utils/demo-restrictions'
+import { invalidateProductCache, invalidateColorCache } from '@/lib/cache'
 
 export async function createProduct(formData: FormData) {
   try {
@@ -84,8 +85,12 @@ export async function createProduct(formData: FormData) {
       return { error: error.message }
     }
 
-    revalidatePath('/dashboard/products')
-    revalidatePath('/dashboard')
+    // Invalidate product cache (also invalidates color cache if color was used)
+    invalidateProductCache(userData.company_id)
+    if (productData.color) {
+      invalidateColorCache(userData.company_id)
+    }
+
     return { success: true }
   } catch (error: any) {
     console.error('Unexpected error:', error)
@@ -106,14 +111,14 @@ export async function updateProduct(formData: FormData) {
       return { error: 'Not authenticated' }
     }
 
-    // Get user's id
+    // Get user's id and company_id
     const { data: userData } = await supabase
       .from('users')
-      .select('id')
+      .select('id, company_id')
       .eq('auth_user_id', user.id)
       .single()
 
-    if (!userData?.id) {
+    if (!userData?.id || !userData?.company_id) {
       return { error: 'User not found' }
     }
 
@@ -163,9 +168,12 @@ export async function updateProduct(formData: FormData) {
       return { error: error.message }
     }
 
-    revalidatePath('/dashboard/products')
-    revalidatePath(`/dashboard/products/${productId}`)
-    revalidatePath('/dashboard')
+    // Invalidate product cache (also invalidates color cache if color was used)
+    invalidateProductCache(userData.company_id)
+    if (productData.color) {
+      invalidateColorCache(userData.company_id)
+    }
+
     return { success: true }
   } catch (error: any) {
     console.error('Unexpected error:', error)
@@ -189,9 +197,13 @@ export async function deleteProduct(productId: string) {
     // Check if user is demo - demo users cannot delete
     const { data: userData } = await supabase
       .from('users')
-      .select('is_demo')
+      .select('is_demo, company_id')
       .eq('auth_user_id', user.id)
       .single()
+
+    if (!userData?.company_id) {
+      return { error: 'User not found' }
+    }
 
     if (isDemoUser(userData)) {
       const actionCheck = isDemoActionAllowed('delete', 'product', true);
@@ -211,8 +223,9 @@ export async function deleteProduct(productId: string) {
       return { error: error.message }
     }
 
-    revalidatePath('/dashboard/products')
-    revalidatePath('/dashboard')
+    // Invalidate product cache
+    invalidateProductCache(userData.company_id)
+
     return { success: true }
   } catch (error: any) {
     console.error('Unexpected error:', error)

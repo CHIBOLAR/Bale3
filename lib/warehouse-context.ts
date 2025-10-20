@@ -103,12 +103,12 @@ export async function getAvailableWarehouses() {
   if (userData.warehouse_id) {
     const { data: warehouse } = await supabase
       .from('warehouses')
-      .select('id, warehouse_name')
+      .select('id, name')
       .eq('id', userData.warehouse_id)
       .single()
 
     return {
-      data: warehouse ? [warehouse] : [],
+      data: warehouse ? [{ id: warehouse.id, warehouse_name: warehouse.name }] : [],
       error: null,
       isAdmin: false,
     }
@@ -117,13 +117,13 @@ export async function getAvailableWarehouses() {
   // Admin user - return all warehouses
   const { data: warehouses, error } = await supabase
     .from('warehouses')
-    .select('id, warehouse_name')
+    .select('id, name')
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
-    .order('warehouse_name')
+    .order('name')
 
   return {
-    data: warehouses || [],
+    data: warehouses ? warehouses.map(w => ({ id: w.id, warehouse_name: w.name })) : [],
     error: error ? 'Failed to fetch warehouses' : null,
     isAdmin: true,
   }

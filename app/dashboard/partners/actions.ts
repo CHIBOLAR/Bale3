@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { invalidatePartnerCache } from '@/lib/cache'
 
 export async function createPartner(formData: FormData) {
   try {
@@ -55,8 +56,9 @@ export async function createPartner(formData: FormData) {
       return { error: error.message }
     }
 
-    revalidatePath('/dashboard/partners')
-    revalidatePath('/dashboard')
+    // Invalidate partner cache (pass partner_type for specific cache invalidation)
+    invalidatePartnerCache(userData.company_id, partnerData.partner_type)
+
     return { success: true }
   } catch (error: any) {
     console.error('Unexpected error:', error)
@@ -77,14 +79,14 @@ export async function updatePartner(formData: FormData) {
       return { error: 'Not authenticated' }
     }
 
-    // Get user's id
+    // Get user's id and company_id
     const { data: userData } = await supabase
       .from('users')
-      .select('id')
+      .select('id, company_id')
       .eq('auth_user_id', user.id)
       .single()
 
-    if (!userData?.id) {
+    if (!userData?.id || !userData?.company_id) {
       return { error: 'User not found' }
     }
 
@@ -120,9 +122,9 @@ export async function updatePartner(formData: FormData) {
       return { error: error.message }
     }
 
-    revalidatePath('/dashboard/partners')
-    revalidatePath(`/dashboard/partners/${partnerId}`)
-    revalidatePath('/dashboard')
+    // Invalidate partner cache (pass partner_type for specific cache invalidation)
+    invalidatePartnerCache(userData.company_id, partnerData.partner_type)
+
     return { success: true }
   } catch (error: any) {
     console.error('Unexpected error:', error)
@@ -143,6 +145,17 @@ export async function deletePartner(partnerId: string) {
       return { error: 'Not authenticated' }
     }
 
+    // Get user's company_id
+    const { data: userData } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('auth_user_id', user.id)
+      .single()
+
+    if (!userData?.company_id) {
+      return { error: 'User not found' }
+    }
+
     // Soft delete by setting deleted_at
     const { error } = await supabase
       .from('partners')
@@ -154,8 +167,9 @@ export async function deletePartner(partnerId: string) {
       return { error: error.message }
     }
 
-    revalidatePath('/dashboard/partners')
-    revalidatePath('/dashboard')
+    // Invalidate partner cache (invalidate all partner types since we don't know which type was deleted)
+    invalidatePartnerCache(userData.company_id)
+
     return { success: true }
   } catch (error: any) {
     console.error('Unexpected error:', error)

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { invalidateWarehouseCache } from '@/lib/cache'
 
 export async function createWarehouse(formData: FormData) {
   try {
@@ -47,7 +48,9 @@ export async function createWarehouse(formData: FormData) {
       return { error: error.message }
     }
 
-    revalidatePath('/dashboard/warehouses')
+    // Invalidate warehouse cache
+    invalidateWarehouseCache(userData.company_id)
+
     return { success: true }
   } catch (error: any) {
     console.error('Unexpected error:', error)
@@ -68,14 +71,14 @@ export async function updateWarehouse(formData: FormData) {
       return { error: 'Not authenticated' }
     }
 
-    // Get user's id
+    // Get user's id and company_id
     const { data: userData } = await supabase
       .from('users')
-      .select('id')
+      .select('id, company_id')
       .eq('auth_user_id', user.id)
       .single()
 
-    if (!userData?.id) {
+    if (!userData?.id || !userData?.company_id) {
       return { error: 'User not found' }
     }
 
@@ -103,8 +106,9 @@ export async function updateWarehouse(formData: FormData) {
       return { error: error.message }
     }
 
-    revalidatePath('/dashboard/warehouses')
-    revalidatePath(`/dashboard/warehouses/${warehouseId}`)
+    // Invalidate warehouse cache
+    invalidateWarehouseCache(userData.company_id)
+
     return { success: true }
   } catch (error: any) {
     console.error('Unexpected error:', error)
@@ -125,6 +129,17 @@ export async function deleteWarehouse(warehouseId: string) {
       return { error: 'Not authenticated' }
     }
 
+    // Get user's company_id
+    const { data: userData } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('auth_user_id', user.id)
+      .single()
+
+    if (!userData?.company_id) {
+      return { error: 'User not found' }
+    }
+
     // Soft delete by setting deleted_at
     const { error } = await supabase
       .from('warehouses')
@@ -136,7 +151,9 @@ export async function deleteWarehouse(warehouseId: string) {
       return { error: error.message }
     }
 
-    revalidatePath('/dashboard/warehouses')
+    // Invalidate warehouse cache
+    invalidateWarehouseCache(userData.company_id)
+
     return { success: true }
   } catch (error: any) {
     console.error('Unexpected error:', error)

@@ -32,8 +32,8 @@ export default async function JobWorksPage() {
     .from('job_works')
     .select(`
       *,
-      partner:partners(id, partner_name, partner_type),
-      warehouse:warehouses(id, warehouse_name),
+      partner:partners(id, first_name, last_name, company_name, partner_type),
+      warehouse:warehouses(id, name),
       sales_order:sales_orders(id, order_number),
       raw_materials:job_work_raw_materials(id, product_id),
       finished_goods:job_work_finished_goods(id, expected_quantity, received_quantity)
@@ -54,40 +54,59 @@ export default async function JobWorksPage() {
     console.error('Error fetching job works:', jobWorksError)
   }
 
+  // Transform job works data
+  const transformedJobWorks = jobWorks?.map(jw => ({
+    ...jw,
+    partner: jw.partner ? {
+      ...jw.partner,
+      partner_name: jw.partner.company_name || `${jw.partner.first_name} ${jw.partner.last_name}`
+    } : null,
+    warehouse: jw.warehouse ? {
+      ...jw.warehouse,
+      warehouse_name: jw.warehouse.name
+    } : null
+  })) || []
+
   // Fetch partners for filter dropdown
-  const { data: partners, error: partnersError } = await supabase
+  const { data: partnersData, error: partnersError } = await supabase
     .from('partners')
-    .select('id, partner_name')
+    .select('id, first_name, last_name, company_name')
     .eq('company_id', userData.company_id)
     .eq('partner_type', 'Job Worker')
     .is('deleted_at', null)
-    .order('partner_name')
+    .order('company_name')
 
   if (partnersError) {
     console.error('Error fetching partners:', partnersError)
   }
+
+  // Transform partners data
+  const partners = partnersData?.map(p => ({
+    id: p.id,
+    partner_name: p.company_name || `${p.first_name} ${p.last_name}`
+  })) || []
 
   // Fetch warehouses for filter dropdown (only for admins)
   let warehouses: Array<{ id: string; warehouse_name: string }> = []
   if (!userData.warehouse_id) {
     const { data: warehousesData, error: warehousesError } = await supabase
       .from('warehouses')
-      .select('id, warehouse_name')
+      .select('id, name')
       .eq('company_id', userData.company_id)
       .is('deleted_at', null)
-      .order('warehouse_name')
+      .order('name')
 
     if (warehousesError) {
       console.error('Error fetching warehouses:', warehousesError)
     } else {
-      warehouses = warehousesData || []
+      warehouses = warehousesData ? warehousesData.map(w => ({ id: w.id, warehouse_name: w.name })) : []
     }
   }
 
   return (
     <JobWorksClient
-      jobWorks={jobWorks || []}
-      partners={partners || []}
+      jobWorks={transformedJobWorks}
+      partners={partners}
       warehouses={warehouses}
       userWarehouseId={userData.warehouse_id}
     />

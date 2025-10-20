@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { invalidateJobWorkCache } from '@/lib/cache'
 
 interface RawMaterial {
   product_id: string
@@ -148,8 +149,7 @@ export async function createJobWork(input: CreateJobWorkInput) {
     }
   }
 
-  revalidatePath('/dashboard/job-works')
-  revalidatePath('/dashboard')
+  invalidateJobWorkCache(userData.company_id)
 
   return { data: jobWork, error: null }
 }
@@ -176,21 +176,21 @@ export async function getJobWork(jobWorkId: string) {
     .from('job_works')
     .select(`
       *,
-      partner:partners(id, partner_name, partner_type),
-      warehouse:warehouses(id, warehouse_name),
+      partner:partners(id, first_name, last_name, company_name, partner_type),
+      warehouse:warehouses(id, name),
       sales_order:sales_orders(id, order_number),
       raw_materials:job_work_raw_materials(
         id,
         required_quantity,
         unit,
-        product:products(id, product_name, measuring_unit)
+        product:products(id, name, measuring_unit)
       ),
       finished_goods:job_work_finished_goods(
         id,
         expected_quantity,
         received_quantity,
         unit,
-        product:products(id, product_name, measuring_unit)
+        product:products(id, name, measuring_unit)
       ),
       dispatches:goods_dispatches(
         id,
@@ -220,7 +220,28 @@ export async function getJobWork(jobWorkId: string) {
     return { data: null, error: 'Job work not found' }
   }
 
-  return { data, error: null }
+  // Transform data to match expected interface
+  const transformed = data ? {
+    ...data,
+    partner: data.partner ? {
+      ...data.partner,
+      partner_name: data.partner.company_name || `${data.partner.first_name} ${data.partner.last_name}`
+    } : null,
+    warehouse: data.warehouse ? {
+      ...data.warehouse,
+      warehouse_name: data.warehouse.name
+    } : null,
+    raw_materials: data.raw_materials?.map((rm: any) => ({
+      ...rm,
+      product: rm.product ? { ...rm.product, product_name: rm.product.name } : null
+    })) || [],
+    finished_goods: data.finished_goods?.map((fg: any) => ({
+      ...fg,
+      product: fg.product ? { ...fg.product, product_name: fg.product.name } : null
+    })) || []
+  } : null
+
+  return { data: transformed, error: null }
 }
 
 export async function getJobWorks(filters?: {
@@ -250,8 +271,8 @@ export async function getJobWorks(filters?: {
     .from('job_works')
     .select(`
       *,
-      partner:partners(id, partner_name, partner_type),
-      warehouse:warehouses(id, warehouse_name),
+      partner:partners(id, first_name, last_name, company_name, partner_type),
+      warehouse:warehouses(id, name),
       sales_order:sales_orders(id, order_number),
       raw_materials:job_work_raw_materials(id, product_id),
       finished_goods:job_work_finished_goods(id, expected_quantity, received_quantity)
@@ -289,7 +310,20 @@ export async function getJobWorks(filters?: {
     return { data: null, error: 'Failed to fetch job works', count: 0 }
   }
 
-  return { data, error: null, count: count || 0 }
+  // Transform data to match expected interface
+  const transformed = data?.map(item => ({
+    ...item,
+    partner: item.partner ? {
+      ...item.partner,
+      partner_name: item.partner.company_name || `${item.partner.first_name} ${item.partner.last_name}`
+    } : null,
+    warehouse: item.warehouse ? {
+      ...item.warehouse,
+      warehouse_name: item.warehouse.name
+    } : null
+  })) || []
+
+  return { data: transformed, error: null, count: count || 0 }
 }
 
 export async function updateJobWorkStatus(jobWorkId: string, status: string) {
@@ -327,8 +361,7 @@ export async function updateJobWorkStatus(jobWorkId: string, status: string) {
     return { data: null, error: 'Failed to update job work status' }
   }
 
-  revalidatePath('/dashboard/job-works')
-  revalidatePath(`/dashboard/job-works/${jobWorkId}`)
+  invalidateJobWorkCache(userData.company_id)
 
   return { data, error: null }
 }
@@ -365,7 +398,7 @@ export async function deleteJobWork(jobWorkId: string) {
     return { data: null, error: 'Failed to delete job work' }
   }
 
-  revalidatePath('/dashboard/job-works')
+  invalidateJobWorkCache(userData.company_id)
 
   return { data: true, error: null }
 }

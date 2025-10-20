@@ -7,24 +7,28 @@ interface Color {
   id: string
   name: string
   hex_code: string
+  pantone_code: string | null
   usage_count: number
 }
 
 interface SmartColorPickerProps {
   value?: string // Color name
   hexValue?: string // Hex code
-  onChange: (colorName: string, hexCode: string) => void
+  pantoneValue?: string // Pantone code
+  onChange: (colorName: string, hexCode: string, pantoneCode?: string) => void
   required?: boolean
 }
 
 export default function SmartColorPicker({
   value = '',
   hexValue = '#000000',
+  pantoneValue = '',
   onChange,
   required = false
 }: SmartColorPickerProps) {
   const [colorName, setColorName] = useState(value)
   const [hexCode, setHexCode] = useState(hexValue)
+  const [pantoneCode, setPantoneCode] = useState(pantoneValue)
   const [suggestions, setSuggestions] = useState<Color[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
@@ -75,7 +79,8 @@ export default function SmartColorPicker({
   const selectColor = (color: Color) => {
     setColorName(color.name)
     setHexCode(color.hex_code)
-    onChange(color.name, color.hex_code)
+    setPantoneCode(color.pantone_code || '')
+    onChange(color.name, color.hex_code, color.pantone_code || undefined)
     setShowSuggestions(false)
 
     // Increment usage count
@@ -94,19 +99,25 @@ export default function SmartColorPicker({
   const handleColorNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value
     setColorName(newName)
-    onChange(newName, hexCode)
+    onChange(newName, hexCode, pantoneCode)
   }
 
   const handleHexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newHex = e.target.value
     setHexCode(newHex)
-    onChange(colorName, newHex)
+    onChange(colorName, newHex, pantoneCode)
   }
 
   const handleColorPickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newHex = e.target.value
     setHexCode(newHex)
-    onChange(colorName, newHex)
+    onChange(colorName, newHex, pantoneCode)
+  }
+
+  const handlePantoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPantone = e.target.value
+    setPantoneCode(newPantone)
+    onChange(colorName, hexCode, newPantone)
   }
 
   return (
@@ -125,42 +136,50 @@ export default function SmartColorPicker({
           onFocus={() => colorName.length >= 2 && setShowSuggestions(true)}
           placeholder="e.g., Sky Blue, Forest Green"
           required={required}
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
         />
 
         {/* Color Suggestions Dropdown */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+          <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg border border-gray-200 overflow-auto">
             {suggestions.map((color) => (
               <button
                 key={color.id}
                 type="button"
                 onClick={() => selectColor(color)}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-3"
+                className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0 transition-colors"
               >
                 <div
-                  className="w-6 h-6 rounded border border-gray-300 flex-shrink-0"
+                  className="w-8 h-8 rounded-lg border-2 border-gray-300 flex-shrink-0 shadow-sm"
                   style={{ backgroundColor: color.hex_code }}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{color.name}</p>
-                  <p className="text-xs text-gray-500">{color.hex_code}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-gray-500 font-mono">{color.hex_code}</p>
+                    {color.pantone_code && (
+                      <span className="text-xs text-brand-blue font-mono">• {color.pantone_code}</span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400">
+                <div className="text-xs font-medium text-brand-blue bg-brand-blue/10 px-2 py-1 rounded-md">
                   Used {color.usage_count}×
                 </div>
               </button>
             ))}
           </div>
         )}
+        <p className="mt-1 text-xs text-gray-500">
+          Start typing to see suggested colors from your catalog
+        </p>
       </div>
 
       {/* Hex Code Input with Color Picker */}
       <div>
         <label htmlFor="hex-code" className="block text-sm font-medium text-gray-700 mb-2">
-          Color Code {required && <span className="text-red-500">*</span>}
+          Hex Color Code {required && <span className="text-red-500">*</span>}
         </label>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <div className="flex-1">
             <input
               id="hex-code"
@@ -170,7 +189,7 @@ export default function SmartColorPicker({
               placeholder="#000000"
               pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
               required={required}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm font-mono"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue font-mono"
             />
           </div>
           <div className="relative">
@@ -179,25 +198,49 @@ export default function SmartColorPicker({
               type="color"
               value={hexCode}
               onChange={handleColorPickerChange}
-              className="h-10 w-16 cursor-pointer rounded-md border border-gray-300"
+              className="h-[42px] w-20 cursor-pointer rounded-lg border-2 border-gray-300 hover:border-brand-blue transition-colors"
               title="Pick a color"
             />
           </div>
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          Enter a hex color code or use the color picker
+          Enter a hex color code or click the color box to pick a color
+        </p>
+      </div>
+
+      {/* Pantone Code Input */}
+      <div>
+        <label htmlFor="pantone-code" className="block text-sm font-medium text-gray-700 mb-2">
+          Pantone Code <span className="text-xs text-gray-500">(Optional)</span>
+        </label>
+        <input
+          id="pantone-code"
+          type="text"
+          value={pantoneCode}
+          onChange={handlePantoneChange}
+          placeholder="e.g., 19-4052 TCX"
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue font-mono"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Enter a Pantone color code for textile matching (e.g., 19-1664 TCX for Red)
         </p>
       </div>
 
       {/* Color Preview */}
-      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+      <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
         <div
-          className="w-12 h-12 rounded-lg border-2 border-gray-300 shadow-sm"
+          className="w-16 h-16 rounded-xl border-2 border-gray-300 shadow-md flex-shrink-0"
           style={{ backgroundColor: hexCode }}
         />
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-900">{colorName || 'No color name'}</p>
-          <p className="text-xs text-gray-500 font-mono">{hexCode}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900">{colorName || 'No color name'}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-xs text-gray-600 font-mono">{hexCode}</p>
+            {pantoneCode && (
+              <p className="text-xs text-brand-blue font-mono">• {pantoneCode}</p>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">This is how the color will appear</p>
         </div>
       </div>
     </div>

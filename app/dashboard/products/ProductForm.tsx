@@ -45,15 +45,17 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false)
   const [colorName, setColorName] = useState(product?.color || '')
   const [colorHex, setColorHex] = useState(product?.color_hex || '#000000')
+  const [colorPantone, setColorPantone] = useState(product?.color_pantone || '')
   const [uploadedImages, setUploadedImages] = useState<string[]>(product?.product_images || [])
   const [uploading, setUploading] = useState(false)
   const [productNumber, setProductNumber] = useState(product?.product_number || '')
   const [generatingNumber, setGeneratingNumber] = useState(false)
 
   // Handle color change from SmartColorPicker
-  const handleColorChange = (name: string, hex: string) => {
+  const handleColorChange = (name: string, hex: string, pantone?: string) => {
     setColorName(name)
     setColorHex(hex)
+    setColorPantone(pantone || '')
   }
 
   // Handle image upload
@@ -177,6 +179,7 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
     // Add color data to form
     formData.set('color', colorName)
     formData.set('color_hex', colorHex)
+    formData.set('color_pantone', colorPantone)
 
     // Add uploaded images to form data
     formData.set('product_images', uploadedImages.join(','))
@@ -333,6 +336,7 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
               <SmartColorPicker
                 value={colorName}
                 hexValue={colorHex}
+                pantoneValue={colorPantone}
                 onChange={handleColorChange}
                 required
               />
