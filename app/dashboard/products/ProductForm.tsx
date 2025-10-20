@@ -16,6 +16,7 @@ interface Product {
   material: string | null
   color: string | null
   color_hex: string | null
+  color_pantone: string | null
   gsm: number | null
   thread_count_cm: number | null
   tags: string[] | null
