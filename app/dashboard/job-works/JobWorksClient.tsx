@@ -24,8 +24,6 @@ interface JobWork {
     id: string
     order_number: string
   }
-  raw_materials: any[]
-  finished_goods: any[]
 }
 
 interface JobWorksClientProps {
@@ -75,21 +73,6 @@ export default function JobWorksClient({
       return matchesSearch && matchesStatus && matchesPartner && matchesWarehouse
     })
   }, [jobWorks, searchTerm, statusFilter, partnerFilter, warehouseFilter])
-
-  const calculateProgress = (jobWork: JobWork) => {
-    if (jobWork.finished_goods.length === 0) return 0
-
-    const totalExpected = jobWork.finished_goods.reduce(
-      (sum, item) => sum + (item.expected_quantity || 0),
-      0
-    )
-    const totalReceived = jobWork.finished_goods.reduce(
-      (sum, item) => sum + (item.received_quantity || 0),
-      0
-    )
-
-    return totalExpected > 0 ? Math.round((totalReceived / totalExpected) * 100) : 0
-  }
 
   return (
     <div className="space-y-6">
@@ -184,8 +167,6 @@ export default function JobWorksClient({
             </li>
           ) : (
             filteredJobWorks.map((jobWork) => {
-              const progress = calculateProgress(jobWork)
-
               return (
                 <li key={jobWork.id}>
                   <Link
@@ -230,22 +211,6 @@ export default function JobWorksClient({
                               {jobWork.job_description}
                             </p>
                           )}
-
-                          {/* Progress Bar for In Progress status */}
-                          {jobWork.status === 'in_progress' && progress > 0 && (
-                            <div className="mt-3">
-                              <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                                <span>Progress</span>
-                                <span>{progress}%</span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                                  style={{ width: `${progress}%` }}
-                                />
-                              </div>
-                            </div>
-                          )}
                         </div>
 
                         <div className="ml-6 flex flex-col items-end gap-2 text-sm text-gray-500">
@@ -257,10 +222,6 @@ export default function JobWorksClient({
                           <span className="text-xs">
                             Created: {new Date(jobWork.created_at).toLocaleDateString()}
                           </span>
-                          <div className="flex items-center gap-3 text-xs">
-                            <span>{jobWork.raw_materials.length} materials</span>
-                            <span>{jobWork.finished_goods.length} returns</span>
-                          </div>
                         </div>
                       </div>
                     </div>

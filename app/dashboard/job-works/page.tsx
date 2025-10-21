@@ -36,9 +36,7 @@ export default async function JobWorksPage() {
       *,
       partner:partners(id, first_name, last_name, company_name, partner_type),
       warehouse:warehouses(id, name),
-      sales_order:sales_orders(id, order_number),
-      raw_materials:job_work_raw_materials(id, product_id),
-      finished_goods:job_work_finished_goods(id, expected_quantity, received_quantity)
+      sales_order:sales_orders(id, order_number)
     `)
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
