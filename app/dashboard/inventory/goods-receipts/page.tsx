@@ -37,9 +37,9 @@ export default async function GoodsReceiptsPage() {
       .from('goods_receipts')
       .select(`
         *,
-        warehouses!goods_receipts_warehouse_id_fkey (id, name),
-        partners:partners!goods_receipts_issued_by_partner_id_fkey (id, company_name, partner_type),
-        source_warehouses:warehouses!goods_receipts_issued_by_warehouse_id_fkey (id, name),
+        warehouses!warehouse_id (id, name),
+        partners:issued_by_partner_id (id, company_name, partner_type),
+        source_warehouses:issued_by_warehouse_id (id, name),
         goods_receipt_items (quantity_received)
       `)
       .eq('company_id', userData.company_id)
@@ -53,15 +53,17 @@ export default async function GoodsReceiptsPage() {
       .order('name'),
   ]);
 
-  // Transform data
-  const receipts = (receiptsResult.data || []).map((receipt: any) => ({
-    ...receipt,
-    partners: Array.isArray(receipt.partners) ? receipt.partners[0] : receipt.partners,
-    source_warehouses: Array.isArray(receipt.source_warehouses)
-      ? receipt.source_warehouses[0]
-      : receipt.source_warehouses,
-  }));
+  // Log any errors
+  if (receiptsResult.error) {
+    console.error('Goods receipts query error:', receiptsResult.error);
+  }
+  if (warehousesResult.error) {
+    console.error('Warehouses query error:', warehousesResult.error);
+  }
 
+  console.log('Goods receipts page - Receipts count:', receiptsResult.data?.length);
+
+  const receipts = receiptsResult.data || [];
   const warehouses = warehousesResult.data || [];
 
   return (
