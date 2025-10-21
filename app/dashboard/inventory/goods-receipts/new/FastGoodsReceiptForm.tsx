@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, X, Trash2, Save, ArrowLeft } from 'lucide-react';
+import { Plus, X, Trash2, Save, Package } from 'lucide-react';
 import { createGoodsReceipt } from '@/app/actions/inventory/goods-receipts';
 
 interface Warehouse {
@@ -167,7 +167,7 @@ export default function FastGoodsReceiptForm({
       });
 
       if (result.success) {
-        router.push(`/dashboard/inventory/goods-receipts/${result.receiptId}`);
+        router.push(`/dashboard/inventory/goods-receipts`);
       } else {
         setError(result.error || 'Failed to create goods receipt');
       }
@@ -179,53 +179,113 @@ export default function FastGoodsReceiptForm({
     }
   };
 
-  const getProductName = (productId: string) => {
-    const product = products.find((p) => p.id === productId);
-    return product ? `${product.name} (${product.material} - ${product.color})` : '';
-  };
-
   const getTotalRolls = () => batches.reduce((sum, b) => sum + b.num_rolls, 0);
   const getTotalLength = () =>
     batches.reduce((sum, b) => sum + b.num_rolls * b.length_per_roll, 0);
   const getTotalWastage = () => batches.reduce((sum, b) => sum + b.num_rolls * b.wastage, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl p-6">
-        {/* Header */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">New Goods Receipt</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Fast entry for receiving materials - just rolls, length, and wastage
-          </p>
+    <div className="w-full">
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3">
+          <p className="text-sm text-red-800">{error}</p>
         </div>
+      )}
 
-        {error && (
-          <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
-            <p className="text-sm text-red-800">{error}</p>
-          </div>
-        )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Receipt Details Card */}
+        <div className="rounded-lg bg-white p-4 shadow-sm border border-gray-200">
+          <h2 className="mb-3 text-base font-semibold text-gray-900">Receipt Details</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Receipt Details Card */}
-          <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-200">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Receipt Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Warehouse */}
+          <div className="space-y-3">
+            {/* Warehouse */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Warehouse <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={warehouseId}
+                onChange={(e) => setWarehouseId(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select warehouse</option>
+                {warehouses.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date and Type Row */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Warehouse <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={receiptDate}
+                  onChange={(e) => setReceiptDate(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type <span className="text-red-500">*</span>
                 </label>
                 <select
-                  value={warehouseId}
-                  onChange={(e) => setWarehouseId(e.target.value)}
+                  value={linkType}
+                  onChange={(e) => {
+                    setLinkType(e.target.value as any);
+                    setSourcePartnerId('');
+                    setSourceWarehouseId('');
+                  }}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="purchase">Purchase</option>
+                  <option value="transfer">Transfer</option>
+                  <option value="job_work_return">Job Work Return</option>
+                  <option value="sales_return">Sales Return</option>
+                  <option value="production">Production</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Source Partner or Warehouse */}
+            {(linkType === 'purchase' || linkType === 'job_work_return' || linkType === 'sales_return') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  From Partner <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={sourcePartnerId}
+                  onChange={(e) => setSourcePartnerId(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select partner</option>
+                  {partners.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.company_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {linkType === 'transfer' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  From Warehouse <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={sourceWarehouseId}
+                  onChange={(e) => setSourceWarehouseId(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                   required
                 >
@@ -237,87 +297,12 @@ export default function FastGoodsReceiptForm({
                   ))}
                 </select>
               </div>
+            )}
 
-              {/* Receipt Date */}
+            {/* Invoice Row */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Receipt Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={receiptDate}
-                  onChange={(e) => setReceiptDate(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Link Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Receipt Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={linkType}
-                  onChange={(e) => setLinkType(e.target.value as any)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="purchase">Purchase</option>
-                  <option value="transfer">Transfer</option>
-                  <option value="job_work_return">Job Work Return</option>
-                  <option value="sales_return">Sales Return</option>
-                  <option value="production">Production</option>
-                </select>
-              </div>
-
-              {/* Source Partner */}
-              {(linkType === 'purchase' || linkType === 'job_work_return' || linkType === 'sales_return') && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Source Partner <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={sourcePartnerId}
-                    onChange={(e) => setSourcePartnerId(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Select partner</option>
-                    {partners.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.company_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Source Warehouse */}
-              {linkType === 'transfer' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Source Warehouse <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={sourceWarehouseId}
-                    onChange={(e) => setSourceWarehouseId(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Select warehouse</option>
-                    {warehouses.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Invoice Number */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Invoice Number</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Invoice #</label>
                 <input
                   type="text"
                   value={invoiceNumber}
@@ -327,9 +312,8 @@ export default function FastGoodsReceiptForm({
                 />
               </div>
 
-              {/* Invoice Amount */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Invoice Amount</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -342,8 +326,8 @@ export default function FastGoodsReceiptForm({
             </div>
 
             {/* Notes */}
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -353,68 +337,69 @@ export default function FastGoodsReceiptForm({
               />
             </div>
           </div>
+        </div>
 
-          {/* Batches Card */}
-          <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-200">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Batches</h2>
-                <p className="text-sm text-gray-600">Add products with their roll details</p>
-              </div>
-              <button
-                type="button"
-                onClick={addBatch}
-                className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                <Plus className="h-4 w-4" />
-                Add Batch
-              </button>
+        {/* Batches Section */}
+        <div className="rounded-lg bg-white p-4 shadow-sm border border-gray-200">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-900">Products & Batches</h2>
+            <button
+              type="button"
+              onClick={addBatch}
+              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform"
+            >
+              <Plus className="h-4 w-4" />
+              Add
+            </button>
+          </div>
+
+          {batches.length === 0 ? (
+            <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
+              <Package className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+              <p className="text-sm text-gray-500">No batches added</p>
+              <p className="text-xs text-gray-400 mt-1">Click "Add" to start</p>
             </div>
+          ) : (
+            <div className="space-y-3">
+              {batches.map((batch, index) => (
+                <div
+                  key={batch.id}
+                  className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-700">Batch {index + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeBatch(batch.id)}
+                      className="text-red-600 hover:text-red-700 p-1"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
 
-            {batches.length === 0 ? (
-              <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-                <p className="text-gray-500">No batches added yet. Click "Add Batch" to start.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {batches.map((batch, index) => (
-                  <div
-                    key={batch.id}
-                    className="rounded-lg border border-gray-200 bg-gray-50 p-4"
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">Batch {index + 1}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeBatch(batch.id)}
-                        className="text-red-600 hover:text-red-700"
+                  <div className="space-y-2">
+                    {/* Product */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Product <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={batch.product_id}
+                        onChange={(e) => updateBatch(batch.id, 'product_id', e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        required
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                        <option value="">Select product</option>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({p.material} - {p.color})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-                      {/* Product */}
-                      <div className="md:col-span-2">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Product <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={batch.product_id}
-                          onChange={(e) => updateBatch(batch.id, 'product_id', e.target.value)}
-                          className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          required
-                        >
-                          <option value="">Select product</option>
-                          {products.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name} ({p.material} - {p.color})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Number of Rolls */}
+                    {/* Rolls and Length Row */}
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">
                           Rolls <span className="text-red-500">*</span>
@@ -431,7 +416,6 @@ export default function FastGoodsReceiptForm({
                         />
                       </div>
 
-                      {/* Length per Roll */}
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">
                           Length (m) <span className="text-red-500">*</span>
@@ -448,8 +432,10 @@ export default function FastGoodsReceiptForm({
                           required
                         />
                       </div>
+                    </div>
 
-                      {/* Wastage */}
+                    {/* Wastage and Quality Row */}
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">
                           Wastage (m)
@@ -466,7 +452,6 @@ export default function FastGoodsReceiptForm({
                         />
                       </div>
 
-                      {/* Quality (Optional) */}
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Quality</label>
                         <input
@@ -479,8 +464,8 @@ export default function FastGoodsReceiptForm({
                       </div>
                     </div>
 
-                    {/* Optional fields row */}
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Location and Notes */}
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Location</label>
                         <input
@@ -504,59 +489,59 @@ export default function FastGoodsReceiptForm({
                     </div>
 
                     {/* Batch Summary */}
-                    <div className="mt-3 flex gap-4 text-xs text-gray-600">
+                    <div className="mt-2 pt-2 border-t border-gray-200 flex justify-between text-xs text-gray-600">
                       <span>
-                        Total: <strong>{batch.num_rolls * batch.length_per_roll} m</strong>
+                        Total: <strong className="text-gray-900">{batch.num_rolls * batch.length_per_roll} m</strong>
                       </span>
                       <span>
-                        Usable: <strong>{batch.num_rolls * (batch.length_per_roll - batch.wastage)} m</strong>
+                        Usable: <strong className="text-green-700">{batch.num_rolls * (batch.length_per_roll - batch.wastage)} m</strong>
                       </span>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Overall Summary */}
-                <div className="rounded-lg border-2 border-blue-200 bg-blue-50 p-4">
-                  <h3 className="mb-2 text-sm font-semibold text-blue-900">Receipt Summary</h3>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="text-blue-700">Total Rolls</p>
-                      <p className="text-2xl font-bold text-blue-900">{getTotalRolls()}</p>
-                    </div>
-                    <div>
-                      <p className="text-blue-700">Total Length</p>
-                      <p className="text-2xl font-bold text-blue-900">{getTotalLength().toFixed(2)} m</p>
-                    </div>
-                    <div>
-                      <p className="text-blue-700">Total Wastage</p>
-                      <p className="text-2xl font-bold text-blue-900">{getTotalWastage().toFixed(2)} m</p>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              ))}
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || batches.length === 0}
-              className="flex items-center gap-2 rounded-lg bg-brand-orange px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-orange/90 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
-            >
-              <Save className="h-4 w-4" />
-              {isSubmitting ? 'Creating...' : 'Create Receipt'}
-            </button>
-          </div>
-        </form>
-      </div>
+              {/* Overall Summary */}
+              <div className="rounded-lg border-2 border-blue-200 bg-blue-50 p-3">
+                <h3 className="mb-2 text-xs font-semibold text-blue-900">Receipt Summary</h3>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-xs text-blue-700">Rolls</p>
+                    <p className="text-lg font-bold text-blue-900">{getTotalRolls()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-700">Length</p>
+                    <p className="text-lg font-bold text-blue-900">{getTotalLength().toFixed(1)} m</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-700">Wastage</p>
+                    <p className="text-lg font-bold text-blue-900">{getTotalWastage().toFixed(1)} m</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="w-full sm:w-auto rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting || batches.length === 0}
+            className="w-full sm:flex-1 flex items-center justify-center gap-2 rounded-lg bg-brand-orange px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-orange/90 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-98 transition-all"
+          >
+            <Save className="h-4 w-4" />
+            {isSubmitting ? 'Creating...' : 'Create Receipt'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

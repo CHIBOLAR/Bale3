@@ -87,6 +87,10 @@ export async function createJobWork(input: CreateJobWorkInput) {
   console.log('Generated job number:', jobNumber)
 
   // Create job work (just the header - dispatches and receipts handled separately)
+  // If no expected_delivery_date provided, default to 7 days from now
+  const defaultDeliveryDate = new Date();
+  defaultDeliveryDate.setDate(defaultDeliveryDate.getDate() + 7);
+
   const jobWorkData = {
     company_id: userData.company_id,
     job_number: jobNumber,
@@ -95,7 +99,7 @@ export async function createJobWork(input: CreateJobWorkInput) {
     sales_order_id: input.sales_order_id,
     agent_id: input.agent_id,
     job_description: input.job_description,
-    expected_delivery_date: input.expected_delivery_date,
+    expected_delivery_date: input.expected_delivery_date || defaultDeliveryDate.toISOString().split('T')[0],
     start_date: new Date().toISOString().split('T')[0],
     job_type: 'processing',
     status: 'pending',
