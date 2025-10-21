@@ -20,7 +20,7 @@ export default async function JobWorksPage() {
   const { data: userData, error: userError } = await supabase
     .from('users')
     .select('company_id, warehouse_id')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   if (userError || !userData) {

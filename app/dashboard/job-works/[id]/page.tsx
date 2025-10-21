@@ -25,7 +25,7 @@ export default async function JobWorkDetailPage({ params }: PageProps) {
   const { data: userData, error: userError } = await supabase
     .from('users')
     .select('company_id, warehouse_id, is_demo')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   if (userError || !userData) {
@@ -37,21 +37,21 @@ export default async function JobWorkDetailPage({ params }: PageProps) {
     .from('job_works')
     .select(`
       *,
-      partner:partners(id, partner_name, partner_type, contact_person, phone_number, email),
-      warehouse:warehouses(id, warehouse_name, address),
+      partner:partners(id, first_name, last_name, company_name, partner_type, phone_number, email),
+      warehouse:warehouses(id, name),
       sales_order:sales_orders(id, order_number, status),
       raw_materials:job_work_raw_materials(
         id,
         required_quantity,
         unit,
-        product:products(id, product_name, measuring_unit)
+        product:products(id, name, measuring_unit)
       ),
       finished_goods:job_work_finished_goods(
         id,
         expected_quantity,
         received_quantity,
         unit,
-        product:products(id, product_name, measuring_unit)
+        product:products(id, name, measuring_unit)
       )
     `)
     .eq('id', id)
@@ -85,7 +85,7 @@ export default async function JobWorkDetailPage({ params }: PageProps) {
           id,
           size_quantity,
           status,
-          product:products(id, product_name, measuring_unit)
+          product:products(id, name, measuring_unit)
         )
       )
     `)
@@ -114,7 +114,7 @@ export default async function JobWorkDetailPage({ params }: PageProps) {
           id,
           size_quantity,
           status,
-          product:products(id, product_name, measuring_unit)
+          product:products(id, name, measuring_unit)
         )
       )
     `)
@@ -127,11 +127,69 @@ export default async function JobWorkDetailPage({ params }: PageProps) {
     console.error('Error fetching receipts:', receiptsError)
   }
 
+  // Transform data to match client component expectations
+  const transformedJobWork = {
+    ...jobWork,
+    partner: jobWork.partner ? {
+      ...jobWork.partner,
+      partner_name: jobWork.partner.company_name || `${jobWork.partner.first_name} ${jobWork.partner.last_name}`,
+      contact_person: jobWork.partner.first_name && jobWork.partner.last_name
+        ? `${jobWork.partner.first_name} ${jobWork.partner.last_name}`
+        : null
+    } : null,
+    warehouse: jobWork.warehouse ? {
+      ...jobWork.warehouse,
+      warehouse_name: jobWork.warehouse.name
+    } : null,
+    raw_materials: jobWork.raw_materials?.map((rm: any) => ({
+      ...rm,
+      product: rm.product ? {
+        ...rm.product,
+        product_name: rm.product.name
+      } : null
+    })) || [],
+    finished_goods: jobWork.finished_goods?.map((fg: any) => ({
+      ...fg,
+      product: fg.product ? {
+        ...fg.product,
+        product_name: fg.product.name
+      } : null
+    })) || []
+  }
+
+  const transformedDispatches = dispatches?.map(dispatch => ({
+    ...dispatch,
+    items: dispatch.items?.map((item: any) => ({
+      ...item,
+      stock_unit: item.stock_unit ? {
+        ...item.stock_unit,
+        product: item.stock_unit.product ? {
+          ...item.stock_unit.product,
+          product_name: item.stock_unit.product.name
+        } : null
+      } : null
+    })) || []
+  })) || []
+
+  const transformedReceipts = receipts?.map(receipt => ({
+    ...receipt,
+    items: receipt.items?.map((item: any) => ({
+      ...item,
+      stock_unit: item.stock_unit ? {
+        ...item.stock_unit,
+        product: item.stock_unit.product ? {
+          ...item.stock_unit.product,
+          product_name: item.stock_unit.product.name
+        } : null
+      } : null
+    })) || []
+  })) || []
+
   return (
     <JobWorkDetail
-      jobWork={jobWork}
-      dispatches={dispatches || []}
-      receipts={receipts || []}
+      jobWork={transformedJobWork}
+      dispatches={transformedDispatches}
+      receipts={transformedReceipts}
       isDemo={userData.is_demo}
     />
   )

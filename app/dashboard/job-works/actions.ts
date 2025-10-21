@@ -71,7 +71,7 @@ export async function createJobWork(input: CreateJobWorkInput) {
   const { data: userData, error: userError } = await supabase
     .from('users')
     .select('company_id, is_demo')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   if (userError || !userData) {
@@ -165,7 +165,7 @@ export async function getJobWork(jobWorkId: string) {
   const { data: userData } = await supabase
     .from('users')
     .select('company_id, warehouse_id')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   if (!userData) {
@@ -260,7 +260,7 @@ export async function getJobWorks(filters?: {
   const { data: userData } = await supabase
     .from('users')
     .select('company_id, warehouse_id')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   if (!userData) {
@@ -337,7 +337,7 @@ export async function updateJobWorkStatus(jobWorkId: string, status: string) {
   const { data: userData } = await supabase
     .from('users')
     .select('company_id, is_demo')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   if (!userData) {
@@ -377,7 +377,7 @@ export async function deleteJobWork(jobWorkId: string) {
   const { data: userData } = await supabase
     .from('users')
     .select('company_id, is_demo')
-    .eq('id', user.id)
+    .eq('auth_user_id', user.id)
     .single()
 
   if (!userData) {
