@@ -4,26 +4,13 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { invalidateJobWorkCache } from '@/lib/cache'
 
-interface RawMaterial {
-  product_id: string
-  required_quantity: number
-  unit: string
-}
-
-interface ExpectedReturn {
-  product_id: string
-  expected_quantity: number
-  unit: string
-}
-
 interface CreateJobWorkInput {
   partner_id: string
   warehouse_id: string
   sales_order_id?: string | null
   job_description?: string
   expected_delivery_date?: string | null
-  raw_materials: RawMaterial[]
-  expected_returns: ExpectedReturn[]
+  agent_id?: string | null
 }
 
 export async function generateJobNumber(companyId: string) {
@@ -88,7 +75,7 @@ export async function createJobWork(input: CreateJobWorkInput) {
     return { data: null, error: jobNumberError || 'Failed to generate job number' }
   }
 
-  // Create job work
+  // Create job work (just the header - dispatches and receipts handled separately)
   const { data: jobWork, error: jobWorkError } = await supabase
     .from('job_works')
     .insert({
@@ -97,8 +84,11 @@ export async function createJobWork(input: CreateJobWorkInput) {
       partner_id: input.partner_id,
       warehouse_id: input.warehouse_id,
       sales_order_id: input.sales_order_id,
+      agent_id: input.agent_id,
       job_description: input.job_description,
       expected_delivery_date: input.expected_delivery_date,
+      start_date: new Date().toISOString().split('T')[0],
+      job_type: 'processing',
       status: 'pending',
       created_by: user.id,
     })
@@ -106,47 +96,8 @@ export async function createJobWork(input: CreateJobWorkInput) {
     .single()
 
   if (jobWorkError || !jobWork) {
+    console.error('Job work creation error:', jobWorkError)
     return { data: null, error: 'Failed to create job work' }
-  }
-
-  // Insert raw materials
-  if (input.raw_materials.length > 0) {
-    const { error: rawMaterialsError } = await supabase
-      .from('job_work_raw_materials')
-      .insert(
-        input.raw_materials.map((material) => ({
-          job_work_id: jobWork.id,
-          product_id: material.product_id,
-          required_quantity: material.required_quantity,
-          unit: material.unit,
-        }))
-      )
-
-    if (rawMaterialsError) {
-      // Rollback job work creation
-      await supabase.from('job_works').delete().eq('id', jobWork.id)
-      return { data: null, error: 'Failed to add raw materials' }
-    }
-  }
-
-  // Insert expected returns (finished goods)
-  if (input.expected_returns.length > 0) {
-    const { error: finishedGoodsError } = await supabase
-      .from('job_work_finished_goods')
-      .insert(
-        input.expected_returns.map((item) => ({
-          job_work_id: jobWork.id,
-          product_id: item.product_id,
-          expected_quantity: item.expected_quantity,
-          unit: item.unit,
-        }))
-      )
-
-    if (finishedGoodsError) {
-      // Rollback job work creation
-      await supabase.from('job_works').delete().eq('id', jobWork.id)
-      return { data: null, error: 'Failed to add expected returns' }
-    }
   }
 
   invalidateJobWorkCache(userData.company_id)

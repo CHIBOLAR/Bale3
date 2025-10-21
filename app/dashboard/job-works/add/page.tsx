@@ -27,13 +27,14 @@ export default async function AddJobWorkPage() {
     redirect('/login')
   }
 
-  // Fetch vendor partners (vendors are used for job works)
-  const { data: partnersData, error: partnersError } = await supabase
+  // Fetch partners (vendors and agents)
+  const { data: partnersData, error: partnersError} = await supabase
     .from('partners')
     .select('id, first_name, last_name, company_name, partner_type')
     .eq('company_id', userData.company_id)
-    .eq('partner_type', 'Vendor')
+    .in('partner_type', ['Vendor', 'Agent'])
     .is('deleted_at', null)
+    .order('partner_type')
     .order('company_name')
 
   if (partnersError) {
@@ -78,18 +79,6 @@ export default async function AddJobWorkPage() {
     }
   }
 
-  // Fetch products
-  const { data: products, error: productsError } = await supabase
-    .from('products')
-    .select('id, name, measuring_unit')
-    .eq('company_id', userData.company_id)
-    .is('deleted_at', null)
-    .order('name')
-
-  if (productsError) {
-    console.error('Error fetching products:', productsError)
-  }
-
   // Fetch sales orders (optional)
   const { data: salesOrders, error: salesOrdersError } = await supabase
     .from('sales_orders')
@@ -120,7 +109,6 @@ export default async function AddJobWorkPage() {
         key="job-work-form"
         partners={partners}
         warehouses={warehouses}
-        products={products || []}
         salesOrders={salesOrders || []}
       />
     </div>
