@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import DashboardNav from '@/components/layouts/DashboardNav';
-import { getAvailableWarehouses, getActiveWarehouse } from '@/lib/warehouse-context';
 
 export default async function DashboardLayout({
   children,
@@ -25,17 +24,14 @@ export default async function DashboardLayout({
     .eq('auth_user_id', user.id)
     .maybeSingle();
 
-  // Get warehouse context
-  const { data: warehouses, isAdmin } = await getAvailableWarehouses();
-  const activeWarehouseId = await getActiveWarehouse();
+  // Check if user is admin (no assigned warehouse)
+  const isAdmin = !userData?.warehouse_id;
 
   return (
     <div className="min-h-screen bg-brand-cream">
       <DashboardNav
         user={userData}
-        warehouses={warehouses || []}
-        activeWarehouseId={activeWarehouseId}
-        isAdmin={isAdmin || false}
+        isAdmin={isAdmin}
       />
       {/* Mobile: no left padding. Desktop: left padding for sidebar */}
       <main className="lg:pl-64 min-h-screen">

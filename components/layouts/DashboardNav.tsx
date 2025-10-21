@@ -5,21 +5,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useState } from 'react';
 import Image from 'next/image';
-import WarehouseSwitcher from '@/components/WarehouseSwitcher';
-
-interface Warehouse {
-  id: string;
-  warehouse_name: string;
-}
 
 interface DashboardNavProps {
   user: any;
-  warehouses: Warehouse[];
-  activeWarehouseId: string | null;
   isAdmin: boolean;
 }
 
-export default function DashboardNav({ user, warehouses, activeWarehouseId, isAdmin }: DashboardNavProps) {
+export default function DashboardNav({ user, isAdmin }: DashboardNavProps) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -160,17 +152,6 @@ export default function DashboardNav({ user, warehouses, activeWarehouseId, isAd
               ))}
 
               <div className="pt-3 mt-3 border-t border-gray-200">
-                {/* Warehouse Switcher - Mobile */}
-                {isAdmin && warehouses.length > 0 && (
-                  <div className="px-3 py-2 mb-3">
-                    <WarehouseSwitcher
-                      warehouses={warehouses}
-                      activeWarehouseId={activeWarehouseId}
-                      isAdmin={isAdmin}
-                    />
-                  </div>
-                )}
-
                 <div className="px-3 py-2 text-xs text-gray-500">
                   {user?.company?.name}
                 </div>
@@ -221,18 +202,6 @@ export default function DashboardNav({ user, warehouses, activeWarehouseId, isAd
 
           {/* User Section */}
           <div className="border-t border-gray-200 px-4 py-4">
-            {/* Warehouse Switcher - Desktop */}
-            {isAdmin && warehouses.length > 0 && (
-              <div className="mb-4 pb-4 border-b border-gray-200">
-                <div className="text-xs font-medium text-gray-500 mb-2">Warehouse</div>
-                <WarehouseSwitcher
-                  warehouses={warehouses}
-                  activeWarehouseId={activeWarehouseId}
-                  isAdmin={isAdmin}
-                />
-              </div>
-            )}
-
             <div className="mb-3">
               <div className="text-xs font-medium text-gray-500 mb-1">Company</div>
               <div className="text-sm text-gray-900 font-medium">{user?.company?.name}</div>
