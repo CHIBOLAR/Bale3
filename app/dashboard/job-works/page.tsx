@@ -56,6 +56,8 @@ export default async function JobWorksPage() {
     console.error('Error fetching job works:', jobWorksError)
   }
 
+  console.log('Job works page - Raw job works:', jobWorks?.length, jobWorks)
+
   // Transform job works data
   const transformedJobWorks = jobWorks?.map(jw => ({
     ...jw,

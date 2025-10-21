@@ -329,12 +329,16 @@ export async function getPendingJobWorks() {
       return [];
     }
 
+    console.log('getPendingJobWorks - Raw data:', data);
+
     // Transform partner from array to single object if needed
     const transformedData = (data || []).map((jobWork: any) => ({
       id: jobWork.id,
       job_number: jobWork.job_number,
       partner: Array.isArray(jobWork.partner) ? jobWork.partner[0] : jobWork.partner
     }));
+
+    console.log('getPendingJobWorks - Transformed data:', transformedData);
 
     return transformedData;
   } catch (error) {
