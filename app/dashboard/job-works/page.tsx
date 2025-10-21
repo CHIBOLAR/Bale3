@@ -8,9 +8,11 @@ export const metadata = {
 }
 
 export default async function JobWorksPage() {
+  console.log('=== JOB WORKS PAGE LOADING ===')
   const supabase = await createClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
+  console.log('Auth check:', { user: !!user, authError })
 
   if (authError || !user) {
     redirect('/login')
@@ -23,7 +25,10 @@ export default async function JobWorksPage() {
     .eq('auth_user_id', user.id)
     .single()
 
+  console.log('User data check:', { userData, userError })
+
   if (userError || !userData) {
+    console.log('REDIRECTING TO LOGIN - userError or no userData')
     redirect('/login')
   }
 
@@ -49,6 +54,12 @@ export default async function JobWorksPage() {
   const { data: jobWorks, error: jobWorksError } = await jobWorksQuery
     .order('created_at', { ascending: false })
     .limit(1000)
+
+  console.log('Job works query result:', {
+    count: jobWorks?.length,
+    hasError: !!jobWorksError,
+    error: jobWorksError
+  })
 
   if (jobWorksError) {
     console.error('Error fetching job works:', jobWorksError)
@@ -102,6 +113,12 @@ export default async function JobWorksPage() {
       warehouses = warehousesData ? warehousesData.map(w => ({ id: w.id, warehouse_name: w.name })) : []
     }
   }
+
+  console.log('=== RENDERING JOB WORKS CLIENT ===', {
+    jobWorksCount: transformedJobWorks.length,
+    partnersCount: partners.length,
+    warehousesCount: warehouses.length
+  })
 
   return (
     <JobWorksClient
