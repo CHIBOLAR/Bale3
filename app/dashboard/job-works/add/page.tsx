@@ -117,6 +117,7 @@ export default async function AddJobWorkPage() {
 
       {/* Form */}
       <JobWorkForm
+        key="job-work-form"
         partners={partners}
         warehouses={warehouses}
         products={products || []}
