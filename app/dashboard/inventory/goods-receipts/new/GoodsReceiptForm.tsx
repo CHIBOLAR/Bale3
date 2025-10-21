@@ -256,7 +256,7 @@ export default function GoodsReceiptForm({
           company_id: companyId,
           warehouse_id: warehouseId,
           receipt_number: newReceiptNumber,
-          issued_by_partner_id: linkType === 'purchase' ? (issuedByPartnerId || null) : null,
+          issued_by_partner_id: ['purchase', 'job_work_return', 'sales_return'].includes(linkType) ? (issuedByPartnerId || null) : null,
           issued_by_warehouse_id: linkType === 'transfer' ? (issuedByWarehouseId || null) : null,
           link_type: linkType,
           receipt_date: receiptDate,
