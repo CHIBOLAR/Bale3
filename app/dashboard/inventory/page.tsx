@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import InventoryClient from './InventoryClient';
+import { getActiveWarehouse } from '@/lib/warehouse-context';
 
 export default async function InventoryDashboardPage() {
   const supabase = await createClient();
@@ -32,28 +33,52 @@ export default async function InventoryDashboardPage() {
     companyId = demoCompany?.id;
   }
 
-  // Get inventory stats
-  const { count: totalStockUnits } = await supabase
+  // Get active warehouse for filtering
+  const activeWarehouseId = await getActiveWarehouse();
+
+  // Build stock units query with warehouse filter
+  let stockUnitsQuery = supabase
     .from('stock_units')
     .select('*', { count: 'exact', head: true })
     .eq('company_id', companyId);
 
-  const { count: inStockUnits } = await supabase
+  let inStockQuery = supabase
     .from('stock_units')
     .select('*', { count: 'exact', head: true })
     .eq('company_id', companyId)
     .eq('status', 'in_stock');
 
-  const { count: totalReceipts } = await supabase
+  // Apply warehouse filter if active
+  if (activeWarehouseId) {
+    stockUnitsQuery = stockUnitsQuery.eq('warehouse_id', activeWarehouseId);
+    inStockQuery = inStockQuery.eq('warehouse_id', activeWarehouseId);
+  }
+
+  // Get inventory stats
+  const { count: totalStockUnits } = await stockUnitsQuery;
+  const { count: inStockUnits } = await inStockQuery;
+
+  // Receipts and dispatches - filter by warehouse through their items
+  let receiptsQuery = supabase
     .from('goods_receipts')
     .select('*', { count: 'exact', head: true })
     .eq('company_id', companyId);
 
-  const { count: totalDispatches } = await supabase
+  let dispatchesQuery = supabase
     .from('goods_dispatches')
     .select('*', { count: 'exact', head: true })
     .eq('company_id', companyId);
 
+  // For receipts and dispatches, we filter by warehouse_id directly if available
+  if (activeWarehouseId) {
+    receiptsQuery = receiptsQuery.eq('warehouse_id', activeWarehouseId);
+    dispatchesQuery = dispatchesQuery.eq('warehouse_id', activeWarehouseId);
+  }
+
+  const { count: totalReceipts } = await receiptsQuery;
+  const { count: totalDispatches } = await dispatchesQuery;
+
+  // QR batches - no warehouse filter needed as they're company-wide
   const { count: qrBatches } = await supabase
     .from('barcode_batches')
     .select('*', { count: 'exact', head: true })

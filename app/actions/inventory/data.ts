@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server';
+import { getActiveWarehouse } from '@/lib/warehouse-context';
 
 /**
  * Gets all products for the current company
@@ -143,6 +144,7 @@ export async function getPartners() {
 
 /**
  * Gets all stock units with optional filters
+ * Automatically respects the active warehouse from the warehouse switcher
  * Staff users are automatically restricted to their assigned warehouse
  */
 export async function getStockUnits(filters?: {
@@ -174,6 +176,9 @@ export async function getStockUnits(filters?: {
       return [];
     }
 
+    // Get active warehouse from warehouse switcher
+    const activeWarehouseId = await getActiveWarehouse();
+
     let query = supabase
       .from('stock_units')
       .select(
@@ -187,12 +192,16 @@ export async function getStockUnits(filters?: {
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
-    // Apply warehouse filtering for staff users (overrides filter parameter)
+    // Apply warehouse filtering for staff users (overrides everything)
     if (userData.role === 'staff' && userData.warehouse_id) {
       query = query.eq('warehouse_id', userData.warehouse_id);
-    } else if (filters?.warehouse_id) {
-      // For admins, respect the filter parameter
+    }
+    // For admins, use explicit filter if provided, otherwise use active warehouse
+    else if (filters?.warehouse_id) {
       query = query.eq('warehouse_id', filters.warehouse_id);
+    } else if (activeWarehouseId) {
+      // Use active warehouse from switcher if no explicit filter
+      query = query.eq('warehouse_id', activeWarehouseId);
     }
 
     // Apply other filters
