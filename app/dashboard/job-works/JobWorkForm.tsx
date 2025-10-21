@@ -191,7 +191,7 @@ export default function JobWorkForm({ partners, warehouses, products, salesOrder
               {/* Partner Selection */}
               <div>
                 <label htmlFor="partner_id" className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Worker Partner <span className="text-red-500">*</span>
+                  Vendor Partner <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="partner_id"

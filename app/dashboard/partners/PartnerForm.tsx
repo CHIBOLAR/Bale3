@@ -141,11 +141,11 @@ export default function PartnerForm({ mode, partner }: PartnerFormProps) {
                   <option value="">Select type</option>
                   <option value="Customer">Customer</option>
                   <option value="Supplier">Supplier</option>
-                  <option value="Both">Both</option>
-                  <option value="Job Worker">Job Worker</option>
+                  <option value="Vendor">Vendor</option>
+                  <option value="Agent">Agent</option>
                 </select>
                 <p className="mt-1 text-xs text-gray-500">
-                  Is this partner a customer, supplier, both, or job worker?
+                  Select the partner type (Vendors are used for job works)
                 </p>
               </div>
 
