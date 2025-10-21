@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createJobWork } from './actions'
 import SuccessDialog from '@/components/SuccessDialog'
@@ -54,12 +54,25 @@ export default function JobWorkForm({ partners, warehouses, products, salesOrder
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Debug: Log products on mount
+  console.log('JobWorkForm - Products received:', products)
+  console.log('JobWorkForm - Products count:', products?.length)
+
   const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([
     { product_id: '', required_quantity: 0, unit: '' }
   ])
   const [expectedReturns, setExpectedReturns] = useState<ExpectedReturn[]>([
     { product_id: '', expected_quantity: 0, unit: '' }
   ])
+
+  // Debug: Log state changes
+  useEffect(() => {
+    console.log('Raw materials state updated:', rawMaterials)
+  }, [rawMaterials])
+
+  useEffect(() => {
+    console.log('Expected returns state updated:', expectedReturns)
+  }, [expectedReturns])
 
   const addRawMaterial = () => {
     setRawMaterials([...rawMaterials, { product_id: '', required_quantity: 0, unit: '' }])
@@ -90,15 +103,23 @@ export default function JobWorkForm({ partners, warehouses, products, salesOrder
   }
 
   const handleProductChange = (index: number, productId: string, isMaterial: boolean) => {
+    console.log('handleProductChange called:', { index, productId, isMaterial })
     const product = products.find(p => p.id === productId)
-    if (!product) return
+    console.log('Found product:', product)
+
+    if (!product) {
+      console.warn('Product not found for ID:', productId)
+      return
+    }
 
     if (isMaterial) {
       updateRawMaterial(index, 'product_id', productId)
       updateRawMaterial(index, 'unit', product.measuring_unit || '')
+      console.log('Updated raw material:', { product_id: productId, unit: product.measuring_unit })
     } else {
       updateExpectedReturn(index, 'product_id', productId)
       updateExpectedReturn(index, 'unit', product.measuring_unit || '')
+      console.log('Updated expected return:', { product_id: productId, unit: product.measuring_unit })
     }
   }
 
