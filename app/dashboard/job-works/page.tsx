@@ -7,9 +7,6 @@ export const metadata = {
   description: 'Manage job work orders sent to partners for processing',
 }
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-
 export default async function JobWorksPage() {
   const supabase = await createClient()
 
@@ -47,15 +44,8 @@ export default async function JobWorksPage() {
     jobWorksQuery = jobWorksQuery.eq('warehouse_id', userData.warehouse_id)
   }
 
-  const { data: jobWorks, error: jobWorksError } = await jobWorksQuery
+  const { data: jobWorks } = await jobWorksQuery
     .order('created_at', { ascending: false })
-    .limit(1000)
-
-  if (jobWorksError) {
-    console.error('Error fetching job works:', jobWorksError)
-  }
-
-  console.log('Job works page - Raw job works:', jobWorks?.length, jobWorks)
 
   // Transform job works data
   const transformedJobWorks = jobWorks?.map(jw => ({
@@ -70,8 +60,8 @@ export default async function JobWorksPage() {
     } : null
   })) || []
 
-  // Fetch vendor partners for filter dropdown (vendors are used for job works)
-  const { data: partnersData, error: partnersError } = await supabase
+  // Fetch vendor partners for filter dropdown
+  const { data: partnersData } = await supabase
     .from('partners')
     .select('id, first_name, last_name, company_name, partner_type')
     .eq('company_id', userData.company_id)
@@ -79,11 +69,6 @@ export default async function JobWorksPage() {
     .is('deleted_at', null)
     .order('company_name')
 
-  if (partnersError) {
-    console.error('Error fetching partners:', partnersError)
-  }
-
-  // Transform partners data
   const partners = partnersData?.map(p => ({
     id: p.id,
     partner_name: p.company_name || `${p.first_name} ${p.last_name}`
@@ -92,18 +77,14 @@ export default async function JobWorksPage() {
   // Fetch warehouses for filter dropdown (only for admins)
   let warehouses: Array<{ id: string; warehouse_name: string }> = []
   if (!userData.warehouse_id) {
-    const { data: warehousesData, error: warehousesError } = await supabase
+    const { data: warehousesData } = await supabase
       .from('warehouses')
       .select('id, name')
       .eq('company_id', userData.company_id)
       .is('deleted_at', null)
       .order('name')
 
-    if (warehousesError) {
-      console.error('Error fetching warehouses:', warehousesError)
-    } else {
-      warehouses = warehousesData ? warehousesData.map(w => ({ id: w.id, warehouse_name: w.name })) : []
-    }
+    warehouses = warehousesData ? warehousesData.map(w => ({ id: w.id, warehouse_name: w.name })) : []
   }
 
   return (

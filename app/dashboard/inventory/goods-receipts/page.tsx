@@ -4,9 +4,6 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import GoodsReceiptsClient from './GoodsReceiptsClient';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 export default async function GoodsReceiptsPage() {
   const supabase = await createClient();
 
@@ -31,40 +28,27 @@ export default async function GoodsReceiptsPage() {
     redirect('/dashboard');
   }
 
-  // Fetch receipts and warehouses directly (not using server actions for better cache control)
-  const [receiptsResult, warehousesResult] = await Promise.all([
-    supabase
-      .from('goods_receipts')
-      .select(`
-        *,
-        warehouses!warehouse_id (id, name),
-        partners:issued_by_partner_id (id, company_name, partner_type),
-        source_warehouses:issued_by_warehouse_id (id, name),
-        goods_receipt_items (quantity_received)
-      `)
-      .eq('company_id', userData.company_id)
-      .is('deleted_at', null)
-      .order('receipt_date', { ascending: false }),
-    supabase
-      .from('warehouses')
-      .select('id, name')
-      .eq('company_id', userData.company_id)
-      .is('deleted_at', null)
-      .order('name'),
-  ]);
+  // Fetch receipts
+  const { data: receipts } = await supabase
+    .from('goods_receipts')
+    .select(`
+      *,
+      warehouses!warehouse_id (id, name),
+      partners:issued_by_partner_id (id, company_name, partner_type),
+      source_warehouses:issued_by_warehouse_id (id, name),
+      goods_receipt_items (quantity_received)
+    `)
+    .eq('company_id', userData.company_id)
+    .is('deleted_at', null)
+    .order('receipt_date', { ascending: false });
 
-  // Log any errors
-  if (receiptsResult.error) {
-    console.error('Goods receipts query error:', receiptsResult.error);
-  }
-  if (warehousesResult.error) {
-    console.error('Warehouses query error:', warehousesResult.error);
-  }
-
-  console.log('Goods receipts page - Receipts count:', receiptsResult.data?.length);
-
-  const receipts = receiptsResult.data || [];
-  const warehouses = warehousesResult.data || [];
+  // Fetch warehouses
+  const { data: warehouses } = await supabase
+    .from('warehouses')
+    .select('id, name')
+    .eq('company_id', userData.company_id)
+    .is('deleted_at', null)
+    .order('name');
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -89,7 +73,7 @@ export default async function GoodsReceiptsPage() {
         </div>
 
         {/* Client Component with filters and table */}
-        <GoodsReceiptsClient receipts={receipts} warehouses={warehouses} />
+        <GoodsReceiptsClient receipts={receipts || []} warehouses={warehouses || []} />
       </div>
     </div>
   );
