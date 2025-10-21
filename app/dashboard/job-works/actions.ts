@@ -101,7 +101,7 @@ export async function createJobWork(input: CreateJobWorkInput) {
     job_description: input.job_description,
     expected_delivery_date: input.expected_delivery_date || defaultDeliveryDate.toISOString().split('T')[0],
     start_date: new Date().toISOString().split('T')[0],
-    job_type: 'processing',
+    job_type: 'Other',
     status: 'pending',
     created_by: userData.id,
   }
