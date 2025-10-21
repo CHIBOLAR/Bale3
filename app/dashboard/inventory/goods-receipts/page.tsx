@@ -6,6 +6,9 @@ import GoodsReceiptsClient from './GoodsReceiptsClient';
 import { getGoodsReceipts } from '@/app/actions/inventory/goods-receipts';
 import { getWarehouses } from '@/app/actions/inventory/data';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function GoodsReceiptsPage() {
   const supabase = await createClient();
 
