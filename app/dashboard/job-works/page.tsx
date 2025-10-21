@@ -7,6 +7,8 @@ export const metadata = {
   description: 'Manage job work orders sent to partners for processing',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function JobWorksPage() {
   const supabase = await createClient()
 

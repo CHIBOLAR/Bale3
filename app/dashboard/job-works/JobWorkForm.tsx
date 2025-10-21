@@ -62,6 +62,7 @@ export default function JobWorkForm({ partners, warehouses, salesOrders }: JobWo
   const handleSuccessClose = () => {
     setShowSuccessDialog(false)
     router.push('/dashboard/job-works')
+    router.refresh() // Force refresh to show new job work
   }
 
   return (
