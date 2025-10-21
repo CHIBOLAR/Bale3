@@ -110,10 +110,10 @@ export async function createGoodsReceipt(
       };
     }
 
-    // Get user's company_id
+    // Get user's company_id and internal user ID
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id')
+      .select('id, company_id')
       .eq('auth_user_id', user.id)
       .single();
 
@@ -125,6 +125,7 @@ export async function createGoodsReceipt(
     }
 
     const companyId = userData.company_id;
+    const userId = userData.id;
 
     // Generate receipt number
     const receiptNumber = await generateReceiptNumber(supabase, companyId);
@@ -144,7 +145,7 @@ export async function createGoodsReceipt(
         invoice_amount: formData.invoice_amount || null,
         transport_details: formData.transport_details || null,
         notes: formData.notes || null,
-        created_by: user.id,
+        created_by: userId,
       })
       .select()
       .single();
@@ -206,7 +207,7 @@ export async function createGoodsReceipt(
           date_received: formData.receipt_date,
           manufacturing_date: unitDetail.manufacturing_date || formData.receipt_date,
           notes: unitDetail.notes || null,
-          created_by: user.id,
+          created_by: userId,
         });
 
         if (stockUnitError) {
