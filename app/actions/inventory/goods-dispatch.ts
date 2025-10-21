@@ -248,6 +248,21 @@ export async function createGoodsDispatch(
       };
     }
 
+    // If linked to job work, update job work status to 'in_progress'
+    if (formData.job_work_id) {
+      await supabase
+        .from('job_works')
+        .update({
+          status: 'in_progress',
+          modified_by: userId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', formData.job_work_id)
+        .eq('company_id', companyId);
+
+      revalidatePath(`/dashboard/job-works/${formData.job_work_id}`);
+    }
+
     // Revalidate relevant paths
     revalidatePath('/dashboard/inventory/goods-dispatch');
     revalidatePath('/dashboard/inventory/stock-units');

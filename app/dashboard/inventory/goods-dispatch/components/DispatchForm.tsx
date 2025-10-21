@@ -30,7 +30,10 @@ interface SalesOrder {
 
 interface JobWork {
   id: string;
-  work_number: string;
+  job_number: string;
+  partner?: {
+    company_name: string;
+  } | null;
 }
 
 interface DispatchFormProps {
@@ -224,7 +227,7 @@ export default function DispatchForm({
                 <option value="">Select job work</option>
                 {jobWorks.map((work) => (
                   <option key={work.id} value={work.id}>
-                    {work.work_number}
+                    {work.job_number}
                   </option>
                 ))}
               </select>

@@ -8,7 +8,7 @@ import InventoryBrowserModal from '../components/InventoryBrowserModal';
 import QRScannerModal from '../components/QRScannerModal';
 import DispatchForm, { DispatchFormData } from '../components/DispatchForm';
 import { SelectedStockUnitItem, StockUnitWithRelations } from '@/lib/types/inventory';
-import { getStockUnits, getWarehouses, getPartners, getPendingSalesOrders } from '@/app/actions/inventory/data';
+import { getStockUnits, getWarehouses, getPartners, getPendingSalesOrders, getPendingJobWorks } from '@/app/actions/inventory/data';
 import { createGoodsDispatch, getGoodsDispatches } from '@/app/actions/inventory/goods-dispatch';
 
 interface Warehouse {
@@ -37,7 +37,10 @@ interface SalesOrder {
 
 interface JobWork {
   id: string;
-  work_number: string;
+  job_number: string;
+  partner?: {
+    company_name: string;
+  } | null;
 }
 
 export default function NewGoodsDispatchPage() {
@@ -51,6 +54,7 @@ export default function NewGoodsDispatchPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
+  const [jobWorks, setJobWorks] = useState<JobWork[]>([]);
   const [recentDispatches, setRecentDispatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -69,11 +73,12 @@ export default function NewGoodsDispatchPage() {
   async function fetchData() {
     setLoading(true);
     try {
-      const [unitsData, warehousesData, partnersData, salesOrdersData, recentDispatchesData] = await Promise.all([
+      const [unitsData, warehousesData, partnersData, salesOrdersData, jobWorksData, recentDispatchesData] = await Promise.all([
         getStockUnits({ status: 'available' }), // Only fetch available units
         getWarehouses(),
         getPartners(),
         getPendingSalesOrders(),
+        getPendingJobWorks(),
         getGoodsDispatches({}), // Fetch all recent dispatches
       ]);
 
@@ -81,6 +86,7 @@ export default function NewGoodsDispatchPage() {
       setWarehouses(warehousesData);
       setPartners(partnersData);
       setSalesOrders(salesOrdersData);
+      setJobWorks(jobWorksData);
       setRecentDispatches((recentDispatchesData || []).slice(0, 5)); // Keep only 5 most recent
       // TODO: Fetch agents from database
       setAgents([]);
@@ -361,7 +367,7 @@ export default function NewGoodsDispatchPage() {
                   partners={partners}
                   agents={agents}
                   salesOrders={salesOrders}
-                  jobWorks={[]} // TODO: Fetch from database
+                  jobWorks={jobWorks}
                   onSubmit={handleDispatchSubmit}
                   onCancel={handlePrevStep}
                   isSubmitting={isSubmitting}

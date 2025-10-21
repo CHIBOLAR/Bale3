@@ -49,21 +49,29 @@ export async function generateJobNumber(companyId: string) {
 export async function createJobWork(input: CreateJobWorkInput) {
   const supabase = await createClient()
 
+  console.log('createJobWork called with input:', input)
+
   // Check demo mode
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
+    console.error('No user found')
     return { data: null, error: 'Unauthorized' }
   }
 
+  console.log('User authenticated:', user.id)
+
   const { data: userData, error: userError } = await supabase
     .from('users')
-    .select('company_id, is_demo')
+    .select('id, company_id, is_demo')
     .eq('auth_user_id', user.id)
     .single()
 
   if (userError || !userData) {
+    console.error('User data error:', userError)
     return { data: null, error: 'User not found' }
   }
+
+  console.log('User data:', userData)
 
   if (userData.is_demo) {
     return { data: null, error: 'Cannot create job works in demo mode' }
@@ -72,26 +80,33 @@ export async function createJobWork(input: CreateJobWorkInput) {
   // Generate job number
   const { data: jobNumber, error: jobNumberError } = await generateJobNumber(userData.company_id)
   if (jobNumberError || !jobNumber) {
+    console.error('Job number generation error:', jobNumberError)
     return { data: null, error: jobNumberError || 'Failed to generate job number' }
   }
 
+  console.log('Generated job number:', jobNumber)
+
   // Create job work (just the header - dispatches and receipts handled separately)
+  const jobWorkData = {
+    company_id: userData.company_id,
+    job_number: jobNumber,
+    partner_id: input.partner_id,
+    warehouse_id: input.warehouse_id,
+    sales_order_id: input.sales_order_id,
+    agent_id: input.agent_id,
+    job_description: input.job_description,
+    expected_delivery_date: input.expected_delivery_date,
+    start_date: new Date().toISOString().split('T')[0],
+    job_type: 'processing',
+    status: 'pending',
+    created_by: userData.id,
+  }
+
+  console.log('Inserting job work with data:', jobWorkData)
+
   const { data: jobWork, error: jobWorkError } = await supabase
     .from('job_works')
-    .insert({
-      company_id: userData.company_id,
-      job_number: jobNumber,
-      partner_id: input.partner_id,
-      warehouse_id: input.warehouse_id,
-      sales_order_id: input.sales_order_id,
-      agent_id: input.agent_id,
-      job_description: input.job_description,
-      expected_delivery_date: input.expected_delivery_date,
-      start_date: new Date().toISOString().split('T')[0],
-      job_type: 'processing',
-      status: 'pending',
-      created_by: user.id,
-    })
+    .insert(jobWorkData)
     .select()
     .single()
 
@@ -100,7 +115,10 @@ export async function createJobWork(input: CreateJobWorkInput) {
     return { data: null, error: 'Failed to create job work' }
   }
 
+  console.log('Job work created successfully:', jobWork)
+
   invalidateJobWorkCache(userData.company_id)
+  revalidatePath('/dashboard/job-works')
 
   return { data: jobWork, error: null }
 }

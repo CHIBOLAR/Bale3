@@ -291,6 +291,59 @@ export async function getPendingSalesOrders() {
 }
 
 /**
+ * Gets pending job works for the current company
+ */
+export async function getPendingJobWorks() {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return [];
+    }
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (!userData?.company_id) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('job_works')
+      .select('id, job_number, partner:partners!job_works_partner_id_fkey(company_name)')
+      .eq('company_id', userData.company_id)
+      .in('status', ['pending', 'in_progress'])
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Error fetching pending job works:', error);
+      return [];
+    }
+
+    // Transform partner from array to single object if needed
+    const transformedData = (data || []).map((jobWork: any) => ({
+      id: jobWork.id,
+      job_number: jobWork.job_number,
+      partner: Array.isArray(jobWork.partner) ? jobWork.partner[0] : jobWork.partner
+    }));
+
+    return transformedData;
+  } catch (error) {
+    console.error('Error in getPendingJobWorks:', error);
+    return [];
+  }
+}
+
+/**
  * Gets a single stock unit by ID
  * Staff users can only access units in their assigned warehouse
  */

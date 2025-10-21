@@ -145,7 +145,8 @@ export interface CreateGoodsReceiptItemInput {
   quantity_received: number;
   notes?: string;
   // Stock unit details for each unit (same length as quantity_received)
-  stock_unit_details: CreateStockUnitInput[];
+  // product_id and warehouse_id are added by the backend
+  stock_unit_details: Omit<CreateStockUnitInput, 'product_id' | 'warehouse_id'>[];
 }
 
 // ============================================

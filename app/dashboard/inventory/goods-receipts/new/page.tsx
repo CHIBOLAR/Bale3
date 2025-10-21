@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import GoodsReceiptForm from './GoodsReceiptForm';
+import FastGoodsReceiptForm from './FastGoodsReceiptForm';
 
 export default async function NewGoodsReceiptPage() {
   const supabase = await createClient();
@@ -70,12 +70,10 @@ export default async function NewGoodsReceiptPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main Form - 2 columns */}
           <div className="lg:col-span-2">
-            <GoodsReceiptForm
+            <FastGoodsReceiptForm
               warehouses={warehousesResult.data || []}
               products={productsResult.data || []}
               partners={partnersResult.data || []}
-              userId={userData.id}
-              companyId={userData.company_id}
             />
           </div>
 
