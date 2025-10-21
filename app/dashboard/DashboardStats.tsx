@@ -99,35 +99,34 @@ export default async function DashboardStats({ companyId }: { companyId: string 
     productsQuery,
   ]);
 
-  // Calculate total dispatched this month (in m/kg)
-  const totalDispatched = dispatchedData?.reduce((sum: number, item: any) => {
+  // Calculate total dispatched this month by unit
+  const dispatchedByUnit = dispatchedData?.reduce((acc: Record<string, number>, item: any) => {
     const quantity = item.dispatched_quantity || item.stock_units?.size_quantity || 0;
     const unit = item.stock_units?.products?.measuring_unit;
-    // Convert Yards to Meters (1 yard = 0.9144 meters)
-    if (unit === 'Yards') {
-      return sum + (quantity * 0.9144);
+    if (unit && quantity > 0) {
+      acc[unit] = (acc[unit] || 0) + quantity;
     }
-    // Only count Meters and KG
-    if (unit === 'Meters' || unit === 'KG') {
-      return sum + quantity;
-    }
-    return sum;
-  }, 0) || 0;
+    return acc;
+  }, {}) || {};
 
-  // Calculate total received this month (in m/kg)
-  const totalReceived = receivedData?.reduce((sum: number, item: any) => {
+  // Calculate total received this month by unit
+  const receivedByUnit = receivedData?.reduce((acc: Record<string, number>, item: any) => {
     const quantity = item.quantity_received || 0;
     const unit = item.stock_units?.products?.measuring_unit;
-    // Convert Yards to Meters
-    if (unit === 'Yards') {
-      return sum + (quantity * 0.9144);
+    if (unit && quantity > 0) {
+      acc[unit] = (acc[unit] || 0) + quantity;
     }
-    // Only count Meters and KG
-    if (unit === 'Meters' || unit === 'KG') {
-      return sum + quantity;
-    }
-    return sum;
-  }, 0) || 0;
+    return acc;
+  }, {}) || {};
+
+  // Format unit display (e.g., "150 Meters, 200 KG")
+  const formatUnitDisplay = (byUnit: Record<string, number>) => {
+    const entries = Object.entries(byUnit);
+    if (entries.length === 0) return '0';
+    return entries
+      .map(([unit, value]) => `${Math.round(value)} ${unit}`)
+      .join(', ');
+  };
 
   // Calculate low stock alerts
   const lowStockAlerts = lowStockProducts
@@ -195,8 +194,7 @@ export default async function DashboardStats({ companyId }: { companyId: string 
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Dispatched (This Month)</dt>
-                  <dd className="text-3xl font-semibold text-gray-900">{Math.round(totalDispatched)}</dd>
-                  <dd className="text-xs text-gray-500 mt-1">in m/kg</dd>
+                  <dd className="text-2xl font-semibold text-gray-900">{formatUnitDisplay(dispatchedByUnit)}</dd>
                 </dl>
               </div>
             </div>
@@ -216,8 +214,7 @@ export default async function DashboardStats({ companyId }: { companyId: string 
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Received (This Month)</dt>
-                  <dd className="text-3xl font-semibold text-gray-900">{Math.round(totalReceived)}</dd>
-                  <dd className="text-xs text-gray-500 mt-1">in m/kg</dd>
+                  <dd className="text-2xl font-semibold text-gray-900">{formatUnitDisplay(receivedByUnit)}</dd>
                 </dl>
               </div>
             </div>
