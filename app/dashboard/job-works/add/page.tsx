@@ -27,12 +27,11 @@ export default async function AddJobWorkPage() {
     redirect('/login')
   }
 
-  // Fetch job worker partners
+  // Fetch all partners (all types available since Job Worker type doesn't exist yet)
   const { data: partnersData, error: partnersError } = await supabase
     .from('partners')
     .select('id, first_name, last_name, company_name, partner_type')
     .eq('company_id', userData.company_id)
-    .eq('partner_type', 'Job Worker')
     .is('deleted_at', null)
     .order('company_name')
 

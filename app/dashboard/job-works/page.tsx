@@ -8,11 +8,9 @@ export const metadata = {
 }
 
 export default async function JobWorksPage() {
-  console.log('=== JOB WORKS PAGE LOADING ===')
   const supabase = await createClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
-  console.log('Auth check:', { user: !!user, authError })
 
   if (authError || !user) {
     redirect('/login')
@@ -25,10 +23,7 @@ export default async function JobWorksPage() {
     .eq('auth_user_id', user.id)
     .single()
 
-  console.log('User data check:', { userData, userError })
-
   if (userError || !userData) {
-    console.log('REDIRECTING TO LOGIN - userError or no userData')
     redirect('/login')
   }
 
@@ -55,12 +50,6 @@ export default async function JobWorksPage() {
     .order('created_at', { ascending: false })
     .limit(1000)
 
-  console.log('Job works query result:', {
-    count: jobWorks?.length,
-    hasError: !!jobWorksError,
-    error: jobWorksError
-  })
-
   if (jobWorksError) {
     console.error('Error fetching job works:', jobWorksError)
   }
@@ -78,12 +67,11 @@ export default async function JobWorksPage() {
     } : null
   })) || []
 
-  // Fetch partners for filter dropdown
+  // Fetch partners for filter dropdown (all types since Job Worker doesn't exist yet)
   const { data: partnersData, error: partnersError } = await supabase
     .from('partners')
-    .select('id, first_name, last_name, company_name')
+    .select('id, first_name, last_name, company_name, partner_type')
     .eq('company_id', userData.company_id)
-    .eq('partner_type', 'Job Worker')
     .is('deleted_at', null)
     .order('company_name')
 
@@ -113,12 +101,6 @@ export default async function JobWorksPage() {
       warehouses = warehousesData ? warehousesData.map(w => ({ id: w.id, warehouse_name: w.name })) : []
     }
   }
-
-  console.log('=== RENDERING JOB WORKS CLIENT ===', {
-    jobWorksCount: transformedJobWorks.length,
-    partnersCount: partners.length,
-    warehousesCount: warehouses.length
-  })
 
   return (
     <JobWorksClient
