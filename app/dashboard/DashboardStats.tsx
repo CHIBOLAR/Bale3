@@ -43,22 +43,22 @@ export default async function DashboardStats({ companyId }: { companyId: string 
     .gte('goods_dispatches.created_at', firstDayOfMonth)
     .lte('goods_dispatches.created_at', lastDayOfMonth);
 
+  // Query stock units created from receipts this month
   let receivedQuery = supabase
-    .from('goods_receipt_items')
+    .from('stock_units')
     .select(`
-      quantity_received,
+      size_quantity,
       product_id,
-      stock_unit_id,
-      stock_units!inner(
-        warehouse_id,
-        products!inner(measuring_unit, company_id)
-      ),
-      receipt_id,
-      goods_receipts!inner(created_at)
+      warehouse_id,
+      products!inner(measuring_unit, company_id),
+      receipt_item:goods_receipt_items!stock_units_receipt_item_id_fkey!inner(
+        quantity_received,
+        receipt:goods_receipts!inner(created_at)
+      )
     `)
-    .eq('stock_units.products.company_id', companyId)
-    .gte('goods_receipts.created_at', firstDayOfMonth)
-    .lte('goods_receipts.created_at', lastDayOfMonth);
+    .eq('company_id', companyId)
+    .gte('receipt_item.receipt.created_at', firstDayOfMonth)
+    .lte('receipt_item.receipt.created_at', lastDayOfMonth);
 
   let productsQuery = supabase
     .from('products')
@@ -80,7 +80,7 @@ export default async function DashboardStats({ companyId }: { companyId: string 
     // Sales orders can have null fulfillment_warehouse_id and should always be visible
     jobWorksQuery = jobWorksQuery.eq('warehouse_id', activeWarehouseId);
     dispatchedQuery = dispatchedQuery.eq('stock_units.warehouse_id', activeWarehouseId);
-    receivedQuery = receivedQuery.eq('stock_units.warehouse_id', activeWarehouseId);
+    receivedQuery = receivedQuery.eq('warehouse_id', activeWarehouseId);
     productsQuery = productsQuery.eq('stock_units.warehouse_id', activeWarehouseId);
   }
 
@@ -111,8 +111,8 @@ export default async function DashboardStats({ companyId }: { companyId: string 
 
   // Calculate total received this month by unit
   const receivedByUnit = receivedData?.reduce((acc: Record<string, number>, item: any) => {
-    const quantity = item.quantity_received || 0;
-    const unit = item.stock_units?.products?.measuring_unit;
+    const quantity = item.size_quantity || 0;
+    const unit = item.products?.measuring_unit;
     if (unit && quantity > 0) {
       acc[unit] = (acc[unit] || 0) + quantity;
     }

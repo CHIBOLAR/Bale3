@@ -40,19 +40,7 @@ export default async function JobWorkDetailPage({ params }: PageProps) {
       partner:partners(id, first_name, last_name, company_name, partner_type, phone_number, email),
       warehouse:warehouses(id, name),
       sales_order:sales_orders(id, order_number, status),
-      raw_materials:job_work_raw_materials(
-        id,
-        required_quantity,
-        unit,
-        product:products(id, name, measuring_unit)
-      ),
-      finished_goods:job_work_finished_goods(
-        id,
-        expected_quantity,
-        received_quantity,
-        unit,
-        product:products(id, name, measuring_unit)
-      )
+      agent:partners!job_works_agent_id_fkey(id, first_name, last_name, company_name)
     `)
     .eq('id', id)
     .eq('company_id', userData.company_id)
@@ -77,12 +65,14 @@ export default async function JobWorkDetailPage({ params }: PageProps) {
       dispatch_number,
       dispatch_date,
       status,
+      notes,
       items:goods_dispatch_items(
         id,
         dispatched_quantity,
-        stock_unit_id,
         stock_unit:stock_units(
           id,
+          unit_number,
+          qr_code,
           size_quantity,
           status,
           product:products(id, name, measuring_unit)
@@ -106,16 +96,11 @@ export default async function JobWorkDetailPage({ params }: PageProps) {
       receipt_number,
       receipt_date,
       status,
+      notes,
       items:goods_receipt_items(
         id,
-        received_quantity,
-        stock_unit_id,
-        stock_unit:stock_units(
-          id,
-          size_quantity,
-          status,
-          product:products(id, name, measuring_unit)
-        )
+        quantity_received,
+        product:products(id, name, measuring_unit)
       )
     `)
     .eq('job_work_id', id)
@@ -141,20 +126,10 @@ export default async function JobWorkDetailPage({ params }: PageProps) {
       ...jobWork.warehouse,
       warehouse_name: jobWork.warehouse.name
     } : null,
-    raw_materials: jobWork.raw_materials?.map((rm: any) => ({
-      ...rm,
-      product: rm.product ? {
-        ...rm.product,
-        product_name: rm.product.name
-      } : null
-    })) || [],
-    finished_goods: jobWork.finished_goods?.map((fg: any) => ({
-      ...fg,
-      product: fg.product ? {
-        ...fg.product,
-        product_name: fg.product.name
-      } : null
-    })) || []
+    agent: jobWork.agent ? {
+      ...jobWork.agent,
+      agent_name: jobWork.agent.company_name || `${jobWork.agent.first_name} ${jobWork.agent.last_name}`
+    } : null
   }
 
   const transformedDispatches = dispatches?.map(dispatch => ({
@@ -175,12 +150,9 @@ export default async function JobWorkDetailPage({ params }: PageProps) {
     ...receipt,
     items: receipt.items?.map((item: any) => ({
       ...item,
-      stock_unit: item.stock_unit ? {
-        ...item.stock_unit,
-        product: item.stock_unit.product ? {
-          ...item.stock_unit.product,
-          product_name: item.stock_unit.product.name
-        } : null
+      product: item.product ? {
+        ...item.product,
+        product_name: item.product.name
       } : null
     })) || []
   })) || []
