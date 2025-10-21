@@ -67,11 +67,12 @@ export default async function JobWorksPage() {
     } : null
   })) || []
 
-  // Fetch partners for filter dropdown (all types since Job Worker doesn't exist yet)
+  // Fetch job worker partners for filter dropdown
   const { data: partnersData, error: partnersError } = await supabase
     .from('partners')
     .select('id, first_name, last_name, company_name, partner_type')
     .eq('company_id', userData.company_id)
+    .eq('partner_type', 'Job Worker')
     .is('deleted_at', null)
     .order('company_name')
 
