@@ -42,7 +42,7 @@ export const getCachedUserData = unstable_cache(
 
     const { data, error } = await supabase
       .from('users')
-      .select('id, company_id, warehouse_id, is_demo, auth_user_id')
+      .select('id, company_id, warehouse_id, auth_user_id, role, is_demo')
       .eq('auth_user_id', userId)
       .single()
 
