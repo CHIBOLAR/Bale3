@@ -148,19 +148,30 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-cream via-white to-blue-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-brand-cream px-4">
       <div className="max-w-md w-full">
-        {/* Logo and Header */}
+        {/* Logo Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <Image src="/logo.jpeg" alt="Bale Logo" width={48} height={48} className="rounded-lg" />
-            <span className="text-3xl font-bold text-brand-blue">Bale</span>
+          <Link href="/" className="inline-flex items-center justify-center gap-3 mb-4 group">
+            <Image
+              src="/logo.jpeg"
+              alt="Bale Logo"
+              width={56}
+              height={56}
+              className="rounded-xl shadow-md group-hover:shadow-lg transition-shadow"
+            />
+            <span className="text-4xl font-bold text-brand-blue">Bale</span>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Bale</h1>
-          <p className="text-gray-600">Sign in or create your account</p>
+          <p className="text-lg text-gray-600 mt-2">Fabric Inventory Management</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
+          {/* Title */}
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome</h1>
+            <p className="text-sm text-gray-600">Sign in or create your account to continue</p>
+          </div>
+
           {/* Choose Method Step */}
           {step === 'choose-method' && (
             <div className="space-y-4">
@@ -168,7 +179,7 @@ function LoginForm() {
               <button
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 border-2 border-gray-200 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white border-2 border-gray-300 rounded-xl text-gray-800 font-semibold hover:bg-gray-50 hover:border-brand-blue hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -193,7 +204,7 @@ function LoginForm() {
               <button
                 onClick={() => setStep('email-input')}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 border-2 border-brand-blue rounded-lg text-brand-blue font-semibold hover:bg-brand-blue hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-brand-blue text-white rounded-xl font-semibold hover:bg-blue-700 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -233,7 +244,7 @@ function LoginForm() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                  className="block w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue transition-all"
                   placeholder="you@company.com"
                   autoComplete="email"
                   autoFocus
@@ -249,7 +260,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full py-3 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full py-3.5 px-4 bg-brand-blue text-white font-semibold rounded-xl hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {loading ? 'Sending code...' : 'Send verification code'}
               </button>
@@ -299,7 +310,7 @@ function LoginForm() {
                   required
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent text-center text-2xl tracking-widest font-mono"
+                  className="block w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue text-center text-2xl tracking-widest font-mono transition-all"
                   placeholder="000000"
                   maxLength={6}
                   autoComplete="one-time-code"
@@ -310,7 +321,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="w-full py-3 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full py-3.5 px-4 bg-brand-blue text-white font-semibold rounded-xl hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {loading ? 'Verifying...' : 'Sign in'}
               </button>
@@ -329,8 +340,13 @@ function LoginForm() {
           )}
 
           {/* Footer */}
-          <div className="mt-6 text-center text-sm text-gray-600">
-            New to Bale? Simply sign in with Google or email to create your account
+          <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+            <p className="text-sm text-gray-500">
+              New user? Your account will be created automatically
+            </p>
+            <Link href="/" className="text-sm text-brand-blue hover:text-blue-700 font-medium mt-2 inline-block">
+              ← Back to home
+            </Link>
           </div>
         </div>
       </div>

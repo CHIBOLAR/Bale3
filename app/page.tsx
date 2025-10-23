@@ -15,15 +15,9 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="px-4 py-2 text-brand-blue font-semibold hover:text-brand-orange transition-colors"
+              className="px-6 py-2.5 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
             >
-              Login
-            </Link>
-            <Link
-              href="/login"
-              className="px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
-            >
-              Sign In / Sign Up
+              Sign In
             </Link>
           </div>
         </div>
