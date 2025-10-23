@@ -45,8 +45,6 @@ export async function setupNewUser() {
       .from('companies')
       .insert({
         name: companyName,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       })
       .select()
       .single()
@@ -64,14 +62,11 @@ export async function setupNewUser() {
       .insert({
         auth_user_id: user.id,
         email: user.email!,
-        name: userName,
         first_name: userName.split(' ')[0],
         last_name: userName.split(' ')[1] || '',
         company_id: company.id,
         role: 'admin',
         onboarding_completed: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       })
 
     if (userError) {
@@ -89,8 +84,6 @@ export async function setupNewUser() {
         location: 'Primary Location',
         company_id: company.id,
         created_by: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       })
 
     if (warehouseError) {
