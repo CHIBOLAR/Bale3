@@ -19,25 +19,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
       }
 
-      // Check if user has completed onboarding
-      if (data.user) {
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('onboarding_completed')
-          .eq('id', data.user.id)
-          .single()
-
-        if (userError) {
-          console.error('Error fetching user data:', userError)
-        }
-
-        // If user hasn't completed onboarding, redirect to onboarding
-        if (!userData?.onboarding_completed) {
-          return NextResponse.redirect(`${origin}/onboarding`)
-        }
-      }
-
-      // Redirect to the next URL or dashboard
+      // User is auto-created with company and warehouse by database trigger
+      // Redirect directly to dashboard
       return NextResponse.redirect(`${origin}${next}`)
     } catch (error) {
       console.error('Unexpected error in OAuth callback:', error)

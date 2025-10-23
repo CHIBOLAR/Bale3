@@ -48,7 +48,7 @@ export async function signUpWithEmailOTP(email: string) {
 }
 
 /**
- * Sign in with Email OTP
+ * Sign in with Email OTP (also creates user if doesn't exist)
  * @param email - User's email address
  */
 export async function signInWithEmailOTP(email: string) {
@@ -57,7 +57,7 @@ export async function signInWithEmailOTP(email: string) {
   const { data, error} = await supabase.auth.signInWithOtp({
     email,
     options: {
-      shouldCreateUser: false, // Don't create user on login
+      shouldCreateUser: true, // Allow creating user on login (works for both signup and login)
     },
   })
 
