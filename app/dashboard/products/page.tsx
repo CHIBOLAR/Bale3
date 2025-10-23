@@ -33,19 +33,14 @@ export default async function ProductsPage() {
     )
   }
 
-  // Fetch all products with stock count (with pagination for performance)
-  // For now, fetch all products but limit to reasonable number
-  // TODO: Add pagination UI when product count exceeds 100
+  // Fetch products without nested stock_units for performance
   const { data: products, error: productsError } = await supabase
     .from('products')
-    .select(`
-      *,
-      stock_units!left(id, status)
-    `, { count: 'exact' })
+    .select('*')
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
-    .limit(1000) // Limit to 1000 products for performance
+    .limit(100)
 
   if (productsError) {
     return (
@@ -56,6 +51,28 @@ export default async function ProductsPage() {
       </div>
     )
   }
+
+  // Fetch stock counts separately
+  const productIds = products?.map(p => p.id) || []
+  const stockMap = new Map<string, number>()
+
+  if (productIds.length > 0) {
+    const { data: stockCounts } = await supabase
+      .from('stock_units')
+      .select('product_id')
+      .in('product_id', productIds)
+      .is('deleted_at', null)
+
+    stockCounts?.forEach(s => {
+      const count = stockMap.get(s.product_id) || 0
+      stockMap.set(s.product_id, count + 1)
+    })
+  }
+
+  const productsWithStock = products?.map(p => ({
+    ...p,
+    stock_units: Array(stockMap.get(p.id) || 0).fill({ id: '', status: '' })
+  }))
 
   const isDemo = userData.is_demo
   const canCreateProduct = !isDemo
@@ -86,8 +103,8 @@ export default async function ProductsPage() {
       </div>
 
       {/* Products List */}
-      {products && products.length > 0 ? (
-        <ProductsClient products={products} canCreateProduct={canCreateProduct} />
+      {productsWithStock && productsWithStock.length > 0 ? (
+        <ProductsClient products={productsWithStock} canCreateProduct={canCreateProduct} />
       ) : (
         <div className="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-8 md:p-12 text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

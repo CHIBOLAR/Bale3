@@ -32,7 +32,6 @@ export async function middleware(request: NextRequest) {
   )
 
   // Check if there are any Supabase auth cookies before attempting to get user
-  // This prevents unnecessary token refresh attempts that cause noisy error logs
   const authCookies = request.cookies.getAll().filter(cookie =>
     cookie.name.startsWith('sb-') &&
     (cookie.name.includes('auth-token') || cookie.name.includes('access-token'))
@@ -51,8 +50,45 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // Check onboarding status for authenticated users
+  if (user && !request.nextUrl.pathname.startsWith('/onboarding')) {
+    try {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('onboarding_completed')
+        .eq('auth_user_id', user.id)
+        .single()
+
+      // Redirect to onboarding if not completed
+      if (userData && !userData.onboarding_completed) {
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
+    } catch (error) {
+      // If user record doesn't exist, redirect to onboarding
+      if (!request.nextUrl.pathname.startsWith('/onboarding')) {
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
+    }
+  }
+
   // Redirect authenticated users away from auth pages
   if ((request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup') && user) {
+    // Check if they've completed onboarding
+    try {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('onboarding_completed')
+        .eq('auth_user_id', user.id)
+        .single()
+
+      if (userData && !userData.onboarding_completed) {
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
+    } catch (error) {
+      // If user record doesn't exist, redirect to onboarding
+      return NextResponse.redirect(new URL('/onboarding', request.url))
+    }
+
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

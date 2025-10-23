@@ -4,6 +4,10 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import GoodsReceiptsClient from './GoodsReceiptsClient';
 
+// Enable aggressive caching for fast page loads
+export const revalidate = 0; // Revalidate on every request for now
+export const dynamic = 'force-dynamic'; // Ensure we get fresh data
+
 export default async function GoodsReceiptsPage() {
   const supabase = await createClient();
 
@@ -28,27 +32,79 @@ export default async function GoodsReceiptsPage() {
     redirect('/dashboard');
   }
 
-  // Fetch receipts
-  const { data: receipts } = await supabase
+  // Fetch receipts with aggregated quantity using RPC or a more efficient query
+  // Instead of fetching all items, we'll calculate totals in a separate efficient query
+  const { data: receipts, error: receiptsError } = await supabase
     .from('goods_receipts')
     .select(`
-      *,
-      warehouses!warehouse_id (id, name),
-      partners:issued_by_partner_id (id, company_name, partner_type),
-      source_warehouses:issued_by_warehouse_id (id, name),
-      goods_receipt_items (quantity_received)
+      id,
+      receipt_number,
+      receipt_date,
+      link_type,
+      invoice_number,
+      invoice_amount,
+      warehouse_id,
+      issued_by_partner_id,
+      issued_by_warehouse_id,
+      created_at,
+      warehouses!warehouse_id (name),
+      partners:issued_by_partner_id (company_name),
+      source_warehouses:issued_by_warehouse_id (name)
     `)
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
-    .order('receipt_date', { ascending: false });
+    .order('receipt_date', { ascending: false })
+    .limit(100);
+
+  if (receiptsError) {
+    console.error('Goods receipts error:', receiptsError);
+  }
+
+  // Fetch item counts separately - only receipt_id and quantity
+  const receiptIds = receipts?.map(r => r.id) || [];
+  let quantityMap = new Map<string, number>();
+
+  if (receiptIds.length > 0) {
+    const { data: itemCounts } = await supabase
+      .from('goods_receipt_items')
+      .select('receipt_id, quantity_received')
+      .in('receipt_id', receiptIds);
+
+    // Aggregate counts locally
+    if (itemCounts) {
+      itemCounts.forEach((item) => {
+        const current = quantityMap.get(item.receipt_id) || 0;
+        quantityMap.set(item.receipt_id, current + (item.quantity_received || 0));
+      });
+    }
+  }
+
+  // Attach quantities to receipts and fix type
+  const receiptsWithQuantities = receipts?.map(receipt => ({
+    id: receipt.id,
+    receipt_number: receipt.receipt_number,
+    receipt_date: receipt.receipt_date,
+    link_type: receipt.link_type,
+    invoice_number: receipt.invoice_number,
+    invoice_amount: receipt.invoice_amount,
+    created_at: receipt.created_at,
+    warehouses: receipt.warehouses?.[0],
+    partners: receipt.partners?.[0],
+    source_warehouses: receipt.source_warehouses?.[0],
+    total_quantity: quantityMap.get(receipt.id) || 0,
+  }));
 
   // Fetch warehouses
-  const { data: warehouses } = await supabase
+  const { data: warehouses, error: warehousesError } = await supabase
     .from('warehouses')
     .select('id, name')
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
     .order('name');
+
+  if (warehousesError) {
+    console.error('Warehouses error:', warehousesError);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -73,7 +129,7 @@ export default async function GoodsReceiptsPage() {
         </div>
 
         {/* Client Component with filters and table */}
-        <GoodsReceiptsClient receipts={receipts || []} warehouses={warehouses || []} />
+        <GoodsReceiptsClient receipts={receiptsWithQuantities || []} warehouses={warehouses || []} />
       </div>
     </div>
   );

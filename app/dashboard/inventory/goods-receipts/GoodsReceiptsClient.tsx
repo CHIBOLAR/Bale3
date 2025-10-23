@@ -16,7 +16,7 @@ interface GoodsReceipt {
   warehouses?: { name: string };
   partners?: { company_name: string };
   source_warehouses?: { name: string };
-  goods_receipt_items?: { quantity_received: number }[];
+  total_quantity?: number;
 }
 
 interface GoodsReceiptsClientProps {
@@ -98,9 +98,6 @@ export default function GoodsReceiptsClient({
     return '-';
   };
 
-  const getTotalQuantity = (items?: { quantity_received: number }[]) => {
-    return items?.reduce((sum, item) => sum + (item.quantity_received || 0), 0) || 0;
-  };
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -278,7 +275,7 @@ export default function GoodsReceiptsClient({
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
                       <span className="text-sm text-gray-900">
-                        {getTotalQuantity(receipt.goods_receipt_items)} units
+                        {receipt.total_quantity || 0} units
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
