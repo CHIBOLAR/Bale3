@@ -114,7 +114,7 @@ export default async function DashboardPage() {
         <RecentActivity companyId={companyId!} />
       </Suspense>
 
-      <QuickActions isDemo={isDemo} />
+      <QuickActions />
     </div>
   );
 }
