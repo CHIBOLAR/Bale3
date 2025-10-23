@@ -88,7 +88,7 @@ function LoginForm() {
       console.log('✅ OTP verified successfully');
 
       // Wait for session to be fully established
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Verify session is active
       const { data: { session } } = await supabase.auth.getSession();
@@ -99,6 +99,22 @@ function LoginForm() {
         setError('Session not established. Please try again.');
         setLoading(false);
         return;
+      }
+
+      // Setup user if first time (creates company, user record, warehouse)
+      try {
+        const setupResponse = await fetch('/api/auth/setup', { method: 'POST' });
+        const setupResult = await setupResponse.json();
+
+        if (!setupResult.success && !setupResult.alreadyExists) {
+          console.error('Setup failed:', setupResult.error);
+          setError('Failed to setup your account. Please try again.');
+          setLoading(false);
+          return;
+        }
+      } catch (setupError) {
+        console.error('Setup error:', setupError);
+        // Continue anyway - might be existing user
       }
 
       // Login successful - redirect to dashboard

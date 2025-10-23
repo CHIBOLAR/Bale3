@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { setupNewUser } from '@/app/actions/auth/setup-new-user'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -19,8 +20,19 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
       }
 
-      // User is auto-created with company and warehouse by database trigger
-      // Redirect directly to dashboard
+      if (!data.user) {
+        return NextResponse.redirect(`${origin}/login?error=no_user_data`)
+      }
+
+      // Setup user (creates company, user record, warehouse if first time)
+      const setupResult = await setupNewUser()
+
+      if (!setupResult.success && !setupResult.alreadyExists) {
+        console.error('Setup failed:', setupResult.error)
+        return NextResponse.redirect(`${origin}/login?error=setup_failed`)
+      }
+
+      // Redirect to dashboard
       return NextResponse.redirect(`${origin}${next}`)
     } catch (error) {
       console.error('Unexpected error in OAuth callback:', error)
