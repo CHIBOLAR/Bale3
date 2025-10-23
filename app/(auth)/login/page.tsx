@@ -156,8 +156,8 @@ function LoginForm() {
             <Image src="/logo.jpeg" alt="Bale Logo" width={48} height={48} className="rounded-lg" />
             <span className="text-3xl font-bold text-brand-blue">Bale</span>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
-          <p className="text-gray-600">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Bale</h1>
+          <p className="text-gray-600">Sign in or create your account</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -330,10 +330,7 @@ function LoginForm() {
 
           {/* Footer */}
           <div className="mt-6 text-center text-sm text-gray-600">
-            Don't have an account?{' '}
-            <Link href="/signup" className="font-semibold text-brand-blue hover:text-blue-700">
-              Sign up
-            </Link>
+            New to Bale? Simply sign in with Google or email to create your account
           </div>
         </div>
       </div>

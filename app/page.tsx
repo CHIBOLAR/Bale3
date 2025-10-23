@@ -20,10 +20,10 @@ export default function HomePage() {
               Login
             </Link>
             <Link
-              href="/signup"
+              href="/login"
               className="px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
             >
-              Get Started
+              Sign In / Sign Up
             </Link>
           </div>
         </div>
@@ -43,10 +43,10 @@ export default function HomePage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/signup"
+              href="/login"
               className="px-8 py-4 bg-brand-blue text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
             >
-              Start Free Account
+              Get Started Free
             </Link>
             <Link
               href="#features"
@@ -125,10 +125,10 @@ export default function HomePage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/signup"
+              href="/login"
               className="px-8 py-3 bg-white text-brand-blue rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl"
             >
-              Create Free Account
+              Get Started Free
             </Link>
             <a
               href="https://wa.me/918928466864?text=Hi%2C%20I%27d%20like%20to%20learn%20more%20about%20Bale%20Inventory"
@@ -235,9 +235,9 @@ export default function HomePage() {
           </div>
 
           <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <h3 className="text-lg font-bold mb-2 text-gray-900">Is there a free trial?</h3>
+            <h3 className="text-lg font-bold mb-2 text-gray-900">How do I get started?</h3>
             <p className="text-gray-600">
-              You can create a free account and explore all features. The introductory pricing of ₹999/month applies when you're ready to start using it for your business.
+              Simply sign in with Google or email - your account is created automatically. You can explore all features instantly. The introductory pricing of ₹999/month applies when you're ready to use it for your business.
             </p>
           </div>
         </div>
