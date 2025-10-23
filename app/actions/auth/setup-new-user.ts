@@ -81,7 +81,6 @@ export async function setupNewUser() {
       .from('warehouses')
       .insert({
         name: 'Main Warehouse',
-        location: 'Primary Location',
         company_id: company.id,
         created_by: user.id,
       })
