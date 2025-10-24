@@ -82,7 +82,7 @@ export default function NewGoodsDispatchPage() {
         getGoodsDispatches({}), // Fetch all recent dispatches
       ]);
 
-      setAvailableUnits(unitsData);
+      setAvailableUnits(unitsData.data);
       setWarehouses(warehousesData);
       setPartners(partnersData);
       setSalesOrders(salesOrdersData);
