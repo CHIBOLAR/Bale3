@@ -17,8 +17,8 @@ export const CACHE_TIMES = {
   PRODUCTS: 300,         // 5 minutes - moderate changes
   PARTNERS: 1800,        // 30 minutes - occasional changes
   COLORS: 3600,          // 1 hour - rarely changes
-  SALES_ORDERS: 60,      // 1 minute - frequently changes
-  JOB_WORKS: 60,         // 1 minute - frequently changes
+  SALES_ORDERS: 300,     // 5 minutes - balanced between freshness and performance
+  JOB_WORKS: 300,        // 5 minutes - balanced between freshness and performance
   USER_DATA: 300,        // 5 minutes - occasional changes
 } as const
 

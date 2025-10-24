@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useDebounce } from 'use-debounce';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, Plus, Calendar, Package, Building2, User } from 'lucide-react';
+import { PaginationClient } from '@/components/PaginationClient';
 
 interface GoodsReceipt {
   id: string;
@@ -22,11 +24,17 @@ interface GoodsReceipt {
 interface GoodsReceiptsClientProps {
   receipts: GoodsReceipt[];
   warehouses: { id: string; name: string }[];
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
 }
 
 export default function GoodsReceiptsClient({
   receipts: initialReceipts,
   warehouses,
+  currentPage,
+  pageSize,
+  totalCount,
 }: GoodsReceiptsClientProps) {
   const router = useRouter();
 
@@ -37,41 +45,46 @@ export default function GoodsReceiptsClient({
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  // Filter receipts client-side
-  const filteredReceipts = initialReceipts.filter((receipt) => {
-    // Search filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch =
-        receipt.receipt_number?.toLowerCase().includes(searchLower) ||
-        receipt.invoice_number?.toLowerCase().includes(searchLower);
-      if (!matchesSearch) return false;
-    }
+  // Debounce search term to reduce filtering operations
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
 
-    // Warehouse filter (check if receipt.warehouses exists and has id)
-    if (warehouseFilter) {
-      // Since we don't have warehouse_id in the receipt object directly,
-      // we'll need to match by name
-      if (!receipt.warehouses?.name.includes(warehouseFilter)) {
+  // Filter receipts client-side with useMemo for performance
+  const filteredReceipts = useMemo(() => {
+    return initialReceipts.filter((receipt) => {
+      // Search filter
+      if (debouncedSearchTerm) {
+        const searchLower = debouncedSearchTerm.toLowerCase();
+        const matchesSearch =
+          receipt.receipt_number?.toLowerCase().includes(searchLower) ||
+          receipt.invoice_number?.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+
+      // Warehouse filter (check if receipt.warehouses exists and has id)
+      if (warehouseFilter) {
+        // Since we don't have warehouse_id in the receipt object directly,
+        // we'll need to match by name
+        if (!receipt.warehouses?.name.includes(warehouseFilter)) {
+          return false;
+        }
+      }
+
+      // Link type filter
+      if (linkTypeFilter && receipt.link_type !== linkTypeFilter) {
         return false;
       }
-    }
 
-    // Link type filter
-    if (linkTypeFilter && receipt.link_type !== linkTypeFilter) {
-      return false;
-    }
+      // Date filters
+      if (dateFrom && receipt.receipt_date < dateFrom) {
+        return false;
+      }
+      if (dateTo && receipt.receipt_date > dateTo) {
+        return false;
+      }
 
-    // Date filters
-    if (dateFrom && receipt.receipt_date < dateFrom) {
-      return false;
-    }
-    if (dateTo && receipt.receipt_date > dateTo) {
-      return false;
-    }
-
-    return true;
-  });
+      return true;
+    });
+  }, [initialReceipts, debouncedSearchTerm, warehouseFilter, linkTypeFilter, dateFrom, dateTo]);
 
   const handleRowClick = (receiptId: string) => {
     router.push(`/dashboard/inventory/goods-receipts/${receiptId}`);
@@ -107,7 +120,7 @@ export default function GoodsReceiptsClient({
     setDateTo('');
   };
 
-  const hasActiveFilters = searchTerm || warehouseFilter || linkTypeFilter || dateFrom || dateTo;
+  const hasActiveFilters = debouncedSearchTerm || warehouseFilter || linkTypeFilter || dateFrom || dateTo;
 
   return (
     <>
@@ -301,6 +314,14 @@ export default function GoodsReceiptsClient({
               </tbody>
             </table>
           </div>
+        )}
+        {filteredReceipts.length > 0 && (
+          <PaginationClient
+            currentPage={currentPage}
+            totalPages={Math.ceil(totalCount / pageSize)}
+            pageSize={pageSize}
+            totalCount={totalCount}
+          />
         )}
       </div>
     </>

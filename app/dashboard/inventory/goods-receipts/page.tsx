@@ -8,7 +8,20 @@ import GoodsReceiptsClient from './GoodsReceiptsClient';
 export const revalidate = 0; // Revalidate on every request for now
 export const dynamic = 'force-dynamic'; // Ensure we get fresh data
 
-export default async function GoodsReceiptsPage() {
+interface SearchParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export default async function GoodsReceiptsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const page = params.page ? parseInt(params.page) : 1;
+  const pageSize = params.pageSize ? parseInt(params.pageSize) : 25;
+
   const supabase = await createClient();
 
   // Get current user
@@ -34,7 +47,10 @@ export default async function GoodsReceiptsPage() {
 
   // Fetch receipts with aggregated quantity using RPC or a more efficient query
   // Instead of fetching all items, we'll calculate totals in a separate efficient query
-  const { data: receipts, error: receiptsError } = await supabase
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize - 1;
+
+  const { data: receipts, error: receiptsError, count } = await supabase
     .from('goods_receipts')
     .select(`
       id,
@@ -50,11 +66,11 @@ export default async function GoodsReceiptsPage() {
       warehouses!warehouse_id (name),
       partners:issued_by_partner_id (company_name),
       source_warehouses:issued_by_warehouse_id (name)
-    `)
+    `, { count: 'exact' })
     .eq('company_id', userData.company_id)
     .is('deleted_at', null)
     .order('receipt_date', { ascending: false })
-    .limit(100);
+    .range(start, end);
 
   if (receiptsError) {
     console.error('Goods receipts error:', receiptsError);
@@ -129,7 +145,13 @@ export default async function GoodsReceiptsPage() {
         </div>
 
         {/* Client Component with filters and table */}
-        <GoodsReceiptsClient receipts={receiptsWithQuantities || []} warehouses={warehouses || []} />
+        <GoodsReceiptsClient
+          receipts={receiptsWithQuantities || []}
+          warehouses={warehouses || []}
+          currentPage={page}
+          pageSize={pageSize}
+          totalCount={count || 0}
+        />
       </div>
     </div>
   );

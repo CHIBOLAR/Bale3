@@ -3,6 +3,7 @@ import { Search, Package } from 'lucide-react';
 import { getStockUnits, getWarehouses, getProducts } from '@/app/actions/inventory/data';
 import StockUnitsTable from './StockUnitsTable';
 import StockUnitsFilters from './StockUnitsFilters';
+import { PaginationClient } from '@/components/PaginationClient';
 
 interface SearchParams {
   search?: string;
@@ -11,6 +12,8 @@ interface SearchParams {
   product?: string;
   dateFrom?: string;
   dateTo?: string;
+  page?: string;
+  pageSize?: string;
 }
 
 export default async function StockUnitsPage({
@@ -21,8 +24,12 @@ export default async function StockUnitsPage({
   // Await searchParams as per Next.js 15 requirements
   const params = await searchParams;
 
+  // Parse pagination params
+  const page = params.page ? parseInt(params.page) : 1;
+  const pageSize = params.pageSize ? parseInt(params.pageSize) : 25;
+
   // Fetch all data in parallel on the server
-  const [stockUnits, warehouses, products] = await Promise.all([
+  const [stockUnitsResult, warehouses, products] = await Promise.all([
     getStockUnits({
       search: params.search || undefined,
       warehouse_id: params.warehouse || undefined,
@@ -30,10 +37,16 @@ export default async function StockUnitsPage({
       product_id: params.product || undefined,
       date_from: params.dateFrom || undefined,
       date_to: params.dateTo || undefined,
+      page,
+      pageSize,
     }),
     getWarehouses(),
     getProducts(),
   ]);
+
+  const stockUnits = stockUnitsResult.data;
+  const totalCount = stockUnitsResult.count;
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   const hasActiveFilters = !!(
     params.search || params.warehouse || params.status || params.product || params.dateFrom || params.dateTo
@@ -73,7 +86,7 @@ export default async function StockUnitsPage({
             dateTo: params.dateTo || '',
           }}
           hasActiveFilters={hasActiveFilters}
-          totalCount={stockUnits.length}
+          totalCount={totalCount}
         />
 
         {/* Stock Units Table */}
@@ -97,7 +110,15 @@ export default async function StockUnitsPage({
               </div>
             </div>
           ) : (
-            <StockUnitsTable stockUnits={stockUnits} />
+            <>
+              <StockUnitsTable stockUnits={stockUnits} />
+              <PaginationClient
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                totalCount={totalCount}
+              />
+            </>
           )}
         </div>
       </div>

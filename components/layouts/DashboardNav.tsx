@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Image from 'next/image';
 
 interface DashboardNavProps {
@@ -11,7 +11,7 @@ interface DashboardNavProps {
   isAdmin: boolean;
 }
 
-export default function DashboardNav({ user, isAdmin }: DashboardNavProps) {
+function DashboardNav({ user, isAdmin }: DashboardNavProps) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -207,3 +207,5 @@ export default function DashboardNav({ user, isAdmin }: DashboardNavProps) {
     </>
   );
 }
+
+export default memo(DashboardNav);

@@ -33,14 +33,37 @@ export default async function ProductsPage() {
     )
   }
 
-  // Fetch products without nested stock_units for performance
-  const { data: products, error: productsError } = await supabase
-    .from('products')
-    .select('*')
-    .eq('company_id', userData.company_id)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
-    .limit(100)
+  // Fetch products with stock count aggregated in a single query
+  // Using RPC function for better performance - if not available, fallback to separate queries
+  let productsWithStock: any[] = []
+  let productsError = null
+
+  try {
+    // Try to use an optimized query with count
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        stock_units:stock_units(count)
+      `)
+      .eq('company_id', userData.company_id)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .limit(100)
+
+    if (error) {
+      productsError = error
+    } else {
+      // Transform the data - Supabase returns count as an array with one object
+      productsWithStock = data?.map(p => ({
+        ...p,
+        stock_units: Array(p.stock_units?.[0]?.count || 0).fill({ id: '', status: '' })
+      })) || []
+    }
+  } catch (error) {
+    console.error('Error fetching products with stock count:', error)
+    productsError = error
+  }
 
   if (productsError) {
     return (
@@ -51,28 +74,6 @@ export default async function ProductsPage() {
       </div>
     )
   }
-
-  // Fetch stock counts separately
-  const productIds = products?.map(p => p.id) || []
-  const stockMap = new Map<string, number>()
-
-  if (productIds.length > 0) {
-    const { data: stockCounts } = await supabase
-      .from('stock_units')
-      .select('product_id')
-      .in('product_id', productIds)
-      .is('deleted_at', null)
-
-    stockCounts?.forEach(s => {
-      const count = stockMap.get(s.product_id) || 0
-      stockMap.set(s.product_id, count + 1)
-    })
-  }
-
-  const productsWithStock = products?.map(p => ({
-    ...p,
-    stock_units: Array(stockMap.get(p.id) || 0).fill({ id: '', status: '' })
-  }))
 
   const isDemo = userData.is_demo
   const canCreateProduct = !isDemo

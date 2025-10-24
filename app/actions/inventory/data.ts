@@ -143,7 +143,7 @@ export async function getPartners() {
 }
 
 /**
- * Gets all stock units with optional filters
+ * Gets all stock units with optional filters and pagination
  * Automatically respects the active warehouse from the warehouse switcher
  * Staff users are automatically restricted to their assigned warehouse
  */
@@ -154,6 +154,8 @@ export async function getStockUnits(filters?: {
   search?: string;
   date_from?: string;
   date_to?: string;
+  page?: number;
+  pageSize?: number;
 }) {
   try {
     const supabase = await createClient();
@@ -163,7 +165,7 @@ export async function getStockUnits(filters?: {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return [];
+      return { data: [], count: 0 };
     }
 
     const { data: userData } = await supabase
@@ -173,67 +175,86 @@ export async function getStockUnits(filters?: {
       .single();
 
     if (!userData?.company_id) {
-      return [];
+      return { data: [], count: 0 };
     }
 
     // Get active warehouse from warehouse switcher
     const activeWarehouseId = await getActiveWarehouse();
 
-    let query = supabase
-      .from('stock_units')
-      .select(
-        `
-        *,
-        products (id, name, material, color, product_number, product_images),
-        warehouses (id, name)
-      `
-      )
-      .eq('company_id', userData.company_id)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+    // Build base query for both count and data
+    const buildQuery = (includeSelect = true) => {
+      let query = includeSelect
+        ? supabase
+            .from('stock_units')
+            .select(
+              `
+              *,
+              products (id, name, material, color, product_number, product_images),
+              warehouses (id, name)
+            `,
+              { count: 'exact' }
+            )
+        : supabase.from('stock_units').select('*', { count: 'exact', head: true });
 
-    // Apply warehouse filtering for staff users (overrides everything)
-    if (userData.role === 'staff' && userData.warehouse_id) {
-      query = query.eq('warehouse_id', userData.warehouse_id);
-    }
-    // For admins, use explicit filter if provided, otherwise use active warehouse
-    else if (filters?.warehouse_id) {
-      query = query.eq('warehouse_id', filters.warehouse_id);
-    } else if (activeWarehouseId) {
-      // Use active warehouse from switcher if no explicit filter
-      query = query.eq('warehouse_id', activeWarehouseId);
-    }
+      query = query
+        .eq('company_id', userData.company_id)
+        .is('deleted_at', null);
 
-    // Apply other filters
-    if (filters?.status) {
-      query = query.eq('status', filters.status);
-    }
-    if (filters?.product_id) {
-      query = query.eq('product_id', filters.product_id);
-    }
-    if (filters?.date_from) {
-      query = query.gte('date_received', filters.date_from);
-    }
-    if (filters?.date_to) {
-      query = query.lte('date_received', filters.date_to);
-    }
-    if (filters?.search) {
-      query = query.or(
-        `qr_code.ilike.%${filters.search}%,unit_number.ilike.%${filters.search}%`
-      );
-    }
+      // Apply warehouse filtering for staff users (overrides everything)
+      if (userData.role === 'staff' && userData.warehouse_id) {
+        query = query.eq('warehouse_id', userData.warehouse_id);
+      }
+      // For admins, use explicit filter if provided, otherwise use active warehouse
+      else if (filters?.warehouse_id) {
+        query = query.eq('warehouse_id', filters.warehouse_id);
+      } else if (activeWarehouseId) {
+        // Use active warehouse from switcher if no explicit filter
+        query = query.eq('warehouse_id', activeWarehouseId);
+      }
 
-    const { data, error } = await query;
+      // Apply other filters
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters?.product_id) {
+        query = query.eq('product_id', filters.product_id);
+      }
+      if (filters?.date_from) {
+        query = query.gte('date_received', filters.date_from);
+      }
+      if (filters?.date_to) {
+        query = query.lte('date_received', filters.date_to);
+      }
+      if (filters?.search) {
+        query = query.or(
+          `qr_code.ilike.%${filters.search}%,unit_number.ilike.%${filters.search}%`
+        );
+      }
+
+      return query;
+    };
+
+    let query = buildQuery(true).order('created_at', { ascending: false });
+
+    // Apply pagination if provided
+    const page = filters?.page || 1;
+    const pageSize = filters?.pageSize || 25;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize - 1;
+
+    query = query.range(start, end);
+
+    const { data, error, count } = await query;
 
     if (error) {
       console.error('Error fetching stock units:', error);
-      return [];
+      return { data: [], count: 0 };
     }
 
-    return data || [];
+    return { data: data || [], count: count || 0 };
   } catch (error) {
     console.error('Error in getStockUnits:', error);
-    return [];
+    return { data: [], count: 0 };
   }
 }
 

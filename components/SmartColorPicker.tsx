@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback, memo } from 'react'
+import { useDebounce } from 'use-debounce'
 import { createClient } from '@/lib/supabase/client'
 
 interface Color {
@@ -18,7 +19,7 @@ interface SmartColorPickerProps {
   required?: boolean
 }
 
-export default function SmartColorPicker({
+function SmartColorPicker({
   value = '',
   codeValue = '',
   onChange,
@@ -29,6 +30,9 @@ export default function SmartColorPicker({
   const [suggestions, setSuggestions] = useState<Color[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
+  // Debounce the colorName to reduce API calls
+  const [debouncedColorName] = useDebounce(colorName, 300)
+
   const inputRef = useRef<HTMLInputElement>(null)
   const colorPickerRef = useRef<HTMLInputElement>(null)
 
@@ -36,16 +40,8 @@ export default function SmartColorPicker({
   const isHexCode = colorCode.startsWith('#')
   const displayHex = isHexCode ? colorCode : '#000000'
 
-  // Fetch color suggestions as user types
-  useEffect(() => {
-    if (colorName.length >= 2) {
-      fetchSuggestions(colorName)
-    } else {
-      setSuggestions([])
-    }
-  }, [colorName])
-
-  const fetchSuggestions = async (searchTerm: string) => {
+  // Memoize fetchSuggestions to prevent recreation on every render
+  const fetchSuggestions = useCallback(async (searchTerm: string) => {
     try {
       const supabase = createClient()
 
@@ -75,7 +71,16 @@ export default function SmartColorPicker({
     } catch (error) {
       console.error('Error fetching color suggestions:', error)
     }
-  }
+  }, [])
+
+  // Fetch color suggestions as user types (debounced)
+  useEffect(() => {
+    if (debouncedColorName.length >= 2) {
+      fetchSuggestions(debouncedColorName)
+    } else {
+      setSuggestions([])
+    }
+  }, [debouncedColorName, fetchSuggestions])
 
   const selectColor = (color: Color) => {
     setColorName(color.name)
@@ -229,3 +234,5 @@ export default function SmartColorPicker({
     </div>
   )
 }
+
+export default memo(SmartColorPicker)
