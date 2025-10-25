@@ -55,7 +55,73 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  return response
+  // Add security headers
+  const headers = new Headers(response.headers)
+
+  // Content Security Policy
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://va.vercel-scripts.com;
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' blob: data: https:;
+    font-src 'self' data:;
+    connect-src 'self' https://*.supabase.co https://vercel.live wss://*.supabase.co https://vitals.vercel-insights.com;
+    frame-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    upgrade-insecure-requests;
+  `.replace(/\s{2,}/g, ' ').trim()
+
+  headers.set('Content-Security-Policy', cspHeader)
+
+  // HTTP Strict Transport Security (HSTS)
+  headers.set(
+    'Strict-Transport-Security',
+    'max-age=31536000; includeSubDomains; preload'
+  )
+
+  // X-Frame-Options (clickjacking protection)
+  headers.set('X-Frame-Options', 'DENY')
+
+  // X-Content-Type-Options (MIME sniffing protection)
+  headers.set('X-Content-Type-Options', 'nosniff')
+
+  // Referrer Policy
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+
+  // Permissions Policy
+  headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=()'
+  )
+
+  // Cross-Origin-Opener-Policy
+  headers.set('Cross-Origin-Opener-Policy', 'same-origin')
+
+  // Cross-Origin-Resource-Policy
+  headers.set('Cross-Origin-Resource-Policy', 'same-origin')
+
+  // Optimize cache headers for bfcache (back/forward cache)
+  const pathname = request.nextUrl.pathname
+  const isApiRoute = pathname.startsWith('/api/')
+  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup')
+
+  if (!isApiRoute && !isAuthRoute) {
+    // Use no-cache instead of no-store to enable bfcache
+    headers.set('Cache-Control', 'private, no-cache, must-revalidate')
+  } else if (isApiRoute || isAuthRoute) {
+    // Only use no-store for sensitive routes
+    headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate, max-age=0')
+  }
+
+  return NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+    headers
+  })
 }
 
 export const config = {

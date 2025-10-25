@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
     serverActions: {
       allowedOrigins: ['localhost:3000', 'mcb761qn-3000.inc1.devtunnels.ms']
     },
+    // Optimize package imports for better tree-shaking
+    optimizePackageImports: ['lucide-react', '@supabase/supabase-js'],
   },
 
   // Production optimizations
@@ -35,6 +37,19 @@ const nextConfig: NextConfig = {
       },
     },
   }),
+
+  // Webpack optimizations for better tree-shaking
+  webpack: (config, { isServer }) => {
+    // Optimize bundle size
+    if (!isServer) {
+      config.optimization = {
+        ...config.optimization,
+        usedExports: true,
+        sideEffects: true,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

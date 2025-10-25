@@ -2,70 +2,32 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import ProductsClient from './ProductsClient'
+import { getUserContext } from '@/lib/cache/user-context'
 
 export default async function ProductsPage() {
-  const supabase = await createClient()
+  // Use cached user context for faster response
+  const context = await getUserContext()
 
-  // Get current user
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
+  if (!context) {
     redirect('/login')
   }
 
-  // Get user details to find company_id
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('company_id, role, is_demo')
-    .eq('auth_user_id', user.id)
-    .single()
+  const supabase = await createClient()
 
-  if (userError || !userData?.company_id) {
-    return (
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-red-800">Company not found. Please contact support.</p>
-        </div>
-      </div>
-    )
-  }
+  // Optimized query: Fetch products with stock count in a single query
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      stock_units:stock_units!left(count)
+    `)
+    .eq('company_id', context.userData.company_id)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(100)
 
-  // Fetch products with stock count aggregated in a single query
-  // Using RPC function for better performance - if not available, fallback to separate queries
-  let productsWithStock: any[] = []
-  let productsError = null
-
-  try {
-    // Try to use an optimized query with count
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        *,
-        stock_units:stock_units(count)
-      `)
-      .eq('company_id', userData.company_id)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
-      .limit(100)
-
-    if (error) {
-      productsError = error
-    } else {
-      // Transform the data - Supabase returns count as an array with one object
-      productsWithStock = data?.map(p => ({
-        ...p,
-        stock_units: Array(p.stock_units?.[0]?.count || 0).fill({ id: '', status: '' })
-      })) || []
-    }
-  } catch (error) {
-    console.error('Error fetching products with stock count:', error)
-    productsError = error
-  }
-
-  if (productsError) {
+  if (error) {
+    console.error('Error fetching products:', error)
     return (
       <div className="max-w-7xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -75,7 +37,13 @@ export default async function ProductsPage() {
     )
   }
 
-  const isDemo = userData.is_demo
+  // Transform the data - Supabase returns count as an array with one object
+  const productsWithStock = data?.map(p => ({
+    ...p,
+    stock_units: Array(p.stock_units?.[0]?.count || 0).fill({ id: '', status: '' })
+  })) || []
+
+  const isDemo = context.userData.is_demo
   const canCreateProduct = !isDemo
 
   return (

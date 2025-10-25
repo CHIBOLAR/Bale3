@@ -2,36 +2,21 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { getActiveWarehouse } from '@/lib/warehouse-context';
+import { getUserContext } from '@/lib/cache/user-context';
 
 /**
  * Gets all products for the current company
  */
 export async function getProducts() {
   try {
+    const context = await getUserContext();
+    if (!context) return [];
+
     const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return [];
-    }
-
-    const { data: userData } = await supabase
-      .from('users')
-      .select('company_id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!userData?.company_id) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('products')
       .select('id, name, material, color, product_number, product_images, measuring_unit')
-      .eq('company_id', userData.company_id)
+      .eq('company_id', context.userData.company_id)
       .is('deleted_at', null)
       .order('name');
 
@@ -53,35 +38,19 @@ export async function getProducts() {
  */
 export async function getWarehouses() {
   try {
+    const context = await getUserContext();
+    if (!context) return [];
+
     const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return [];
-    }
-
-    const { data: userData } = await supabase
-      .from('users')
-      .select('company_id, role, warehouse_id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!userData?.company_id) {
-      return [];
-    }
-
     let query = supabase
       .from('warehouses')
       .select('id, name')
-      .eq('company_id', userData.company_id)
+      .eq('company_id', context.userData.company_id)
       .is('deleted_at', null);
 
     // Apply warehouse filtering for staff users
-    if (userData.role === 'staff' && userData.warehouse_id) {
-      query = query.eq('id', userData.warehouse_id);
+    if (context.userData.role === 'staff' && context.userData.warehouse_id) {
+      query = query.eq('id', context.userData.warehouse_id);
     }
 
     const { data, error } = await query.order('name');
@@ -103,30 +72,14 @@ export async function getWarehouses() {
  */
 export async function getPartners() {
   try {
+    const context = await getUserContext();
+    if (!context) return [];
+
     const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return [];
-    }
-
-    const { data: userData } = await supabase
-      .from('users')
-      .select('company_id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!userData?.company_id) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('partners')
       .select('id, company_name, partner_type')
-      .eq('company_id', userData.company_id)
+      .eq('company_id', context.userData.company_id)
       .is('deleted_at', null)
       .order('company_name');
 
@@ -158,25 +111,10 @@ export async function getStockUnits(filters?: {
   pageSize?: number;
 }) {
   try {
+    const context = await getUserContext();
+    if (!context) return { data: [], count: 0 };
+
     const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { data: [], count: 0 };
-    }
-
-    const { data: userData } = await supabase
-      .from('users')
-      .select('company_id, role, warehouse_id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!userData?.company_id) {
-      return { data: [], count: 0 };
-    }
 
     // Get active warehouse from warehouse switcher
     const activeWarehouseId = await getActiveWarehouse();
@@ -197,12 +135,12 @@ export async function getStockUnits(filters?: {
         : supabase.from('stock_units').select('*', { count: 'exact', head: true });
 
       query = query
-        .eq('company_id', userData.company_id)
+        .eq('company_id', context.userData.company_id)
         .is('deleted_at', null);
 
       // Apply warehouse filtering for staff users (overrides everything)
-      if (userData.role === 'staff' && userData.warehouse_id) {
-        query = query.eq('warehouse_id', userData.warehouse_id);
+      if (context.userData.role === 'staff' && context.userData.warehouse_id) {
+        query = query.eq('warehouse_id', context.userData.warehouse_id);
       }
       // For admins, use explicit filter if provided, otherwise use active warehouse
       else if (filters?.warehouse_id) {
@@ -264,30 +202,14 @@ export async function getStockUnits(filters?: {
  */
 export async function getPendingSalesOrders() {
   try {
+    const context = await getUserContext();
+    if (!context) return [];
+
     const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return [];
-    }
-
-    const { data: userData } = await supabase
-      .from('users')
-      .select('company_id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!userData?.company_id) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('sales_orders')
       .select('id, order_number, customer:partners!sales_orders_customer_id_fkey(company_name)')
-      .eq('company_id', userData.company_id)
+      .eq('company_id', context.userData.company_id)
       .in('status', ['pending', 'partially_fulfilled'])
       .is('deleted_at', null)
       .order('order_date', { ascending: false })
@@ -316,30 +238,14 @@ export async function getPendingSalesOrders() {
  */
 export async function getPendingJobWorks() {
   try {
+    const context = await getUserContext();
+    if (!context) return [];
+
     const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return [];
-    }
-
-    const { data: userData } = await supabase
-      .from('users')
-      .select('company_id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!userData?.company_id) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('job_works')
       .select('id, job_number, partner:partners!job_works_partner_id_fkey(company_name)')
-      .eq('company_id', userData.company_id)
+      .eq('company_id', context.userData.company_id)
       .in('status', ['pending', 'in_progress'])
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
@@ -350,16 +256,12 @@ export async function getPendingJobWorks() {
       return [];
     }
 
-    console.log('getPendingJobWorks - Raw data:', data);
-
     // Transform partner from array to single object if needed
     const transformedData = (data || []).map((jobWork: any) => ({
       id: jobWork.id,
       job_number: jobWork.job_number,
       partner: Array.isArray(jobWork.partner) ? jobWork.partner[0] : jobWork.partner
     }));
-
-    console.log('getPendingJobWorks - Transformed data:', transformedData);
 
     return transformedData;
   } catch (error) {
@@ -374,26 +276,10 @@ export async function getPendingJobWorks() {
  */
 export async function getStockUnit(unitId: string) {
   try {
+    const context = await getUserContext();
+    if (!context) return null;
+
     const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return null;
-    }
-
-    const { data: userData } = await supabase
-      .from('users')
-      .select('company_id, role, warehouse_id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!userData?.company_id) {
-      return null;
-    }
-
     let query = supabase
       .from('stock_units')
       .select(
@@ -404,11 +290,11 @@ export async function getStockUnit(unitId: string) {
       `
       )
       .eq('id', unitId)
-      .eq('company_id', userData.company_id);
+      .eq('company_id', context.userData.company_id);
 
     // Apply warehouse filtering for staff users
-    if (userData.role === 'staff' && userData.warehouse_id) {
-      query = query.eq('warehouse_id', userData.warehouse_id);
+    if (context.userData.role === 'staff' && context.userData.warehouse_id) {
+      query = query.eq('warehouse_id', context.userData.warehouse_id);
     }
 
     const { data, error } = await query.single();
