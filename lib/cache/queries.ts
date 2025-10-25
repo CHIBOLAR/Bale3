@@ -20,7 +20,6 @@ export const CACHE_TIMES = {
   SALES_ORDERS: 300,     // 5 minutes - balanced between freshness and performance
   JOB_WORKS: 300,        // 5 minutes - balanced between freshness and performance
   USER_DATA: 300,        // 5 minutes - occasional changes
-  DASHBOARD_STATS: 120,  // 2 minutes - acceptable staleness for stats
 } as const
 
 // Cache Tags for Targeted Invalidation

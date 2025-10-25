@@ -1,101 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { getActiveWarehouse } from '@/lib/warehouse-context';
-import { unstable_cache } from 'next/cache';
-import { CACHE_TIMES } from '@/lib/cache/queries';
-
-// Cache the stats data fetching (2 min cache to reduce load)
-const getCachedDashboardStats = unstable_cache(
-  async (companyId: string, activeWarehouseId: string | null, firstDayOfMonth: string, lastDayOfMonth: string) => {
-    const supabase = await createClient();
-
-    // Build queries with warehouse filtering
-    let salesOrdersQuery = supabase
-      .from('sales_orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('company_id', companyId)
-      .in('status', ['pending', 'confirmed', 'in_progress'])
-      .is('deleted_at', null);
-
-    let jobWorksQuery = supabase
-      .from('job_works')
-      .select('*', { count: 'exact', head: true })
-      .eq('company_id', companyId)
-      .is('deleted_at', null);
-
-    let dispatchedQuery = supabase
-      .from('goods_dispatch_items')
-      .select(`
-        dispatched_quantity,
-        stock_unit_id,
-        stock_units!inner(
-          size_quantity,
-          product_id,
-          warehouse_id,
-          products!inner(measuring_unit)
-        ),
-        dispatch_id,
-        goods_dispatches!inner(created_at)
-      `)
-      .eq('stock_units.company_id', companyId)
-      .gte('goods_dispatches.created_at', firstDayOfMonth)
-      .lte('goods_dispatches.created_at', lastDayOfMonth);
-
-    let receivedQuery = supabase
-      .from('stock_units')
-      .select(`
-        size_quantity,
-        product_id,
-        warehouse_id,
-        products!inner(measuring_unit, company_id),
-        receipt_item:goods_receipt_items!stock_units_receipt_item_id_fkey!inner(
-          quantity_received,
-          receipt:goods_receipts!inner(created_at)
-        )
-      `)
-      .eq('company_id', companyId)
-      .gte('receipt_item.receipt.created_at', firstDayOfMonth)
-      .lte('receipt_item.receipt.created_at', lastDayOfMonth);
-
-    let productsQuery = supabase
-      .from('products')
-      .select(`
-        id,
-        name,
-        product_number,
-        min_stock_threshold,
-        stock_units!inner(id, status, warehouse_id)
-      `)
-      .eq('company_id', companyId)
-      .is('deleted_at', null)
-      .eq('stock_units.status', 'in_stock')
-      .limit(10);
-
-    // Apply warehouse filter if a specific warehouse is selected
-    if (activeWarehouseId) {
-      jobWorksQuery = jobWorksQuery.eq('warehouse_id', activeWarehouseId);
-      dispatchedQuery = dispatchedQuery.eq('stock_units.warehouse_id', activeWarehouseId);
-      receivedQuery = receivedQuery.eq('warehouse_id', activeWarehouseId);
-      productsQuery = productsQuery.eq('stock_units.warehouse_id', activeWarehouseId);
-    }
-
-    // Fetch all stats in parallel
-    return await Promise.all([
-      salesOrdersQuery,
-      jobWorksQuery,
-      dispatchedQuery,
-      receivedQuery,
-      productsQuery,
-    ]);
-  },
-  ['dashboard-stats'],
-  {
-    revalidate: CACHE_TIMES.DASHBOARD_STATS, // 2 minutes
-    tags: ['dashboard-stats'],
-  }
-);
 
 export default async function DashboardStats({ companyId }: { companyId: string }) {
+  const supabase = await createClient();
   const activeWarehouseId = await getActiveWarehouse();
 
   // Get first and last day of current month
@@ -103,14 +11,93 @@ export default async function DashboardStats({ companyId }: { companyId: string 
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
-  // Fetch all stats in parallel from cache (2 min cache)
+  // Build queries with warehouse filtering
+  let salesOrdersQuery = supabase
+    .from('sales_orders')
+    .select('*', { count: 'exact', head: true })
+    .eq('company_id', companyId)
+    .in('status', ['pending', 'confirmed', 'in_progress'])
+    .is('deleted_at', null);
+
+  let jobWorksQuery = supabase
+    .from('job_works')
+    .select('*', { count: 'exact', head: true })
+    .eq('company_id', companyId)
+    .is('deleted_at', null);
+
+  let dispatchedQuery = supabase
+    .from('goods_dispatch_items')
+    .select(`
+      dispatched_quantity,
+      stock_unit_id,
+      stock_units!inner(
+        size_quantity,
+        product_id,
+        warehouse_id,
+        products!inner(measuring_unit)
+      ),
+      dispatch_id,
+      goods_dispatches!inner(created_at)
+    `)
+    .eq('stock_units.company_id', companyId)
+    .gte('goods_dispatches.created_at', firstDayOfMonth)
+    .lte('goods_dispatches.created_at', lastDayOfMonth);
+
+  // Query stock units created from receipts this month
+  let receivedQuery = supabase
+    .from('stock_units')
+    .select(`
+      size_quantity,
+      product_id,
+      warehouse_id,
+      products!inner(measuring_unit, company_id),
+      receipt_item:goods_receipt_items!stock_units_receipt_item_id_fkey!inner(
+        quantity_received,
+        receipt:goods_receipts!inner(created_at)
+      )
+    `)
+    .eq('company_id', companyId)
+    .gte('receipt_item.receipt.created_at', firstDayOfMonth)
+    .lte('receipt_item.receipt.created_at', lastDayOfMonth);
+
+  let productsQuery = supabase
+    .from('products')
+    .select(`
+      id,
+      name,
+      product_number,
+      min_stock_threshold,
+      stock_units!inner(id, status, warehouse_id)
+    `)
+    .eq('company_id', companyId)
+    .is('deleted_at', null)
+    .eq('stock_units.status', 'in_stock')
+    .limit(10);
+
+  // Apply warehouse filter if a specific warehouse is selected
+  if (activeWarehouseId) {
+    // Don't filter sales orders by warehouse - they're customer-centric, not warehouse-specific
+    // Sales orders can have null fulfillment_warehouse_id and should always be visible
+    jobWorksQuery = jobWorksQuery.eq('warehouse_id', activeWarehouseId);
+    dispatchedQuery = dispatchedQuery.eq('stock_units.warehouse_id', activeWarehouseId);
+    receivedQuery = receivedQuery.eq('warehouse_id', activeWarehouseId);
+    productsQuery = productsQuery.eq('stock_units.warehouse_id', activeWarehouseId);
+  }
+
+  // Fetch all stats in parallel
   const [
     { count: salesOrdersCount },
     { count: jobWorksCount },
     { data: dispatchedData },
     { data: receivedData },
     { data: lowStockProducts },
-  ] = await getCachedDashboardStats(companyId, activeWarehouseId, firstDayOfMonth, lastDayOfMonth);
+  ] = await Promise.all([
+    salesOrdersQuery,
+    jobWorksQuery,
+    dispatchedQuery,
+    receivedQuery,
+    productsQuery,
+  ]);
 
   // Calculate total dispatched this month by unit
   const dispatchedByUnit = dispatchedData?.reduce((acc: Record<string, number>, item: any) => {
