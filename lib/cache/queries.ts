@@ -38,30 +38,48 @@ export const CACHE_TAGS = {
  */
 export const getCachedUserData = unstable_cache(
   async (userId: string) => {
-    const supabase = await createClient()
+    try {
+      const supabase = await createClient()
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, company_id, warehouse_id, auth_user_id, role, is_demo, first_name, last_name, company:companies(name)')
-      .eq('auth_user_id', userId)
-      .single()
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, company_id, warehouse_id, auth_user_id, role, is_demo, first_name, last_name, company:companies(name)')
+        .eq('auth_user_id', userId)
+        .single()
 
-    if (error) {
-      console.error('Error fetching user data:', error)
+      if (error) {
+        console.error('Error fetching user data:', error)
+        return null
+      }
+
+      if (!data) return null
+
+      // Transform company array to single object (Supabase returns joins as arrays)
+      // Handle both array and object formats for backwards compatibility
+      let company = null
+      if (data.company) {
+        if (Array.isArray(data.company) && data.company.length > 0) {
+          company = data.company[0]
+        } else if (!Array.isArray(data.company)) {
+          company = data.company
+        }
+      }
+
+      return {
+        id: data.id,
+        company_id: data.company_id,
+        warehouse_id: data.warehouse_id,
+        auth_user_id: data.auth_user_id,
+        role: data.role,
+        is_demo: data.is_demo,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        company
+      }
+    } catch (err) {
+      console.error('Unexpected error in getCachedUserData:', err)
       return null
     }
-
-    if (!data) return null
-
-    // Transform company array to single object (Supabase returns joins as arrays)
-    const company = Array.isArray(data.company) && data.company.length > 0
-      ? data.company[0]
-      : (data.company || null)
-
-    return {
-      ...data,
-      company
-    } as typeof data & { company: { name: string } | null }
   },
   ['user-data'],
   {
