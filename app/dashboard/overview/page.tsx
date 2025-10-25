@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { getCachedUserData } from '@/lib/cache/queries';
 
 export default async function OverviewPage() {
   const supabase = await createClient();
@@ -12,12 +13,8 @@ export default async function OverviewPage() {
     redirect('/login');
   }
 
-  // Get user data
-  const { data: userData } = await supabase
-    .from('users')
-    .select('*, company:companies(*)')
-    .eq('auth_user_id', user.id)
-    .maybeSingle();
+  // Get user data from cache (5 min cache)
+  const userData = await getCachedUserData(user.id);
 
   // Check if user is demo (either has is_demo flag or no user record)
   const isDemo = userData?.is_demo === true || !userData;
@@ -33,147 +30,105 @@ export default async function OverviewPage() {
     companyId = demoCompany?.id;
   }
 
-  // Get comprehensive analytics
-  const { count: totalProducts } = await supabase
-    .from('products')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .is('deleted_at', null);
+  // Batch all queries in parallel for maximum performance
+  const [
+    { count: totalProducts },
+    stockUnitsData,
+    salesOrdersData,
+    partnersData,
+    { count: totalReceipts },
+    { count: totalDispatches },
+    { count: warehouses },
+    { count: qrBatches }
+  ] = await Promise.all([
+    // Products count
+    supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .is('deleted_at', null),
 
-  const { count: totalStockUnits } = await supabase
-    .from('stock_units')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId);
+    // Stock units - fetch all in one query with status
+    supabase
+      .from('stock_units')
+      .select('status')
+      .eq('company_id', companyId),
 
-  const { count: inStockUnits } = await supabase
-    .from('stock_units')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .eq('status', 'in_stock');
+    // Sales orders - fetch all in one query with status and revenue
+    supabase
+      .from('sales_orders')
+      .select('status, total_amount')
+      .eq('company_id', companyId)
+      .is('deleted_at', null),
 
-  const { count: dispatchedUnits } = await supabase
-    .from('stock_units')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .eq('status', 'dispatched');
+    // Partners - fetch all in one query with partner_type
+    supabase
+      .from('partners')
+      .select('partner_type')
+      .eq('company_id', companyId)
+      .is('deleted_at', null),
 
-  const { count: soldUnits } = await supabase
-    .from('stock_units')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .eq('status', 'sold');
+    // Goods receipts count
+    supabase
+      .from('goods_receipts')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId),
 
-  // Sales Orders Stats
-  const { count: totalOrders } = await supabase
-    .from('sales_orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .is('deleted_at', null);
+    // Goods dispatches count
+    supabase
+      .from('goods_dispatches')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId),
 
-  const { count: pendingOrders } = await supabase
-    .from('sales_orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .eq('status', 'pending')
-    .is('deleted_at', null);
+    // Warehouses count
+    supabase
+      .from('warehouses')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .is('deleted_at', null),
 
-  const { count: confirmedOrders } = await supabase
-    .from('sales_orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .eq('status', 'confirmed')
-    .is('deleted_at', null);
+    // QR Codes count
+    supabase
+      .from('barcode_batches')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+  ]);
 
-  const { count: inProgressOrders } = await supabase
-    .from('sales_orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .eq('status', 'in_progress')
-    .is('deleted_at', null);
+  // Process stock units data
+  const stockUnits = stockUnitsData.data || [];
+  const totalStockUnits = stockUnits.length;
+  const inStockUnits = stockUnits.filter(s => s.status === 'in_stock').length;
+  const dispatchedUnits = stockUnits.filter(s => s.status === 'dispatched').length;
+  const soldUnits = stockUnits.filter(s => s.status === 'sold').length;
 
-  const { count: completedOrders } = await supabase
-    .from('sales_orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .eq('status', 'completed')
-    .is('deleted_at', null);
+  // Process sales orders data
+  const salesOrders = salesOrdersData.data || [];
+  const totalOrders = salesOrders.length;
+  const pendingOrders = salesOrders.filter(o => o.status === 'pending').length;
+  const confirmedOrders = salesOrders.filter(o => o.status === 'confirmed').length;
+  const inProgressOrders = salesOrders.filter(o => o.status === 'in_progress').length;
+  const completedOrders = salesOrders.filter(o => o.status === 'completed').length;
+  const cancelledOrders = salesOrders.filter(o => o.status === 'cancelled').length;
 
-  const { count: cancelledOrders } = await supabase
-    .from('sales_orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .eq('status', 'cancelled')
-    .is('deleted_at', null);
+  // Calculate revenue
+  const totalRevenue = salesOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+  const completedRevenue = salesOrders
+    .filter(order => order.status === 'completed')
+    .reduce((sum, order) => sum + (order.total_amount || 0), 0);
+  const pendingRevenue = salesOrders
+    .filter(order => ['pending', 'confirmed', 'in_progress'].includes(order.status))
+    .reduce((sum, order) => sum + (order.total_amount || 0), 0);
 
-  // Revenue calculation
-  const { data: ordersWithRevenue } = await supabase
-    .from('sales_orders')
-    .select('total_amount, status')
-    .eq('company_id', companyId)
-    .is('deleted_at', null);
-
-  const totalRevenue = ordersWithRevenue?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
-  const completedRevenue = ordersWithRevenue
-    ?.filter(order => order.status === 'completed')
-    .reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
-  const pendingRevenue = ordersWithRevenue
-    ?.filter(order => ['pending', 'confirmed', 'in_progress'].includes(order.status))
-    .reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
-
-  // Partners Stats
-  const { count: totalPartners } = await supabase
-    .from('partners')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .is('deleted_at', null);
-
-  const { count: customersCount } = await supabase
-    .from('partners')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .in('partner_type', ['Customer', 'Both'])
-    .is('deleted_at', null);
-
-  const { count: suppliersCount } = await supabase
-    .from('partners')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .in('partner_type', ['Supplier', 'Both'])
-    .is('deleted_at', null);
-
-  const { count: vendorsCount } = await supabase
-    .from('partners')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .eq('partner_type', 'Vendor')
-    .is('deleted_at', null);
-
-  // Goods Movement Stats
-  const { count: totalReceipts } = await supabase
-    .from('goods_receipts')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId);
-
-  const { count: totalDispatches } = await supabase
-    .from('goods_dispatches')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId);
-
-  const { count: warehouses } = await supabase
-    .from('warehouses')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .is('deleted_at', null);
-
-  // QR Codes
-  const { count: qrBatches } = await supabase
-    .from('barcode_batches')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId);
+  // Process partners data
+  const partners = partnersData.data || [];
+  const totalPartners = partners.length;
+  const customersCount = partners.filter(p => ['Customer', 'Both'].includes(p.partner_type)).length;
+  const suppliersCount = partners.filter(p => ['Supplier', 'Both'].includes(p.partner_type)).length;
+  const vendorsCount = partners.filter(p => p.partner_type === 'Vendor').length;
 
   // Calculate percentages
-  const stockUtilization = totalStockUnits ? Math.round((inStockUnits || 0) / totalStockUnits * 100) : 0;
-  const orderCompletionRate = totalOrders ? Math.round((completedOrders || 0) / totalOrders * 100) : 0;
+  const stockUtilization = totalStockUnits ? Math.round(inStockUnits / totalStockUnits * 100) : 0;
+  const orderCompletionRate = totalOrders ? Math.round(completedOrders / totalOrders * 100) : 0;
 
   return (
     <div className="space-y-6">

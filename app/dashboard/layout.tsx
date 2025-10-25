@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import DashboardNav from '@/components/layouts/DashboardNav';
+import { getCachedUserData } from '@/lib/cache/queries';
 
 export default async function DashboardLayout({
   children,
@@ -16,13 +17,8 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  // Get user details from database
-  // Use maybeSingle() to handle new users who don't have a record yet
-  const { data: userData } = await supabase
-    .from('users')
-    .select('*, company:companies(name)')
-    .eq('auth_user_id', user.id)
-    .maybeSingle();
+  // Get user details from cache (5 min cache, includes company info)
+  const userData = await getCachedUserData(user.id);
 
   // Check if user is admin (no assigned warehouse)
   const isAdmin = !userData?.warehouse_id;

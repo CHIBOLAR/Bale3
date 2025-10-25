@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import QRCode from 'qrcode';
+// Dynamic imports for jsPDF and QRCode (lazy load when PDF generation is needed)
 import { LabelLayoutConfig } from '@/lib/types/inventory';
 
 interface QRLabelData {
@@ -9,6 +8,7 @@ interface QRLabelData {
 
 /**
  * Generates a PDF with QR code labels
+ * jsPDF and QRCode libraries are lazy-loaded to reduce initial bundle size
  */
 export async function generateQRCodesPDF(
   labels: QRLabelData[],
@@ -16,6 +16,12 @@ export async function generateQRCodesPDF(
   layout: LabelLayoutConfig
 ): Promise<ArrayBuffer> {
   console.log(`Starting PDF generation for batch: ${batchName}, ${labels.length} labels`);
+
+  // Lazy load jsPDF and QRCode only when needed (reduces bundle by ~100KB+)
+  const [{ default: jsPDF }, QRCode] = await Promise.all([
+    import('jspdf'),
+    import('qrcode')
+  ]);
 
   const pdf = new jsPDF({
     orientation: 'portrait',

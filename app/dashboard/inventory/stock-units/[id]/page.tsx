@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { QRCodeSVG } from 'qrcode.react';
+import dynamic from 'next/dynamic';
 import {
   ArrowLeft,
   QrCode,
@@ -21,6 +21,12 @@ import {
 } from 'lucide-react';
 import { StockUnitWithRelations, StockUnitStatus } from '@/lib/types/inventory';
 import { getStockUnit } from '@/app/actions/inventory/data';
+
+// Lazy load QRCodeSVG component (reduces initial bundle size)
+const QRCodeSVG = dynamic(
+  () => import('qrcode.react').then(mod => mod.QRCodeSVG),
+  { ssr: false, loading: () => <div className="h-32 w-32 animate-pulse bg-gray-200 rounded" /> }
+);
 
 export default function StockUnitDetailPage() {
   const router = useRouter();

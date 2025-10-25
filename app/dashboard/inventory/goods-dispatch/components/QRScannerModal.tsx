@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { X, Camera, AlertCircle } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
+
+// Lazy load html5-qrcode (196KB) only when scanner is used
+type Html5QrcodeType = any;
 
 interface QRScannerModalProps {
   isOpen: boolean;
@@ -22,7 +24,7 @@ export default function QRScannerModal({ isOpen, onClose, onScan, availableUnits
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [isScanning, setIsScanning] = useState(false);
-  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const html5QrCodeRef = useRef<Html5QrcodeType | null>(null);
   const lastScanTimeRef = useRef<number>(0);
 
   useEffect(() => {
@@ -41,8 +43,9 @@ export default function QRScannerModal({ isOpen, onClose, onScan, availableUnits
       setScanSuccess(false);
       setIsScanning(true);
 
-      // Initialize Html5Qrcode if not already initialized
+      // Dynamically import Html5Qrcode only when camera starts (lazy load ~196KB)
       if (!html5QrCodeRef.current) {
+        const { Html5Qrcode } = await import('html5-qrcode');
         html5QrCodeRef.current = new Html5Qrcode('qr-reader-video');
       }
 
@@ -59,11 +62,11 @@ export default function QRScannerModal({ isOpen, onClose, onScan, availableUnits
       await qrCodeScanner.start(
         { facingMode: 'environment' }, // Use back camera on mobile
         config,
-        (decodedText, decodedResult) => {
+        (decodedText: string, decodedResult: any) => {
           // Success callback - QR code detected
           handleQRCodeDetected(decodedText);
         },
-        (errorMessage) => {
+        (errorMessage: string) => {
           // Error callback - usually just scanning, ignore
           // console.log('Scanning...', errorMessage);
         }

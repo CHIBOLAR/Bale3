@@ -2,9 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { QRCodeSVG } from 'qrcode.react';
+import dynamic from 'next/dynamic';
 import { PRODUCT_LABEL_FIELDS, STOCK_UNIT_LABEL_FIELDS, QRLabelFieldOption } from '@/lib/types/inventory';
 import { createBarcodeBatch } from '@/app/actions/inventory/barcode';
+
+// Lazy load QRCodeSVG component (reduces initial bundle size)
+const QRCodeSVG = dynamic(
+  () => import('qrcode.react').then(mod => mod.QRCodeSVG),
+  { ssr: false, loading: () => <div className="h-32 w-32 animate-pulse bg-gray-200 rounded" /> }
+);
 
 export default function ConfigureLabelPage() {
   const router = useRouter();

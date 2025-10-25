@@ -2,10 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { QRCodeSVG } from 'qrcode.react';
+import dynamic from 'next/dynamic';
 import { ArrowLeft, Download, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import { getBarcodeBatch } from '@/app/actions/inventory/barcode';
 import { PRODUCT_LABEL_FIELDS, STOCK_UNIT_LABEL_FIELDS } from '@/lib/types/inventory';
+
+// Lazy load QRCodeSVG component (reduces initial bundle size)
+const QRCodeSVG = dynamic(
+  () => import('qrcode.react').then(mod => mod.QRCodeSVG),
+  { ssr: false, loading: () => <div className="h-32 w-32 animate-pulse bg-gray-200 rounded" /> }
+);
 
 interface GroupedBatchItems {
   receipt_number: string;

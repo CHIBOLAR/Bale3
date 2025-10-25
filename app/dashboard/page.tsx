@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import QuickActions from './QuickActions';
 import DashboardStats from './DashboardStats';
 import RecentActivity from './RecentActivity';
+import { getCachedUserData } from '@/lib/cache/queries';
 
 // Skeleton components for loading states
 function DashboardStatsSkeleton() {
@@ -81,12 +82,10 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Get user data
-  const { data: userData } = await supabase
-    .from('users')
-    .select('*, company:companies(*)')
-    .eq('auth_user_id', user?.id)
-    .maybeSingle();
+  if (!user) return null;
+
+  // Get user data from cache (5 min cache, includes company info)
+  const userData = await getCachedUserData(user.id);
 
   const companyId = userData?.company_id;
   const companyName = userData?.company?.name;

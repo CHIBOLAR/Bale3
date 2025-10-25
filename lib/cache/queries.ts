@@ -34,7 +34,7 @@ export const CACHE_TAGS = {
 }
 
 /**
- * Get cached user data
+ * Get cached user data with company information
  */
 export const getCachedUserData = unstable_cache(
   async (userId: string) => {
@@ -42,7 +42,7 @@ export const getCachedUserData = unstable_cache(
 
     const { data, error } = await supabase
       .from('users')
-      .select('id, company_id, warehouse_id, auth_user_id, role, is_demo')
+      .select('id, company_id, warehouse_id, auth_user_id, role, is_demo, first_name, last_name, company:companies(name)')
       .eq('auth_user_id', userId)
       .single()
 
@@ -51,7 +51,17 @@ export const getCachedUserData = unstable_cache(
       return null
     }
 
-    return data
+    if (!data) return null
+
+    // Transform company array to single object (Supabase returns joins as arrays)
+    const company = Array.isArray(data.company) && data.company.length > 0
+      ? data.company[0]
+      : (data.company || null)
+
+    return {
+      ...data,
+      company
+    } as typeof data & { company: { name: string } | null }
   },
   ['user-data'],
   {
