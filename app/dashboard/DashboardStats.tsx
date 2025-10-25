@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { getActiveWarehouse } from '@/lib/warehouse-context';
+import { cache } from 'react';
 
-export default async function DashboardStats({ companyId }: { companyId: string }) {
+// Request-scoped memoized function to fetch dashboard stats
+// This prevents duplicate queries within the same request while maintaining auth context
+const getDashboardStats = cache(async (companyId: string, activeWarehouseId: string | null) => {
   const supabase = await createClient();
-  const activeWarehouseId = await getActiveWarehouse();
 
   // Get first and last day of current month
   const now = new Date();
@@ -85,19 +87,26 @@ export default async function DashboardStats({ companyId }: { companyId: string 
   }
 
   // Fetch all stats in parallel
-  const [
-    { count: salesOrdersCount },
-    { count: jobWorksCount },
-    { data: dispatchedData },
-    { data: receivedData },
-    { data: lowStockProducts },
-  ] = await Promise.all([
+  return await Promise.all([
     salesOrdersQuery,
     jobWorksQuery,
     dispatchedQuery,
     receivedQuery,
     productsQuery,
   ]);
+});
+
+export default async function DashboardStats({ companyId }: { companyId: string }) {
+  const activeWarehouseId = await getActiveWarehouse();
+
+  // Fetch stats with request-scoped memoization
+  const [
+    { count: salesOrdersCount },
+    { count: jobWorksCount },
+    { data: dispatchedData },
+    { data: receivedData },
+    { data: lowStockProducts },
+  ] = await getDashboardStats(companyId, activeWarehouseId);
 
   // Calculate total dispatched this month by unit
   const dispatchedByUnit = dispatchedData?.reduce((acc: Record<string, number>, item: any) => {
