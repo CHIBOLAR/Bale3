@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { GoodsDispatchFormData } from '@/lib/types/inventory';
+import { getUserContext } from '@/lib/cache/user-context';
 
 interface CreateGoodsDispatchResult {
   success: boolean;
@@ -285,69 +286,56 @@ export async function createGoodsDispatch(
  */
 export async function getGoodsDispatch(dispatchId: string) {
   try {
-    const supabase = await createClient();
-
-    // Get authenticated user and company_id
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    const context = await getUserContext();
+    if (!context) {
       throw new Error('Unauthorized');
     }
 
-    const { data: userData } = await supabase
-      .from('users')
-      .select('company_id')
-      .eq('auth_user_id', user.id)
-      .single();
+    const supabase = await createClient();
 
-    if (!userData?.company_id) {
-      throw new Error('Company not found');
-    }
-
-    // Get dispatch with relations
-    const { data: dispatch, error } = await supabase
-      .from('goods_dispatches')
-      .select(
+    // Optimized: Fetch dispatch and items in parallel
+    const [dispatchResult, itemsResult] = await Promise.all([
+      supabase
+        .from('goods_dispatches')
+        .select(
+          `
+          *,
+          warehouses!goods_dispatches_warehouse_id_fkey (id, name),
+          dispatch_to_partner:partners!goods_dispatches_dispatch_to_partner_id_fkey (id, company_name, partner_type),
+          dispatch_to_warehouse:warehouses!goods_dispatches_dispatch_to_warehouse_id_fkey (id, name)
         `
-        *,
-        warehouses!goods_dispatches_warehouse_id_fkey (id, name),
-        dispatch_to_partner:partners!goods_dispatches_dispatch_to_partner_id_fkey (id, company_name, partner_type),
-        dispatch_to_warehouse:warehouses!goods_dispatches_dispatch_to_warehouse_id_fkey (id, name)
-      `
-      )
-      .eq('id', dispatchId)
-      .eq('company_id', userData.company_id)
-      .single();
+        )
+        .eq('id', dispatchId)
+        .eq('company_id', context.userData.company_id)
+        .single(),
 
-    if (error) {
-      console.error('Error fetching dispatch:', error);
+      supabase
+        .from('goods_dispatch_items')
+        .select(
+          `
+          id,
+          stock_unit_id,
+          dispatched_quantity,
+          created_at,
+          stock_units (
+            *,
+            products (id, name, material, color, product_number, product_images),
+            warehouses (id, name)
+          )
+        `
+        )
+        .eq('dispatch_id', dispatchId)
+        .eq('company_id', context.userData.company_id)
+    ]);
+
+    if (dispatchResult.error) {
+      console.error('Error fetching dispatch:', dispatchResult.error);
       return null;
     }
 
-    // Get dispatch items with stock units (including dispatched_quantity)
-    const { data: items } = await supabase
-      .from('goods_dispatch_items')
-      .select(
-        `
-        id,
-        stock_unit_id,
-        dispatched_quantity,
-        created_at,
-        stock_units (
-          *,
-          products (id, name, material, color, product_number, product_images),
-          warehouses (id, name)
-        )
-      `
-      )
-      .eq('dispatch_id', dispatchId)
-      .eq('company_id', userData.company_id);
-
     return {
-      ...dispatch,
-      items: items || [],
+      ...dispatchResult.data,
+      items: itemsResult.data || [],
     };
   } catch (error) {
     console.error('Error in getGoodsDispatch:', error);

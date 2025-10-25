@@ -1,97 +1,27 @@
-'use client'
-
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { redirect } from 'next/navigation';
 import {
   ArrowLeft,
   Package,
   Calendar,
   TruckIcon,
   FileText,
-  Building2,
-  User,
   Edit,
-  CheckCircle,
-  XCircle,
 } from 'lucide-react';
 import { GoodsDispatchStatus } from '@/lib/types/inventory';
-import { getGoodsDispatch, updateDispatchStatus } from '@/app/actions/inventory/goods-dispatch';
+import { getGoodsDispatch } from '@/app/actions/inventory/goods-dispatch';
+import GoodsDispatchClient from './GoodsDispatchClient';
 
-export default function GoodsDispatchDetailPage() {
-  const router = useRouter();
-  const params = useParams();
-  const dispatchId = params.id as string;
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
-  const [dispatch, setDispatch] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
+export default async function GoodsDispatchDetailPage({ params }: PageProps) {
+  const { id: dispatchId } = await params;
 
-  useEffect(() => {
-    async function fetchDispatch() {
-      try {
-        const data = await getGoodsDispatch(dispatchId);
-        setDispatch(data);
-      } catch (error) {
-        console.error('Error fetching dispatch:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (dispatchId) {
-      fetchDispatch();
-    }
-  }, [dispatchId]);
-
-  const getStatusBadge = (status: GoodsDispatchStatus) => {
-    const styles: Record<GoodsDispatchStatus, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      in_transit: 'bg-blue-100 text-blue-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-gray-100 text-gray-800',
-    };
-
-    return (
-      <span
-        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${styles[status]}`}
-      >
-        {status.replace('_', ' ')}
-      </span>
-    );
-  };
-
-  const handleStatusUpdate = async (newStatus: GoodsDispatchStatus) => {
-    setUpdatingStatus(true);
-    try {
-      const result = await updateDispatchStatus(dispatchId, newStatus);
-      if (result.success && dispatch) {
-        setDispatch({ ...dispatch, status: newStatus });
-      }
-    } catch (error) {
-      console.error('Error updating status:', error);
-    } finally {
-      setUpdatingStatus(false);
-    }
-  };
-
-  const getTotalQuantity = () => {
-    if (!dispatch?.items) return 0;
-    return dispatch.items.reduce(
-      (sum: number, item: any) =>
-        sum + (item.dispatched_quantity || (item.stock_units.size_quantity - item.stock_units.wastage)),
-      0
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-gray-500">Loading dispatch...</div>
-      </div>
-    );
-  }
+  // Server-side data fetching - much faster than client-side useEffect
+  const dispatch = await getGoodsDispatch(dispatchId);
 
   if (!dispatch) {
     return (
@@ -115,18 +45,44 @@ export default function GoodsDispatchDetailPage() {
     );
   }
 
+  const getStatusBadge = (status: GoodsDispatchStatus) => {
+    const styles: Record<GoodsDispatchStatus, string> = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      in_transit: 'bg-blue-100 text-blue-800',
+      delivered: 'bg-green-100 text-green-800',
+      cancelled: 'bg-gray-100 text-gray-800',
+    };
+
+    return (
+      <span
+        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${styles[status]}`}
+      >
+        {status.replace('_', ' ')}
+      </span>
+    );
+  };
+
+  const getTotalQuantity = () => {
+    if (!dispatch?.items) return 0;
+    return dispatch.items.reduce(
+      (sum: number, item: any) =>
+        sum + (item.dispatched_quantity || (item.stock_units.size_quantity - item.stock_units.wastage)),
+      0
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-6">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/dashboard/inventory/goods-dispatch"
             className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
-          </button>
+          </Link>
 
           <div className="flex items-start justify-between">
             <div>
@@ -301,41 +257,13 @@ export default function GoodsDispatchDetailPage() {
 
           {/* Right Column - Actions & Status */}
           <div className="space-y-6">
-            {/* Status Actions */}
+            {/* Status Actions - Client Component */}
             <div className="rounded-lg bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-lg font-semibold text-gray-900">Update Status</h2>
-              <div className="space-y-2">
-                {dispatch.status !== 'in_transit' && dispatch.status !== 'delivered' && (
-                  <button
-                    onClick={() => handleStatusUpdate('in_transit')}
-                    disabled={updatingStatus}
-                    className="w-full flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    <TruckIcon className="h-4 w-4" />
-                    Mark as In Transit
-                  </button>
-                )}
-                {dispatch.status !== 'delivered' && dispatch.status !== 'cancelled' && (
-                  <button
-                    onClick={() => handleStatusUpdate('delivered')}
-                    disabled={updatingStatus}
-                    className="w-full flex items-center justify-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    Mark as Delivered
-                  </button>
-                )}
-                {dispatch.status === 'pending' && (
-                  <button
-                    onClick={() => handleStatusUpdate('cancelled')}
-                    disabled={updatingStatus}
-                    className="w-full flex items-center justify-center gap-2 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <XCircle className="h-4 w-4" />
-                    Cancel Dispatch
-                  </button>
-                )}
-              </div>
+              <GoodsDispatchClient
+                dispatchId={dispatchId}
+                currentStatus={dispatch.status}
+              />
             </div>
 
             {/* Quick Info */}
