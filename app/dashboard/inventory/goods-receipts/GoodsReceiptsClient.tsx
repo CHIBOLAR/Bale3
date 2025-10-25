@@ -3,27 +3,16 @@
 import { useState, useMemo } from 'react';
 import { useDebounce } from 'use-debounce';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Search, Plus, Calendar, Package, Building2, User } from 'lucide-react';
+import { Search, Plus, Package } from 'lucide-react';
 import { PaginationClient } from '@/components/PaginationClient';
-
-interface GoodsReceipt {
-  id: string;
-  receipt_number: string;
-  receipt_date: string;
-  link_type: string;
-  invoice_number?: string;
-  invoice_amount?: number;
-  created_at: string;
-  warehouses?: { name: string };
-  partners?: { company_name: string };
-  source_warehouses?: { name: string };
-  total_quantity?: number;
-}
+import {
+  GoodsReceiptListItem,
+  GoodsReceiptListHeader,
+} from '@/components/inventory/GoodsReceiptListItem';
+import { StandardGoodsReceiptListItem } from '@/lib/types/goods-receipt';
 
 interface GoodsReceiptsClientProps {
-  receipts: GoodsReceipt[];
-  warehouses: { id: string; name: string }[];
+  receipts: StandardGoodsReceiptListItem[];
   currentPage: number;
   pageSize: number;
   totalCount: number;
@@ -31,16 +20,12 @@ interface GoodsReceiptsClientProps {
 
 export default function GoodsReceiptsClient({
   receipts: initialReceipts,
-  warehouses,
   currentPage,
   pageSize,
   totalCount,
 }: GoodsReceiptsClientProps) {
-  const router = useRouter();
-
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
-  const [warehouseFilter, setWarehouseFilter] = useState('');
   const [linkTypeFilter, setLinkTypeFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -56,17 +41,9 @@ export default function GoodsReceiptsClient({
         const searchLower = debouncedSearchTerm.toLowerCase();
         const matchesSearch =
           receipt.receipt_number?.toLowerCase().includes(searchLower) ||
-          receipt.invoice_number?.toLowerCase().includes(searchLower);
+          receipt.invoice_number?.toLowerCase().includes(searchLower) ||
+          receipt.source_name?.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
-      }
-
-      // Warehouse filter (check if receipt.warehouses exists and has id)
-      if (warehouseFilter) {
-        // Since we don't have warehouse_id in the receipt object directly,
-        // we'll need to match by name
-        if (!receipt.warehouses?.name.includes(warehouseFilter)) {
-          return false;
-        }
       }
 
       // Link type filter
@@ -84,43 +61,16 @@ export default function GoodsReceiptsClient({
 
       return true;
     });
-  }, [initialReceipts, debouncedSearchTerm, warehouseFilter, linkTypeFilter, dateFrom, dateTo]);
-
-  const handleRowClick = (receiptId: string) => {
-    router.push(`/dashboard/inventory/goods-receipts/${receiptId}`);
-  };
-
-  const formatLinkType = (linkType: string) => {
-    const types: Record<string, string> = {
-      purchase: 'Purchase',
-      transfer: 'Transfer',
-      job_work_return: 'Job Work Return',
-      sales_return: 'Sales Return',
-      production: 'Production',
-    };
-    return types[linkType] || linkType;
-  };
-
-  const getSourceName = (receipt: GoodsReceipt) => {
-    if (receipt.partners) {
-      return receipt.partners.company_name;
-    }
-    if (receipt.source_warehouses) {
-      return receipt.source_warehouses.name;
-    }
-    return '-';
-  };
-
+  }, [initialReceipts, debouncedSearchTerm, linkTypeFilter, dateFrom, dateTo]);
 
   const clearFilters = () => {
     setSearchTerm('');
-    setWarehouseFilter('');
     setLinkTypeFilter('');
     setDateFrom('');
     setDateTo('');
   };
 
-  const hasActiveFilters = debouncedSearchTerm || warehouseFilter || linkTypeFilter || dateFrom || dateTo;
+  const hasActiveFilters = debouncedSearchTerm || linkTypeFilter || dateFrom || dateTo;
 
   return (
     <>
@@ -132,7 +82,7 @@ export default function GoodsReceiptsClient({
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by receipt number, invoice number..."
+              placeholder="Search by receipt number, invoice number, or source..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -141,20 +91,7 @@ export default function GoodsReceiptsClient({
         </div>
 
         {/* Filter Dropdowns */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <select
-            value={warehouseFilter}
-            onChange={(e) => setWarehouseFilter(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="">All Warehouses</option>
-            {warehouses.map((warehouse) => (
-              <option key={warehouse.id} value={warehouse.name}>
-                {warehouse.name}
-              </option>
-            ))}
-          </select>
-
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <select
             value={linkTypeFilter}
             onChange={(e) => setLinkTypeFilter(e.target.value)}
@@ -189,7 +126,8 @@ export default function GoodsReceiptsClient({
         {hasActiveFilters && (
           <div className="mt-3 flex items-center justify-between border-t border-gray-200 pt-3">
             <p className="text-sm text-gray-600">
-              {filteredReceipts.length} {filteredReceipts.length === 1 ? 'receipt' : 'receipts'} found
+              {filteredReceipts.length} {filteredReceipts.length === 1 ? 'receipt' : 'receipts'}{' '}
+              found
             </p>
             <button
               onClick={clearFilters}
@@ -227,89 +165,10 @@ export default function GoodsReceiptsClient({
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Receipt Number
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Source
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Warehouse
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Quantity
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Receipt Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Invoice
-                  </th>
-                </tr>
-              </thead>
+              <GoodsReceiptListHeader />
               <tbody className="divide-y divide-gray-200 bg-white">
                 {filteredReceipts.map((receipt) => (
-                  <tr
-                    key={receipt.id}
-                    onClick={() => handleRowClick(receipt.id)}
-                    className="cursor-pointer hover:bg-gray-50"
-                  >
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-gray-400" />
-                        <span className="font-mono text-sm font-medium text-gray-900">
-                          {receipt.receipt_number}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                        {formatLinkType(receipt.link_type)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-900">
-                        <User className="h-4 w-4 text-gray-400" />
-                        {getSourceName(receipt)}
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-900">
-                          {receipt.warehouses?.name || '-'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span className="text-sm text-gray-900">
-                        {receipt.total_quantity || 0} units
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-900">
-                          {new Date(receipt.receipt_date).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {receipt.invoice_number || '-'}
-                        {receipt.invoice_amount && (
-                          <div className="text-xs text-gray-500">
-                            ₹{receipt.invoice_amount.toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                  <GoodsReceiptListItem key={receipt.id} receipt={receipt} />
                 ))}
               </tbody>
             </table>
