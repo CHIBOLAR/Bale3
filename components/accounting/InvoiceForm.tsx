@@ -74,7 +74,7 @@ export function InvoiceForm({
       if (onSuccess) {
         onSuccess(result.invoice_id);
       } else {
-        router.push(`/dashboard/accounts/invoices/${result.invoice_id}`);
+        router.push(`/dashboard/invoices/${result.invoice_id}`);
       }
     } else {
       setError(result.error || 'Failed to create invoice');

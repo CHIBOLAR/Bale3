@@ -30,7 +30,7 @@ export default async function CreateInvoicePage({ params }: PageProps) {
     .maybeSingle();
 
   if (existingInvoice) {
-    redirect(`/dashboard/accounts/invoices/${existingInvoice.id}`);
+    redirect(`/dashboard/invoices/${existingInvoice.id}`);
   }
 
   // Ensure dispatch has a customer
