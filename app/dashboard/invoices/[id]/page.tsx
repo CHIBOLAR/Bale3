@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft, FileText, Download } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
 interface PageProps {
@@ -91,6 +91,14 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
             </div>
 
             <div className="flex gap-2">
+              <a
+                href={`/api/invoices/${invoiceId}/pdf`}
+                download
+                className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                <Download className="h-4 w-4" />
+                Download PDF
+              </a>
               {isEditable && (
                 <Link
                   href={`/dashboard/invoices/${invoiceId}/edit`}

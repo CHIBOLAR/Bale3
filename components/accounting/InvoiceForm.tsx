@@ -16,7 +16,6 @@ interface InvoiceFormProps {
   customerName: string;
   dispatchId?: string;
   initialItems: InvoiceItem[];
-  onSuccess?: (invoiceId: string) => void;
 }
 
 export function InvoiceForm({
@@ -24,7 +23,6 @@ export function InvoiceForm({
   customerName,
   dispatchId,
   initialItems,
-  onSuccess,
 }: InvoiceFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -71,11 +69,8 @@ export function InvoiceForm({
     setLoading(false);
 
     if (result.success && result.invoice_id) {
-      if (onSuccess) {
-        onSuccess(result.invoice_id);
-      } else {
-        router.push(`/dashboard/invoices/${result.invoice_id}`);
-      }
+      // Always redirect to invoice detail page
+      router.push(`/dashboard/invoices/${result.invoice_id}`);
     } else {
       setError(result.error || 'Failed to create invoice');
     }

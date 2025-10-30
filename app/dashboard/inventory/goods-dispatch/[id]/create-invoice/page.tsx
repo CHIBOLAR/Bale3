@@ -169,9 +169,6 @@ export default async function CreateInvoicePage({ params }: PageProps) {
           customerName={customerName}
           dispatchId={dispatchId}
           initialItems={invoiceItems}
-          onSuccess={(invoiceId) => {
-            window.location.href = `/dashboard/inventory/goods-dispatch/${dispatchId}`;
-          }}
         />
       </div>
     </div>

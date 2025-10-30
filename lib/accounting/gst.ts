@@ -83,7 +83,7 @@ export async function getGSTRate(company_id: string): Promise<number> {
     .from('gst_settings')
     .select('default_gst_rate')
     .eq('company_id', company_id)
-    .single();
+    .maybeSingle();
 
   // Return configured rate or default to 18%
   return gst_settings?.default_gst_rate || 18;
