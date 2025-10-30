@@ -31,7 +31,7 @@ export default async function GoodsDispatchDetailPage({ params }: PageProps) {
     .from('invoices')
     .select('id, invoice_number, status, total_amount')
     .eq('dispatch_id', dispatchId)
-    .single();
+    .maybeSingle();
 
   if (!dispatch) {
     return (

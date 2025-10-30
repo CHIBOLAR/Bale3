@@ -27,7 +27,7 @@ export default async function CreateInvoicePage({ params }: PageProps) {
     .from('invoices')
     .select('id, invoice_number')
     .eq('dispatch_id', dispatchId)
-    .single();
+    .maybeSingle();
 
   if (existingInvoice) {
     redirect(`/dashboard/accounts/invoices/${existingInvoice.id}`);
