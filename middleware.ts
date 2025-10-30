@@ -91,10 +91,10 @@ export async function middleware(request: NextRequest) {
   // Referrer Policy
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
 
-  // Permissions Policy
+  // Permissions Policy - Allow camera for QR scanner
   headers.set(
     'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=()'
+    'camera=(self), microphone=(), geolocation=()'
   )
 
   // Cross-Origin-Opener-Policy
