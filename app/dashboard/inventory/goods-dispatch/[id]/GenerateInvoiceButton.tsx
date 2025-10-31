@@ -28,24 +28,30 @@ export function GenerateInvoiceButton({ dispatchId }: GenerateInvoiceButtonProps
   const [error, setError] = useState<string | null>(null);
 
   const handleGeneratePreview = async () => {
+    console.log('[GenerateInvoiceButton] Starting preview generation for dispatch:', dispatchId);
     setLoading(true);
     setError(null);
 
     try {
+      console.log('[GenerateInvoiceButton] Calling generateInvoicePreview...');
       const result = await generateInvoicePreview(dispatchId);
+      console.log('[GenerateInvoiceButton] Result:', result);
 
       if (!result.success || !result.data) {
-        setError(result.error || 'Failed to generate preview');
-        alert(result.error || 'Failed to generate preview');
+        const errorMsg = result.error || 'Failed to generate preview';
+        console.error('[GenerateInvoiceButton] Error:', errorMsg);
+        setError(errorMsg);
+        alert(errorMsg);
         return;
       }
 
+      console.log('[GenerateInvoiceButton] Preview data received, opening modal');
       setPreviewData(result.data);
       setShowModal(true);
     } catch (err) {
-      console.error('Error generating preview:', err);
+      console.error('[GenerateInvoiceButton] Unexpected error:', err);
       setError('An unexpected error occurred');
-      alert('An unexpected error occurred');
+      alert('An unexpected error occurred: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }

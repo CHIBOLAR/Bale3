@@ -45,6 +45,18 @@ export async function generateInvoicePreview(dispatchId: string): Promise<{
     const companyId = userData.company_id;
     const company = userData.companies as any;
 
+    // Validate company_id exists
+    if (!companyId) {
+      console.error('Missing company_id for user:', user.id);
+      return { success: false, error: 'User is not assigned to a company. Please contact administrator.' };
+    }
+
+    // Validate company data exists
+    if (!company) {
+      console.error('Missing company data for company_id:', companyId);
+      return { success: false, error: 'Company information not found. Please contact administrator.' };
+    }
+
     // Get goods dispatch with full details
     const { data: dispatch, error: dispatchError } = await supabase
       .from('goods_dispatches')

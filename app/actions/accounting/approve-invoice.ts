@@ -58,6 +58,12 @@ export async function approveInvoice(
     const userId = userData.id;
     const companyState = (userData.companies as any)?.state || '';
 
+    // Validate company_id exists
+    if (!company_id) {
+      console.error('Missing company_id for user:', user.id);
+      return { success: false, error: 'User is not assigned to a company. Please contact administrator.' };
+    }
+
     // Get goods dispatch with full details
     const { data: dispatch, error: dispatchError } = await supabase
       .from('goods_dispatches')
