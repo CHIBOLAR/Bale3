@@ -1,6 +1,7 @@
 /**
- * Invoice PDF Generator
- * Creates professional GST-compliant invoice PDFs
+ * Invoice PDF Generator - GST Compliant
+ * Creates professional GST-compliant invoice PDFs per Section 31 CGST Act 2017
+ * All mandatory fields included
  */
 
 export interface InvoicePDFData {
@@ -9,7 +10,7 @@ export interface InvoicePDFData {
   invoice_date: string;
   due_date?: string | null;
 
-  // Company Info
+  // Company Info (FULL details required)
   company: {
     name: string;
     address?: string;
@@ -19,7 +20,7 @@ export interface InvoicePDFData {
     state?: string;
   };
 
-  // Customer Info
+  // Customer Info (FULL details required)
   customer: {
     name: string;
     address?: string;
@@ -56,7 +57,7 @@ export interface InvoicePDFData {
   adjustment_amount?: number;
   total_amount: number;
 
-  // GST Compliance
+  // GST Compliance (MANDATORY)
   place_of_supply?: string;
   invoice_type?: string;
   reverse_charge?: boolean;
@@ -84,7 +85,7 @@ export interface InvoicePDFData {
 }
 
 /**
- * Generates an invoice PDF
+ * Generates a GST-compliant invoice PDF
  * Lazy loads jsPDF to reduce bundle size
  */
 export async function generateInvoicePDF(data: InvoicePDFData): Promise<ArrayBuffer> {
@@ -98,155 +99,225 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<ArrayBuf
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
+  const margin = 12;
   let yPos = margin;
 
-  // Helper function to add text with word wrap
-  const addText = (text: string, x: number, y: number, maxWidth?: number, options?: any) => {
-    if (maxWidth) {
-      const lines = doc.splitTextToSize(text, maxWidth);
-      doc.text(lines, x, y, options);
-      return y + (lines.length * 5);
-    }
-    doc.text(text, x, y, options);
-    return y + 5;
-  };
-
-  // ===== HEADER =====
-  doc.setFontSize(20);
+  // ===== HEADER SECTION =====
+  // Company Name (LARGE, NO LOGO - as per user requirement)
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text(data.is_credit_note ? 'CREDIT NOTE' : 'TAX INVOICE', pageWidth / 2, yPos, { align: 'center' });
-  yPos += 10;
+  doc.text(data.company.name, margin, yPos);
+  yPos += 6;
 
-  // Company Details (Left)
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  yPos = addText(data.company.name, margin, yPos);
-
+  // Company Address (FULL - GST mandatory)
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   if (data.company.address) {
-    yPos = addText(data.company.address, margin, yPos, 80);
+    const addressLines = doc.splitTextToSize(data.company.address, 90);
+    doc.text(addressLines, margin, yPos);
+    yPos += addressLines.length * 4;
   }
+
+  // Company GSTIN and State (MANDATORY)
   if (data.company.gstin) {
-    yPos = addText(`GSTIN: ${data.company.gstin}`, margin, yPos);
+    doc.text(`GSTIN: ${data.company.gstin}`, margin, yPos);
+    yPos += 4;
+  }
+  if (data.company.state) {
+    doc.text(`State: ${data.company.state}`, margin, yPos);
+    yPos += 4;
   }
   if (data.company.phone) {
-    yPos = addText(`Phone: ${data.company.phone}`, margin, yPos);
+    doc.text(`Phone: ${data.company.phone}`, margin, yPos);
+    yPos += 4;
   }
   if (data.company.email) {
-    yPos = addText(`Email: ${data.company.email}`, margin, yPos);
+    doc.text(`Email: ${data.company.email}`, margin, yPos);
+    yPos += 4;
   }
 
-  // Invoice Info (Right)
-  const rightX = pageWidth - margin - 60;
-  let rightY = 30;
+  // Top-right info box with background
+  const boxX = pageWidth - margin - 72;
+  const boxY = 12;
+  const boxWidth = 72;
+  const boxHeight = 55;
 
-  doc.setFontSize(9);
+  doc.setFillColor(240, 240, 240);
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(boxX, boxY, boxWidth, boxHeight, 'FD');
+
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Invoice No:', rightX, rightY);
+  doc.text('TAX INVOICE', boxX + boxWidth / 2, boxY + 6, { align: 'center' });
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Invoice No:', boxX + 2, boxY + 14);
   doc.setFont('helvetica', 'normal');
-  doc.text(data.invoice_number, rightX + 25, rightY);
-  rightY += 5;
+  doc.text(data.invoice_number, boxX + 22, boxY + 14);
 
   doc.setFont('helvetica', 'bold');
-  doc.text('Date:', rightX, rightY);
+  doc.text('Date:', boxX + 2, boxY + 20);
   doc.setFont('helvetica', 'normal');
-  doc.text(new Date(data.invoice_date).toLocaleDateString('en-IN'), rightX + 25, rightY);
-  rightY += 5;
+  doc.text(new Date(data.invoice_date).toLocaleDateString('en-IN'), boxX + 22, boxY + 20);
 
   if (data.due_date) {
     doc.setFont('helvetica', 'bold');
-    doc.text('Due Date:', rightX, rightY);
+    doc.text('Due Date:', boxX + 2, boxY + 26);
     doc.setFont('helvetica', 'normal');
-    doc.text(new Date(data.due_date).toLocaleDateString('en-IN'), rightX + 25, rightY);
-    rightY += 5;
+    doc.text(new Date(data.due_date).toLocaleDateString('en-IN'), boxX + 22, boxY + 26);
   }
 
-  if (data.is_credit_note && data.credit_note_for) {
+  // Place of Supply (MANDATORY)
+  if (data.place_of_supply) {
     doc.setFont('helvetica', 'bold');
-    doc.text('Against:', rightX, rightY);
+    doc.text('Place of Supply:', boxX + 2, boxY + 32);
     doc.setFont('helvetica', 'normal');
-    doc.text(data.credit_note_for, rightX + 25, rightY);
+    const placeText = doc.splitTextToSize(data.place_of_supply, boxWidth - 4);
+    doc.text(placeText, boxX + 2, boxY + 37);
   }
 
-  yPos = Math.max(yPos, rightY) + 10;
+  // Invoice Type Badge (B2B/B2C)
+  if (data.invoice_type) {
+    doc.setFillColor(59, 130, 246);
+    doc.rect(boxX + 2, boxY + 43, 20, 6, 'F');
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text(data.invoice_type, boxX + 12, boxY + 47.5, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+  }
 
-  // ===== BILL TO =====
+  // Reverse Charge (MANDATORY indicator)
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Reverse Charge: ${data.reverse_charge ? 'Yes' : 'No'}`, boxX + 25, boxY + 47.5);
+
+  yPos = Math.max(yPos, boxY + boxHeight) + 8;
+
+  // ===== BILL TO SECTION =====
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  yPos = addText('Bill To:', margin, yPos);
+  doc.text('Bill To:', margin, yPos);
+  yPos += 5;
 
+  // Customer Name
   doc.setFontSize(11);
-  yPos = addText(data.customer.name, margin, yPos);
+  doc.text(data.customer.name, margin, yPos);
+  yPos += 5;
 
+  // Customer Address (FULL - GST mandatory)
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   if (data.customer.address) {
-    yPos = addText(data.customer.address, margin, yPos, 80);
+    const custAddressLines = doc.splitTextToSize(data.customer.address, 90);
+    doc.text(custAddressLines, margin, yPos);
+    yPos += custAddressLines.length * 4;
   }
+
+  // Customer State (MANDATORY)
   if (data.customer.state) {
-    yPos = addText(`State: ${data.customer.state}`, margin, yPos);
+    doc.text(`State: ${data.customer.state}`, margin, yPos);
+    yPos += 4;
   }
+
+  // Customer GSTIN (MANDATORY for B2B)
   if (data.customer.gstin) {
-    yPos = addText(`GSTIN: ${data.customer.gstin}`, margin, yPos);
+    doc.text(`GSTIN: ${data.customer.gstin}`, margin, yPos);
+    yPos += 4;
   }
 
-  yPos += 5;
+  yPos += 6;
 
-  // ===== ITEMS TABLE =====
+  // ===== ITEMS TABLE WITH BORDERS =====
+  const col1X = margin;
+  const col2X = margin + 8;
+  const col3X = margin + 78;
+  const col4X = margin + 105;
+  const col5X = margin + 120;
+  const col6X = margin + 138;
+  const col7X = margin + 158;
+
+  // Table header
   doc.setFillColor(240, 240, 240);
   doc.rect(margin, yPos, pageWidth - 2 * margin, 8, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(margin, yPos, pageWidth - 2 * margin, 8, 'S');
 
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.text('#', margin + 2, yPos + 5);
-  doc.text('Description', margin + 8, yPos + 5);
-  doc.text('HSN/SAC', margin + 65, yPos + 5);
-  doc.text('UOM', pageWidth - 125, yPos + 5);
-  doc.text('Qty', pageWidth - 110, yPos + 5, { align: 'right' });
-  doc.text('Rate', pageWidth - 90, yPos + 5, { align: 'right' });
-  doc.text('Taxable', pageWidth - 65, yPos + 5, { align: 'right' });
-  doc.text('GST', pageWidth - 45, yPos + 5, { align: 'right' });
-  doc.text('Total', pageWidth - margin - 2, yPos + 5, { align: 'right' });
+  doc.text('#', col1X + 2, yPos + 5);
+  doc.text('Description', col2X + 2, yPos + 5);
+  doc.text('HSN/SAC', col3X + 2, yPos + 5);
+  doc.text('UOM', col4X + 2, yPos + 5);
+  doc.text('Qty', col5X + 2, yPos + 5);
+  doc.text('Rate', col6X + 2, yPos + 5, { align: 'right' });
+  doc.text('Amount', col7X + 2, yPos + 5, { align: 'right' });
 
   yPos += 8;
-  doc.setFont('helvetica', 'normal');
 
-  // Item rows
+  // Table rows with borders
+  doc.setFont('helvetica', 'normal');
   data.items.forEach((item, index) => {
-    // Check if we need a new page
+    // Check for page break
     if (yPos > pageHeight - 60) {
       doc.addPage();
       yPos = margin;
     }
 
-    const gstAmount = (item.cgst_amount || 0) + (item.sgst_amount || 0) + (item.igst_amount || 0);
-    const hsnSac = item.hsn_code || item.sac_code || '-';
-    const uom = item.unit_of_measurement || 'PCS';
+    const itemStartY = yPos;
+    const rowHeight = 6;
 
+    // Draw borders
+    doc.setDrawColor(220, 220, 220);
+    doc.rect(margin, itemStartY, pageWidth - 2 * margin, rowHeight);
+
+    // Content
     doc.setFontSize(7);
-    doc.text((index + 1).toString(), margin + 2, yPos + 4);
+    doc.text((index + 1).toString(), col1X + 2, itemStartY + 4);
 
-    const descLines = doc.splitTextToSize(item.description, 50);
-    doc.text(descLines, margin + 8, yPos + 4);
+    const descLines = doc.splitTextToSize(item.description, 65);
+    doc.text(descLines[0] || '', col2X + 2, itemStartY + 4);
 
-    doc.text(hsnSac, margin + 65, yPos + 4);
-    doc.text(uom, pageWidth - 125, yPos + 4);
-    doc.text(item.quantity.toFixed(2), pageWidth - 110, yPos + 4, { align: 'right' });
-    doc.text('₹' + item.unit_rate.toFixed(2), pageWidth - 90, yPos + 4, { align: 'right' });
-    doc.text('₹' + item.taxable_amount.toFixed(2), pageWidth - 65, yPos + 4, { align: 'right' });
-    doc.text('₹' + gstAmount.toFixed(2), pageWidth - 45, yPos + 4, { align: 'right' });
-    doc.text('₹' + item.line_total.toFixed(2), pageWidth - margin - 2, yPos + 4, { align: 'right' });
+    const hsnSac = item.hsn_code || item.sac_code || '-';
+    doc.text(hsnSac, col3X + 2, itemStartY + 4);
 
-    yPos += Math.max(descLines.length * 4, 6);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
+    const uom = item.unit_of_measurement || 'PCS';
+    doc.text(uom, col4X + 2, itemStartY + 4);
+
+    doc.text(item.quantity.toFixed(2), col5X + 2, itemStartY + 4);
+    doc.text('₹' + item.unit_rate.toFixed(2), col6X + 2, itemStartY + 4, { align: 'right' });
+    doc.text('₹' + item.line_total.toFixed(2), col7X + 2, itemStartY + 4, { align: 'right' });
+
+    yPos += rowHeight;
+
+    // Tax breakdown with RATES (MANDATORY - user correction)
+    const taxLines: string[] = [];
+    if (item.cgst_rate && item.cgst_amount) {
+      taxLines.push(`CGST @${item.cgst_rate}%: ₹${item.cgst_amount.toFixed(2)}`);
+    }
+    if (item.sgst_rate && item.sgst_amount) {
+      taxLines.push(`SGST @${item.sgst_rate}%: ₹${item.sgst_amount.toFixed(2)}`);
+    }
+    if (item.igst_rate && item.igst_amount) {
+      taxLines.push(`IGST @${item.igst_rate}%: ₹${item.igst_amount.toFixed(2)}`);
+    }
+
+    if (taxLines.length > 0) {
+      doc.setFontSize(6);
+      doc.setTextColor(100, 100, 100);
+      doc.text(taxLines.join(' | '), col2X + 2, yPos + 3);
+      doc.setTextColor(0, 0, 0);
+      yPos += 4;
+    }
   });
 
-  yPos += 5;
+  yPos += 4;
 
-  // ===== TOTALS =====
+  // ===== TOTALS SECTION WITH TAX RATES =====
   const totalsX = pageWidth - margin - 60;
+
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
 
   doc.text('Subtotal:', totalsX, yPos);
@@ -263,25 +334,34 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<ArrayBuf
   doc.text('₹' + data.taxable_amount.toFixed(2), pageWidth - margin - 2, yPos, { align: 'right' });
   yPos += 5;
 
+  // Tax breakdown with RATES (MANDATORY)
   if (data.cgst_total > 0) {
-    doc.text('CGST:', totalsX, yPos);
+    // Calculate CGST rate from first item
+    const cgstRate = data.items.find(i => i.cgst_rate)?.cgst_rate || 0;
+    doc.text(`CGST @ ${cgstRate}%:`, totalsX, yPos);
     doc.text('₹' + data.cgst_total.toFixed(2), pageWidth - margin - 2, yPos, { align: 'right' });
     yPos += 5;
 
-    doc.text('SGST:', totalsX, yPos);
+    doc.text(`SGST @ ${cgstRate}%:`, totalsX, yPos);
     doc.text('₹' + data.sgst_total.toFixed(2), pageWidth - margin - 2, yPos, { align: 'right' });
     yPos += 5;
   }
 
   if (data.igst_total > 0) {
-    doc.text('IGST:', totalsX, yPos);
+    const igstRate = data.items.find(i => i.igst_rate)?.igst_rate || 0;
+    doc.text(`IGST @ ${igstRate}%:`, totalsX, yPos);
     doc.text('₹' + data.igst_total.toFixed(2), pageWidth - margin - 2, yPos, { align: 'right' });
     yPos += 5;
   }
 
   if (data.adjustment_amount && data.adjustment_amount !== 0) {
     doc.text('Adjustment:', totalsX, yPos);
-    doc.text((data.adjustment_amount > 0 ? '+' : '') + '₹' + data.adjustment_amount.toFixed(2), pageWidth - margin - 2, yPos, { align: 'right' });
+    doc.text(
+      (data.adjustment_amount > 0 ? '+' : '') + '₹' + data.adjustment_amount.toFixed(2),
+      pageWidth - margin - 2,
+      yPos,
+      { align: 'right' }
+    );
     yPos += 5;
   }
 
@@ -298,17 +378,21 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<ArrayBuf
   yPos += 10;
 
   // ===== TRANSPORT DETAILS =====
-  if (data.vehicle_number || data.lr_rr_number || data.transport_mode || data.e_way_bill_number) {
-    // Check if we need a new page
-    if (yPos > pageHeight - 50) {
+  if (
+    data.vehicle_number ||
+    data.lr_rr_number ||
+    data.transport_mode ||
+    data.e_way_bill_number
+  ) {
+    if (yPos > pageHeight - 40) {
       doc.addPage();
       yPos = margin;
     }
 
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    yPos = addText('Transport Details:', margin, yPos);
-    yPos += 2;
+    doc.text('Transport Details:', margin, yPos);
+    yPos += 5;
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
@@ -317,70 +401,34 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<ArrayBuf
     if (data.vehicle_number) transportInfo.push(`Vehicle: ${data.vehicle_number}`);
     if (data.transport_mode) transportInfo.push(`Mode: ${data.transport_mode}`);
     if (data.lr_rr_number) {
-      const lrText = `LR/RR No.: ${data.lr_rr_number}${data.lr_rr_date ? ` (${new Date(data.lr_rr_date).toLocaleDateString('en-IN')})` : ''}`;
+      const lrText = `LR/RR No.: ${data.lr_rr_number}${
+        data.lr_rr_date
+          ? ` (${new Date(data.lr_rr_date).toLocaleDateString('en-IN')})`
+          : ''
+      }`;
       transportInfo.push(lrText);
     }
     if (data.transporter_name) transportInfo.push(`Transporter: ${data.transporter_name}`);
     if (data.distance_km) transportInfo.push(`Distance: ${data.distance_km} km`);
     if (data.e_way_bill_number) {
-      const ewbText = `E-Way Bill: ${data.e_way_bill_number}${data.e_way_bill_date ? ` (${new Date(data.e_way_bill_date).toLocaleDateString('en-IN')})` : ''}`;
+      const ewbText = `E-Way Bill: ${data.e_way_bill_number}${
+        data.e_way_bill_date
+          ? ` (${new Date(data.e_way_bill_date).toLocaleDateString('en-IN')})`
+          : ''
+      }`;
       transportInfo.push(ewbText);
     }
 
-    transportInfo.forEach(info => {
-      yPos = addText(info, margin, yPos);
+    transportInfo.forEach((info) => {
+      doc.text(info, margin, yPos);
+      yPos += 4;
     });
 
     yPos += 3;
   }
 
-  // ===== GST COMPLIANCE INFO =====
-  if (data.place_of_supply || data.invoice_type || data.reverse_charge) {
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-
-    const gstInfo: string[] = [];
-    if (data.place_of_supply) gstInfo.push(`Place of Supply: ${data.place_of_supply}`);
-    if (data.invoice_type) gstInfo.push(`Invoice Type: ${data.invoice_type}`);
-    if (data.reverse_charge) gstInfo.push('Reverse Charge: Yes');
-
-    gstInfo.forEach(info => {
-      yPos = addText(info, margin, yPos);
-    });
-
-    yPos += 3;
-  }
-
-  // ===== E-INVOICE QR CODE =====
-  if (data.e_invoice_qr) {
-    // Check if we need a new page
-    if (yPos > pageHeight - 50) {
-      doc.addPage();
-      yPos = margin;
-    }
-
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    yPos = addText('E-Invoice QR Code:', margin, yPos);
-    yPos += 3;
-
-    // Add QR code placeholder (actual QR generation would require qrcode library)
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'italic');
-    yPos = addText('(Scan for E-Invoice verification)', margin, yPos);
-
-    if (data.e_invoice_irn) {
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
-      yPos = addText(`IRN: ${data.e_invoice_irn}`, margin, yPos, pageWidth - 2 * margin);
-    }
-
-    yPos += 5;
-  }
-
-  // ===== NOTES =====
+  // ===== NOTES/TERMS =====
   if (data.notes) {
-    // Check if we need a new page
     if (yPos > pageHeight - 30) {
       doc.addPage();
       yPos = margin;
@@ -388,15 +436,38 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<ArrayBuf
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    yPos = addText('Notes:', margin, yPos);
+    doc.text('Terms & Conditions:', margin, yPos);
+    yPos += 5;
+
     doc.setFont('helvetica', 'normal');
-    yPos = addText(data.notes, margin, yPos, pageWidth - 2 * margin);
+    doc.setFontSize(8);
+    const notesLines = doc.splitTextToSize(data.notes, pageWidth - 2 * margin);
+    doc.text(notesLines, margin, yPos);
+    yPos += notesLines.length * 4 + 5;
   }
 
-  // ===== FOOTER =====
+  // ===== AUTHORIZED SIGNATORY (MANDATORY) =====
+  // Position at bottom right
+  const sigY = pageHeight - 30;
+  const sigX = pageWidth - margin - 50;
+
   doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`For ${data.company.name}`, sigX, sigY);
+  doc.line(sigX, sigY + 8, sigX + 45, sigY + 8); // Signature line
   doc.setFont('helvetica', 'italic');
-  doc.text('This is a computer-generated GST-compliant invoice', pageWidth / 2, pageHeight - 10, { align: 'center' });
+  doc.text('Authorized Signatory', sigX + 22.5, sigY + 12, { align: 'center' });
+
+  // ===== FOOTER (MANDATORY) =====
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(100, 100, 100);
+  doc.text(
+    'This is a computer-generated GST-compliant invoice',
+    pageWidth / 2,
+    pageHeight - 8,
+    { align: 'center' }
+  );
 
   return doc.output('arraybuffer');
 }

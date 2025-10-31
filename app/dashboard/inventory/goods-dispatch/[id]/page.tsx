@@ -14,7 +14,7 @@ import { GoodsDispatchStatus } from '@/lib/types/inventory';
 import { getGoodsDispatch } from '@/app/actions/inventory/goods-dispatch';
 import { createClient } from '@/lib/supabase/server';
 import GoodsDispatchClient from './GoodsDispatchClient';
-import { GenerateInvoiceButton } from './GenerateInvoiceButton';
+import { CreateInvoiceButton } from './CreateInvoiceButton';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -272,41 +272,10 @@ export default async function GoodsDispatchDetailPage({ params }: PageProps) {
             {dispatch.dispatch_to_partner_id && (
               <div className="rounded-lg bg-white p-6 shadow-sm">
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">Invoice</h2>
-                {existingInvoice ? (
-                  <div className="space-y-3">
-                    <div className="rounded-md bg-green-50 p-3">
-                      <p className="text-sm font-medium text-green-800">
-                        Invoice Created
-                      </p>
-                      <p className="mt-1 text-xs text-green-600">
-                        {existingInvoice.invoice_number}
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Status:</span>
-                        <span className="font-medium capitalize">{existingInvoice.status}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Amount:</span>
-                        <span className="font-medium">₹{existingInvoice.total_amount?.toLocaleString()}</span>
-                      </div>
-                    </div>
-                    <Link
-                      href={`/dashboard/accounts/invoices/${existingInvoice.id}`}
-                      className="block w-full rounded-md bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-blue-700"
-                    >
-                      View Invoice →
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-sm text-gray-600">
-                      No invoice created for this dispatch yet.
-                    </p>
-                    <GenerateInvoiceButton dispatchId={dispatchId} />
-                  </div>
-                )}
+                <CreateInvoiceButton
+                  dispatchId={dispatchId}
+                  linkedInvoice={existingInvoice}
+                />
               </div>
             )}
 
