@@ -59,7 +59,14 @@ export interface DispatchFormData {
   due_date?: string;
   invoice_number?: string;
   invoice_amount?: string;
-  transport_details?: string;
+  // Transport Details (structured for GST compliance)
+  vehicle_number?: string;
+  lr_rr_number?: string;
+  lr_rr_date?: string;
+  transport_mode?: string;
+  transporter_name?: string;
+  distance_km?: string;
+  e_way_bill_required?: boolean;
   notes?: string;
 }
 
@@ -388,19 +395,122 @@ export default function DispatchForm({
                   />
                 </div>
 
-                {/* Transport Details */}
-                <div>
-                  <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Truck className="h-4 w-4 text-gray-400" />
-                    Transport details
-                  </label>
-                  <textarea
-                    value={formData.transport_details || ''}
-                    onChange={(e) => handleChange('transport_details', e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    rows={2}
-                    placeholder="Vehicle number, driver details, etc."
-                  />
+                {/* Transport Details Section */}
+                <div className="space-y-4 border-t border-gray-200 pt-4">
+                  <div>
+                    <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                      <Truck className="h-4 w-4 text-gray-600" />
+                      Transport Details (Optional)
+                    </h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Enter what you know now. Accountant will add missing details during invoice approval.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Vehicle Number */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Vehicle Number
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.vehicle_number || ''}
+                        onChange={(e) => handleChange('vehicle_number', e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="MH12AB1234"
+                      />
+                    </div>
+
+                    {/* Transport Mode */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Transport Mode
+                      </label>
+                      <select
+                        value={formData.transport_mode || ''}
+                        onChange={(e) => handleChange('transport_mode', e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="">Select mode</option>
+                        <option value="Road">Road</option>
+                        <option value="Rail">Rail</option>
+                        <option value="Air">Air</option>
+                        <option value="Ship">Ship</option>
+                      </select>
+                    </div>
+
+                    {/* LR/RR Number */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        LR/RR Number
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lr_rr_number || ''}
+                        onChange={(e) => handleChange('lr_rr_number', e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="Lorry/Railway Receipt No."
+                      />
+                    </div>
+
+                    {/* LR/RR Date */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        LR/RR Date
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.lr_rr_date || ''}
+                        onChange={(e) => handleChange('lr_rr_date', e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Transporter Name */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Transporter Name
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.transporter_name || ''}
+                        onChange={(e) => handleChange('transporter_name', e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="Transport company name"
+                      />
+                    </div>
+
+                    {/* Distance */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Distance (KM)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={formData.distance_km || ''}
+                        onChange={(e) => handleChange('distance_km', e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="Distance in kilometers"
+                      />
+                    </div>
+                  </div>
+
+                  {/* E-Way Bill Required */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="e_way_bill_required"
+                      checked={formData.e_way_bill_required || false}
+                      onChange={(e) => handleChange('e_way_bill_required', e.target.checked.toString())}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="e_way_bill_required" className="text-sm font-medium text-gray-700">
+                      E-Way Bill Required (for goods value &gt; ₹50,000)
+                    </label>
+                  </div>
                 </div>
 
                 {/* Notes */}

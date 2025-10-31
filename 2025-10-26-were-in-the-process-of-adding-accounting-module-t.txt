@@ -1,0 +1,2604 @@
+
+ ▐▛███▜▌   Claude Code v2.0.27
+▝▜█████▛▘  Sonnet 4.5 · Claude Pro
+  ▘▘ ▝▝    C:\Users\Chirag\Bale Inventorye
+══════════════════════════════════════════════════════════ Conversation compacted · ctrl+o for history ═════════════════════════════════════════════════════════
+  ⎿  Referenced file .claude.md
+  ⎿  Referenced file .todo.md
+  ⎿  Read components\layouts\DashboardNav.tsx (212 lines)
+  ⎿  Todo list read (4 items)
+
+● I'll continue by updating the .todo.md file with the detailed Phase 7 implementation tasks. Let me first mark the .claude.md task as completed and then
+  read the current .todo.md structure.
+
+● Read(.todo.md)
+  ⎿  Read 922 lines
+
+● Now I'll update the .todo.md file with the missing Phase 7 tasks, focusing on:
+
+  1. Cash Management (6 new tables + UI)
+  2. Multi-Currency Support (exchange rates, currency fields)
+  3. Navigation Compaction (reduce to 6 items, route restructuring)
+  4. Complete Database Schema (all 29 tables)
+  5. Updated Sandbox API Strategy (minimize costs)
+
+● Read(.todo.md)
+  ⎿  Read 50 lines
+
+● Write(.todo.md)
+  ⎿  Updated .todo.md with 1601 additions and 921 removals                                                                                              
+          1 -  # Bale Inventory App Refactor - Task List
+          2 -  
+          3 -  ## Legend
+          4 -  - ✅ Completed
+          5 -  - ⏳ In Progress
+          6 -  - ⏸️ Blocked/Waiting
+          7 -  - ❌ Cancelled
+          8 -  - 🔄 Needs Review
+          9 -  - ⭕ Not Started
+         10 -  ---
+         11 -  
+         12 -  ## Phase 4: UI/UX Improvements
+         13 -  
+         14 -  ### 4.1 Redesign Landing Page
+         15 -  - ⏳ Complete rewrite of `app/page.tsx`
+         16 -  - ⏳ New hero section with clear value proposition
+         17 -  - ⏳ Update CTAs (Google OAuth + Email OTP)
+         18 -  - ⏳ Remove all demo content
+         19 -  - ⏳ Add feature showcase
+         20 -  - ⏳ Add testimonials (optional)
+         21 -  - ⏳ Add pricing section (optional)
+         22 -  - ⏳ Update footer
+         23 -  - ⏳ Test responsive design
+         24 -  - ⏳ Test all links
+         25 -  
+         26 -  ### 4.2 Remove Demo UI Elements
+         27 -  - ⏳ Search codebase for "demo" (case-insensitive)
+         28 -  - ⏳ Remove from `app/dashboard/layout.tsx`
+         29 -  - ⏳ Remove from all feature pages
+         30 -  - ⏳ Remove "Demo Mode" badges
+         31 -  - ⏳ Remove "Upgrade Account" buttons
+         32 -  - ⏳ Remove demo restrictions display
+         33 -  - ⏳ Remove account type indicators
+         34 -  - ⏳ Remove demo limits display (e.g., "3/5 products")
+         35 -  
+         36 -  ### 4.3 Improve Dashboard Navigation
+         37 -  - ⏳ Update `components/DashboardNav.tsx`
+         38 -  - ⏳ Group menu items logically
+         39 -  - ⏳ Add icons to all items (if missing)
+         40 -  - ⏳ Improve active state indication
+         41 -  - ⏳ Improve mobile menu
+         42 -  - ⏳ Add keyboard shortcuts (optional)
+         43 -  - ⏳ Test navigation on mobile
+         44 -  
+         45 -  ### 4.4 Add Breadcrumbs
+         46 -  - ⏳ Create `components/Breadcrumbs.tsx`
+         47 -  - ⏳ Implement dynamic breadcrumb logic
+         48 -  - ⏳ Add to `app/dashboard/layout.tsx`
+         49 -  - ⏳ Test on various pages
+         50 -  - ⏳ Test on mobile
+         51 -  
+         52 -  ### 4.5 Improve Loading States
+         53 -  - ⏳ Add loading skeletons to dashboard
+         54 -  - ⏳ Add loading skeletons to all list pages
+         55 -  - ⏳ Add loading skeletons to detail pages
+         56 -  - ⏳ Add loading spinners to forms
+         57 -  - ⏳ Add loading states to buttons
+         58 -  - ⏳ Test all loading states
+         59 -  
+         60 -  ### 4.6 Improve Mobile Responsiveness
+         61 -  - ⏳ Test all pages on mobile
+         62 -  - ⏳ Fix any layout issues
+         63 -  - ⏳ Improve table responsiveness
+         64 -  - ⏳ Improve form responsiveness
+         65 -  - ⏳ Test on various screen sizes
+         66 -  
+         67 -  ---
+         68 -  
+         69 -  ## Phase 5: Backend Cleanup
+         70 -  
+         71 -  ### 5.1 Remove Demo Logic from Server Actions
+         72 -  - ⏳ Search for `is_demo` in codebase
+         73 -  - ⏳ Search for `isDemoUser` in codebase
+         74 -  - ⏳ Search for `checkDemoRestriction` in codebase
+         75 -  - ⏳ Remove demo checks from:
+         76 -    - `app/actions/products/*.ts`
+         77 -    - `app/actions/inventory/*.ts`
+         78 -    - `app/actions/partners/*.ts`
+         79 -    - `app/actions/sales/*.ts`
+         80 -    - `app/actions/warehouse/*.ts`
+         81 -    - `app/actions/staff/*.ts`
+         82 -  
+         83 -  ### 5.2 Remove Demo Constants
+         84 -  - ⏳ Search for `MAX_PRODUCTS`
+         85 -  - ⏳ Search for `MAX_PARTNERS`
+         86 -  - ⏳ Search for `MAX_SALES_ORDERS`
+         87 -  - ⏳ Search for `MAX_GOODS_RECEIPTS`
+         88 -  - ⏳ Search for `MAX_GOODS_DISPATCHES`
+         89 -  - ⏳ Remove all demo restriction constants
+         90 -  
+         91 -  ### 5.3 Clean Up API Routes
+         92 -  - ⏳ Review all API routes in `app/api/`
+         93 -  - ⏳ Remove demo-related logic
+         94 -  - ⏳ Remove invite-related routes (already deleted)
+         95 -  - ⏳ Remove upgrade-related routes (already deleted)
+         96 -  - ⏳ Add proper error handling
+         97 -  - ⏳ Add proper logging
+         98 -  
+         99 -  ### 5.4 Consolidate Duplicate Code
+        100 -  - ⏳ Identify common patterns
+        101 -  - ⏳ Extract form validation to `lib/validation/`
+        102 -  - ⏳ Extract data formatting to `lib/formatters/`
+        103 -  - ⏳ Extract common queries to `lib/queries/`
+        104 -  - ⏳ Extract reusable hooks to `lib/hooks/`
+        105 -  
+        106 -  ### 5.5 TypeScript Improvements
+        107 -  - ⏳ Generate types from Supabase schema
+        108 -  - ⏳ Create `lib/types/database.ts`
+        109 -  - ⏳ Create `lib/types/api.ts`
+        110 -  - ⏳ Create `lib/types/forms.ts`
+        111 -  - ⏳ Fix all `any` types
+        112 -  - ⏳ Add proper type exports
+        113 -  - ⏳ Run TypeScript compiler, fix errors
+        114 -  
+        115 -  ### 5.6 Error Handling
+        116 -  - ⏳ Create `lib/errors/handler.ts`
+        117 -  - ⏳ Create `lib/errors/types.ts`
+        118 -  - ⏳ Standardize error messages
+        119 -  - ⏳ Add error logging
+        120 -  - ⏳ Create error boundaries
+        121 -  - ⏳ Test error handling
+        122 -  
+        123 -  ### 5.7 Add Logging
+        124 -  - ⏳ Set up logging utility
+        125 -  - ⏳ Add logging to critical operations
+        126 -  - ⏳ Add performance logging
+        127 -  - ⏳ Add error logging
+        128 -  - ⏳ Test logging in production
+        129 -  
+        130 -  ---
+        131 -  
+        132 -  ## Phase 6: Testing & Validation
+        133 -  
+        134 -  ### 6.3 Feature Testing
+        135 -  - ⏳ Test create product
+        136 -  - ⏳ Test edit product
+        137 -  - ⏳ Test delete product
+        138 -  - ⏳ Test create partner
+        139 -  - ⏳ Test edit partner
+        140 -  - ⏳ Test delete partner
+        141 -  - ⏳ Test create goods receipt
+        142 -  - ⏳ Test view goods receipt
+        143 -  - ⏳ Test create goods dispatch
+        144 -  - ⏳ Test view goods dispatch
+        145 -  - ⏳ Test create sales order
+        146 -  - ⏳ Test view sales order
+        147 -  - ⏳ Test QR code generation
+        148 -  - ⏳ Test QR code scanning
+        149 -  - ⏳ Test warehouse switching
+        150 -  - ⏳ Test staff management
+        151 -  - ⏳ Test all pagination
+        152 -  - ⏳ Test all search/filters
+        153 -  - ⏳ Test all sort options
+        154 -  
+        155 -  ### 6.4 UI/UX Testing
+        156 -  - ⏳ Test landing page on desktop
+        157 -  - ⏳ Test landing page on mobile
+        158 -  - ⏳ Test dashboard on desktop
+        159 -  - ⏳ Test dashboard on mobile
+        160 -  - ⏳ Test all pages on mobile
+        161 -  - ⏳ Test breadcrumbs
+        162 -  - ⏳ Test navigation
+        163 -  - ⏳ Test loading states
+        164 -  - ⏳ Test error states
+        165 -  - ⏳ Verify no demo UI elements remain
+        166 -  
+        167 -  ### 6.5 Database Testing
+        168 -  - ⏳ Verify migrations ran successfully
+        169 -  - ⏳ Verify indexes created
+        170 -  - ⏳ Verify demo tables dropped
+        171 -  - ⏳ Verify demo columns removed
+        172 -  - ⏳ Test RLS policies
+        173 -  - ⏳ Test multi-tenancy isolation
+        174 -  - ⏳ Test data integrity
+        175 -  
+        176 -  ### 6.6 Bug Fixes
+        177 -  - ⏳ Create list of bugs found
+        178 -  - ⏳ Prioritize bugs
+        179 -  - ⏳ Fix critical bugs
+        180 -  - ⏳ Fix high-priority bugs
+        181 -  - ⏳ Fix medium-priority bugs
+        182 -  - ⏳ Retest after fixes
+        183 -  
+        184 -  ### 6.7 Code Quality
+        185 -  - ⏳ Run TypeScript compiler
+        186 -  - ⏳ Fix all TypeScript errors
+        187 -  - ⏳ Run ESLint
+        188 -  - ⏳ Fix linting issues
+        189 -  - ⏳ Run Prettier
+        190 -  - ⏳ Format code
+        191 -  - ⏳ Review code for dead code
+        192 -  - ⏳ Remove unused imports
+        193 -  - ⏳ Remove commented code
+        194 -  
+        195 -  ## Phase 7: Accounting Module Integration
+        196 -  
+        197 -  ### 7.1 Database Schema & Migrations (Week 1)
+        198 -  
+        199 -  #### Create User-Facing Tables
+        200 -  - ⭕ Create `invoices` table
+        201 -    - invoice_number, customer_id, dispatch_id (FK)
+        202 -    - invoice_date, subtotal, gst_amount, total_amount
+        203 -    - payment_status ('unpaid', 'partial', 'paid')
+        204 -    - tally_import_id, tally_voucher_guid (for import tracking)
+        205 -  - ⭕ Create `payments_received` table
+        206 -    - payment_number, customer_id, invoice_id (FK)
+        207 -    - amount, payment_method, payment_date
+        208 -    - bank_details (for cheque/bank transfer)
+        209 -  - ⭕ Create `purchase_bills` table
+        210 -    - bill_number, supplier_id, receipt_id (FK)
+        211 -    - bill_date, subtotal, gst_amount, total_amount
+        212 -    - payment_status
+        213 -  - ⭕ Create `payments_made` table
+        214 -    - payment_number, supplier_id, bill_id (FK)
+        215 -    - amount, payment_method, payment_date
+        216 -  - ⭕ Create `expenses` table
+        217 -    - expense_number, category, amount
+        218 -    - payment_method, expense_date, description
+        219 -  
+        220 -  #### Create Hidden Accounting Tables
+        221 -  - ⭕ Create `ledger_accounts` table
+        222 -    - name, account_group_id (FK), account_type
+        223 -    - current_balance, balance_type ('debit'/'credit')
+        224 -    - partner_id (FK - for customer/supplier ledgers)
+        225 -    - is_system_ledger (Cash, Bank, Sales, etc.)
+        226 -  - ⭕ Create `journal_entries` table
+        227 -    - entry_number, transaction_type, transaction_id
+        228 -    - entry_date, narration
+        229 -    - imported_from_tally, tally_voucher_guid
+        230 -  - ⭕ Create `journal_entry_lines` table
+        231 -    - journal_entry_id (FK), ledger_account_id (FK)
+        232 -    - debit_amount, credit_amount
+        233 -    - bill_reference (for bill-wise tracking)
+        234 -  
+        235 -  #### Create Supporting Tables
+        236 -  - ⭕ Create `account_groups` table
+        237 -    - name, parent_group_id (FK), group_type
+        238 -    - nature ('Asset', 'Liability', 'Income', 'Expense')
+        239 -    - is_system_group (28 standard Tally groups)
+        240 -  - ⭕ Create `gst_settings` table (per company)
+        241 -    - gstin, state_code, default_gst_rate
+        242 -    - e_invoice_enabled, e_invoice_username
+        243 -  - ⭕ Create `inventory_movements` table
+        244 -    - journal_entry_id (FK), stock_unit_id (FK)
+        245 -    - movement_type ('inward', 'outward')
+        246 -    - quantity, unit, rate
+        247 -  - ⭕ Create `tally_import_logs` table
+        248 -    - import_date, period_from, period_to
+        249 -    - import_type, status, records_processed
+        250 -  - ⭕ Create `tally_export_queue` table
+        251 -    - export_date, period_from, period_to
+        252 -    - status, xml_file_url
+        253 -  
+        254 -  #### Database Triggers & Functions
+        255 -  - ⭕ Create double-entry validation trigger
+        256 -    - Enforces Dr = Cr before INSERT on journal_entry_lines
+        257 -    - Raises exception if unbalanced
+        258 -  - ⭕ Create auto-ledger creation trigger
+        259 -    - Auto-creates ledger when new partner created
+        260 -    - Links partner to ledger_account
+        261 -  - ⭕ Create COGS calculation function (FIFO)
+        262 -    - Calculates cost based on stock_units purchase_rate
+        263 -    - Returns weighted average cost
+        264 -  - ⭕ Create ledger balance calculation function
+        265 -    - Real-time balance from journal_entry_lines
+        266 -    - Returns current balance + balance_type
+        267 -  
+        268 -  #### Indexing & Performance
+        269 -  - ⭕ Add indexes on invoices(company_id, invoice_date)
+        270 -  - ⭕ Add indexes on journal_entries(company_id, entry_date)
+        271 -  - ⭕ Add indexes on journal_entry_lines(ledger_account_id)
+        272 -  - ⭕ Add indexes on ledger_accounts(partner_id)
+        273 -  - ⭕ Add indexes on payments_received(invoice_id)
+        274 -  
+        275 -  #### Data Seeding
+        276 -  - ⭕ Seed 28 standard account groups
+        277 -    - Assets: Current Assets, Fixed Assets, Bank Accounts, Cash, Stock, Sundry Debtors
+        278 -    - Liabilities: Current Liabilities, Sundry Creditors, Duties & Taxes, Capital Account
+        279 -    - Income: Sales, Direct Income, Indirect Income
+        280 -    - Expense: Purchase, Direct Expenses, Indirect Expenses
+        281 -  - ⭕ Seed system ledgers for each company
+        282 -    - Cash, Bank Account, Sales, Purchases
+        283 -    - CGST Output, SGST Output, IGST Output
+        284 -    - CGST Input, SGST Input, IGST Input
+        285 -    - Cost of Goods Sold, Inventory
+        286 -  
+        287 -  ### 7.2 Core Accounting Engine (Week 2)
+        288 -  
+        289 -  #### Double-Entry Logic
+        290 -  - ⭕ Create `createJournalEntry()` function
+        291 -    - Accepts transaction_type, transaction_id, date, lines[]
+        292 -    - Validates Dr = Cr before save
+        293 -    - Auto-generates entry_number
+        294 -  - ⭕ Create `validateDoubleEntry()` function
+        295 -    - Checks total Dr = total Cr
+        296 -    - Returns validation errors
+        297 -  - ⭕ Create `reverseJournalEntry()` function
+        298 -    - Creates opposite entry for cancellations
+        299 -    - Links to original entry
+        300 -  
+        301 -  #### Ledger Management
+        302 -  - ⭕ Create `getOrCreateLedger()` function
+        303 -    - Finds existing ledger or creates new
+        304 -    - Auto-assigns to correct account group
+        305 -  - ⭕ Create `calculateLedgerBalance()` function
+        306 -    - Sums all Dr/Cr entries for ledger
+        307 -    - Returns balance + balance_type
+        308 -  - ⭕ Create `getLedgerStatement()` function
+        309 -    - Returns all transactions for ledger
+        310 -    - With running balance
+        311 -  
+        312 -  #### GST Calculator
+        313 -  - ⭕ Create `calculateGST()` function
+        314 -    - Accepts: amount, customer_state, company_state, gst_rate
+        315 -    - Returns: {cgst, sgst, igst, total_gst}
+        316 -    - Logic: Same state → CGST+SGST, Different state → IGST
+        317 -  - ⭕ Create `getGSTRate()` function
+        318 -    - Gets rate from hsn_code or default company rate
+        319 -  
+        320 -  #### COGS Calculator
+        321 -  - ⭕ Create `calculateCOGS()` function (FIFO method)
+        322 -    - Accepts: stock_units[] dispatched
+        323 -    - Queries stock_units.purchase_rate in FIFO order
+        324 -    - Returns: total_cost
+        325 -  - ⭕ Create `createCOGSEntry()` function
+        326 -    - Auto-creates journal entry:
+        327 -      - Dr: Cost of Goods Sold
+        328 -      - Cr: Inventory
+        329 -  
+        330 -  #### Testing
+        331 -  - ⭕ Test double-entry validation (should reject unbalanced entries)
+        332 -  - ⭕ Test GST calculation (intra-state vs inter-state)
+        333 -  - ⭕ Test COGS calculation with multiple stock units
+        334 -  - ⭕ Test ledger balance calculation
+        335 -  
+        336 -  ### 7.3 Invoice Management (Week 3)
+        337 -  
+        338 -  #### Invoice Creation
+        339 -  - ⭕ Create `createInvoiceFromDispatch()` server action
+        340 -    - Accepts: dispatch_id
+        341 -    - Creates invoice record
+        342 -    - Auto-creates journal entries (Customer Dr, Sales Cr, GST Cr)
+        343 -    - Creates COGS entry
+        344 -    - Creates inventory movement record
+        345 -  - ⭕ Create `createStandaloneInvoice()` server action
+        346 -    - For manual invoice creation (without dispatch)
+        347 -    - Links to customer, items, amounts
+        348 -  - ⭕ Add GST calculation to invoice
+        349 -    - Based on customer state vs company state
+        350 -    - Auto-fills CGST, SGST, or IGST
+        351 -  
+        352 -  #### Invoice Editing & Cancellation
+        353 -  - ⭕ Create `updateInvoice()` server action
+        354 -    - Updates invoice details
+        355 -    - Re-creates journal entries if amounts changed
+        356 -  - ⭕ Create `cancelInvoice()` server action
+        357 -    - Creates reversal journal entry
+        358 -    - Updates invoice status to 'cancelled'
+        359 -  
+        360 -  #### Payment Status Tracking
+        361 -  - ⭕ Create `updateInvoicePaymentStatus()` function
+        362 -    - Checks total payments_received for invoice
+        363 -    - Updates status: 'unpaid', 'partial', 'paid'
+        364 -  
+        365 -  #### Invoice UI
+        366 -  - ⭕ Create invoice listing page (`/dashboard/accounting/invoices`)
+        367 -    - Table with filters (date range, customer, status)
+        368 -    - Pagination
+        369 -    - Actions: View, Edit, Cancel
+        370 -  - ⭕ Create invoice detail page (`/dashboard/accounting/invoices/[id]`)
+        371 -    - Full invoice details
+        372 -    - Linked goods dispatch
+        373 -    - Payment history
+        374 -    - Download PDF button
+        375 -  - ⭕ Create invoice creation form
+        376 -    - Option 1: Create from goods dispatch
+        377 -    - Option 2: Standalone creation
+        378 -    - GST auto-calculation
+        379 -    - Preview before save
+        380 -  
+        381 -  #### Invoice PDF & E-Invoice
+        382 -  - ⭕ Create invoice PDF generator
+        383 -    - Company letterhead
+        384 -    - GST-compliant format
+        385 -    - QR code (if e-invoice enabled)
+        386 -  - ⭕ Create E-invoice IRN generation
+        387 -    - API integration with NIC e-invoice portal
+        388 -    - Store IRN in invoice record
+        389 -    - Embed QR code in PDF
+        390 -  - ⭕ Add error handling for e-invoice failures
+        391 -  
+        392 -  #### Integration with Goods Dispatch
+        393 -  - ⭕ Add "Create Invoice" button to goods dispatch detail page
+        394 -  - ⭕ Auto-fill invoice from dispatch data
+        395 -  - ⭕ Link invoice_id back to goods_dispatches table
+        396 -  
+        397 -  #### Testing
+        398 -  - ⭕ Test invoice creation from dispatch
+        399 -  - ⭕ Test standalone invoice creation
+        400 -  - ⭕ Test journal entry auto-creation
+        401 -  - ⭕ Test GST calculation (CGST+SGST vs IGST)
+        402 -  - ⭕ Test payment status updates
+        403 -  - ⭕ Test invoice PDF generation
+        404 -  - ⭕ Test e-invoice IRN generation
+        405 -  
+        406 -  ### 7.4 Payment Management (Week 3)
+        407 -  
+        408 -  #### Payment Received
+        409 -  - ⭕ Create `recordPaymentReceived()` server action
+        410 -    - Creates payment_received record
+        411 -    - Creates journal entry (Bank Dr, Customer Cr)
+        412 -    - Updates invoice payment status
+        413 -    - Supports partial payments
+        414 -  - ⭕ Add payment allocation to multiple invoices
+        415 -    - User can split payment across invoices
+        416 -  - ⭕ Create payment receipt PDF generator
+        417 -  
+        418 -  #### Payment Made
+        419 -  - ⭕ Create `recordPaymentMade()` server action
+        420 -    - Creates payment_made record
+        421 -    - Creates journal entry (Supplier Dr, Bank Cr)
+        422 -    - Updates bill payment status
+        423 -  - ⭕ Add payment allocation to multiple bills
+        424 -  
+        425 -  #### Payment UI
+        426 -  - ⭕ Create payments received listing page
+        427 -    - Filter by customer, date range, payment method
+        428 -  - ⭕ Create payment received form
+        429 -    - Select customer
+        430 -    - Enter amount, payment method
+        431 -    - Allocate to invoices
+        432 -    - Preview journal entry
+        433 -  - ⭕ Create payments made listing page
+        434 -  - ⭕ Create payment made form
+        435 -    - Select supplier
+        436 -    - Allocate to purchase bills
+        437 -  
+        438 -  #### Payment Methods
+        439 -  - ⭕ Add payment method options
+        440 -    - Cash, Bank Transfer, UPI, Cheque, Credit Card
+        441 -  - ⭕ Add bank account selection (for bank transfers)
+        442 -  - ⭕ Add cheque number field (for cheques)
+        443 -  
+        444 -  #### Testing
+        445 -  - ⭕ Test payment received creation
+        446 -  - ⭕ Test payment allocation to multiple invoices
+        447 -  - ⭕ Test journal entry auto-creation
+        448 -  - ⭕ Test payment status updates on invoices
+        449 -  
+        450 -  ### 7.5 Purchase Bill Management (Week 4)
+        451 -  
+        452 -  #### Purchase Bill Creation
+        453 -  - ⭕ Create `createPurchaseBillFromReceipt()` server action
+        454 -    - Accepts: receipt_id
+        455 -    - Creates purchase_bill record
+        456 -    - Auto-creates journal entries (Purchase Dr, GST Dr, Supplier Cr)
+        457 -    - Links to goods_receipt
+        458 -  - ⭕ Create `createStandalonePurchaseBill()` server action
+        459 -  
+        460 -  #### Purchase Bill UI
+        461 -  - ⭕ Create purchase bills listing page
+        462 -  - ⭕ Create purchase bill detail page
+        463 -  - ⭕ Create purchase bill form
+        464 -    - Option 1: From goods receipt
+        465 -    - Option 2: Standalone
+        466 -    - GST input credit auto-calculation
+        467 -  
+        468 -  #### Integration with Goods Receipt
+        469 -  - ⭕ Add "Create Purchase Bill" button to goods receipt detail page
+        470 -  - ⭕ Link bill_id back to goods_receipts table
+        471 -  
+        472 -  #### Testing
+        473 -  - ⭕ Test bill creation from receipt
+        474 -  - ⭕ Test journal entry auto-creation
+        475 -  - ⭕ Test GST input credit calculation
+        476 -  
+        477 -  ### 7.6 Expense Tracking (Week 4)
+        478 -  
+        479 -  #### Expense Categories
+        480 -  - ⭕ Create predefined expense categories
+        481 -    - Rent, Salary, Transport, Utilities, Marketing, Office Supplies
+        482 -  - ⭕ Allow custom categories per company
+        483 -  
+        484 -  #### Expense Recording
+        485 -  - ⭕ Create `addExpense()` server action
+        486 -    - Creates expense record
+        487 -    - Creates journal entry (Expense Dr, Cash/Bank Cr)
+        488 -    - Auto-posts to P&L
+        489 -  
+        490 -  #### Expense UI
+        491 -  - ⭕ Create expenses listing page
+        492 -    - Filter by category, date range, payment method
+        493 -  - ⭕ Create expense form
+        494 -    - Select category
+        495 -    - Enter amount, description, date
+        496 -    - Select payment method
+        497 -  
+        498 -  #### Testing
+        499 -  - ⭕ Test expense creation
+        500 -  - ⭕ Test journal entry auto-creation
+        501 -  - ⭕ Test expense categorization
+        502 -  
+        503 -  ### 7.7 Financial Reports (Week 5)
+        504 -  
+        505 -  #### Trial Balance
+        506 -  - ⭕ Create `generateTrialBalance()` function
+        507 -    - Groups by ledger_account
+        508 -    - Calculates Dr total, Cr total
+        509 -    - Validates Dr = Cr
+        510 -  - ⭕ Create Trial Balance report page
+        511 -    - Date range filter
+        512 -    - Export to Excel/PDF
+        513 -    - Drill-down to ledger statement
+        514 -  
+        515 -  #### Profit & Loss Statement
+        516 -  - ⭕ Create `generateProfitLoss()` function
+        517 -    - Revenue (Income accounts)
+        518 -    - - Direct Expenses (Purchases, COGS)
+        519 -    - = Gross Profit
+        520 -    - - Indirect Expenses
+        521 -    - = Net Profit
+        522 -  - ⭕ Create P&L report page
+        523 -    - Period selection
+        524 -    - Comparative columns (This Year vs Last Year)
+        525 -    - Export to Excel/PDF
+        526 -  
+        527 -  #### Balance Sheet
+        528 -  - ⭕ Create `generateBalanceSheet()` function
+        529 -    - Assets (Current + Fixed)
+        530 -    - Liabilities (Current + Long-term)
+        531 -    - Capital + Profit/Loss
+        532 -    - Validates Assets = Liabilities
+        533 -  - ⭕ Create Balance Sheet report page
+        534 -    - As on date selection
+        535 -    - Comparative columns
+        536 -  
+        537 -  #### Outstanding Reports
+        538 -  - ⭕ Create `generateARAgingReport()` function
+        539 -    - Customer-wise outstanding
+        540 -    - Aging buckets: 0-30, 31-60, 61-90, 90+
+        541 -  - ⭕ Create `generateAPAgingReport()` function
+        542 -    - Supplier-wise payables
+        543 -  - ⭕ Create AR Aging report page
+        544 -  - ⭕ Create AP Aging report page
+        545 -  
+        546 -  #### Cash Flow Statement
+        547 -  - ⭕ Create `generateCashFlowStatement()` function
+        548 -    - Operating activities
+        549 -    - Investing activities
+        550 -    - Financing activities
+        551 -  - ⭕ Create Cash Flow report page
+        552 -  
+        553 -  #### Ledger Statement
+        554 -  - ⭕ Create `generateLedgerStatement()` function
+        555 -    - All transactions for a ledger
+        556 -    - Running balance
+        557 -  - ⭕ Create Ledger Statement page
+        558 -    - Select ledger
+        559 -    - Date range
+        560 -  
+        561 -  #### Reports Dashboard
+        562 -  - ⭕ Create reports dashboard page
+        563 -    - Quick links to all reports
+        564 -    - Summary widgets
+        565 -  
+        566 -  #### Export Functionality
+        567 -  - ⭕ Add Excel export for all reports
+        568 -  - ⭕ Add PDF export for all reports
+        569 -  
+        570 -  #### Testing
+        571 -  - ⭕ Test Trial Balance accuracy (manual verification)
+        572 -  - ⭕ Test P&L accuracy
+        573 -  - ⭕ Test Balance Sheet (Assets = Liabilities)
+        574 -  - ⭕ Test AR/AP aging calculations
+        575 -  - ⭕ Test report exports
+        576 -  
+        577 -  ### 7.8 GST Compliance (Week 5)
+        578 -  
+        579 -  #### GSTR-1 Report
+        580 -  - ⭕ Create `generateGSTR1()` function
+        581 -    - B2B section (invoices with GSTIN)
+        582 -    - B2C section (state-wise summary for invoices without GSTIN)
+        583 -    - HSN summary (item-wise with quantities)
+        584 -  - ⭕ Create GSTR-1 report page
+        585 -    - Month selection
+        586 -    - Export to JSON (GSTN format)
+        587 -    - Excel summary for review
+        588 -  - ⭕ Validate JSON format against GSTN schema
+        589 -  
+        590 -  #### GSTR-3B Summary
+        591 -  - ⭕ Create `generateGSTR3B()` function
+        592 -    - Outward supplies (from sales)
+        593 -    - Input tax credit (from purchases)
+        594 -    - Net tax payable
+        595 -  - ⭕ Create GSTR-3B summary page
+        596 -    - Month selection
+        597 -    - Section-wise breakdown
+        598 -  
+        599 -  #### E-Invoice Integration
+        600 -  - ⭕ Integrate with NIC E-Invoice API
+        601 -    - Authentication
+        602 -    - IRN generation
+        603 -    - QR code generation
+        604 -  - ⭕ Add E-Invoice settings page
+        605 -    - Enable/disable
+        606 -    - API credentials
+        607 -  - ⭕ Auto-generate IRN on invoice creation (if enabled)
+        608 -  - ⭕ Handle E-Invoice errors gracefully
+        609 -  
+        610 -  #### GST Returns Dashboard
+        611 -  - ⭕ Create GST returns dashboard
+        612 -    - GSTR-1 status (filed/pending)
+        613 -    - GSTR-3B status
+        614 -    - Tax liability summary
+        615 -  
+        616 -  #### Testing
+        617 -  - ⭕ Test GSTR-1 B2B section
+        618 -  - ⭕ Test GSTR-1 B2C section
+        619 -  - ⭕ Test HSN summary
+        620 -  - ⭕ Test GSTR-3B calculations
+        621 -  - ⭕ Test E-Invoice IRN generation
+        622 -  - ⭕ Validate JSON exports
+        623 -  
+        624 -  ### 7.9 Tally Integration - Export (Week 6)
+        625 -  
+        626 -  #### XML Export Structure
+        627 -  - ⭕ Create Tally XML generator
+        628 -    - Header (company name, period)
+        629 -    - Body (masters, transactions)
+        630 -  - ⭕ Map account_groups to Tally groups
+        631 -  - ⭕ Map ledger_accounts to Tally ledgers
+        632 -  - ⭕ Map journal_entries to Tally vouchers
+        633 -    - Invoice → Sales Voucher
+        634 -    - Purchase Bill → Purchase Voucher
+        635 -    - Payment Received → Receipt Voucher
+        636 -    - Payment Made → Payment Voucher
+        637 -    - Expense → Journal Voucher
+        638 -  
+        639 -  #### Export Functionality
+        640 -  - ⭕ Create `exportToTallyXML()` function
+        641 -    - Date range selection
+        642 -    - Export type: Masters only, Transactions only, Full
+        643 -  - ⭕ Create export preview
+        644 -    - Shows what will be exported
+        645 -    - Validation checks
+        646 -  - ⭕ Create "Export to Tally" page
+        647 -    - Date range picker
+        648 -    - Export type selection
+        649 -    - Download XML button
+        650 -  
+        651 -  #### Validation
+        652 -  - ⭕ Validate XML against Tally schema
+        653 -  - ⭕ Ensure Trial Balance matches in Tally after import
+        654 -  - ⭕ Test with Tally Prime import
+        655 -  
+        656 -  #### Testing
+        657 -  - ⭕ Export sample data to XML
+        658 -  - ⭕ Import XML into Tally Prime
+        659 -  - ⭕ Verify Trial Balance matches exactly
+        660 -  - ⭕ Test with large datasets (1000+ transactions)
+        661 -  
+        662 -  ### 7.10 Tally Integration - Import (Week 6)
+        663 -  
+        664 -  #### XML Parser
+        665 -  - ⭕ Create Tally XML parser
+        666 -    - Parse company info
+        667 -    - Parse ledgers
+        668 -    - Parse vouchers
+        669 -  - ⭕ Handle Tally-specific formats
+        670 -  
+        671 -  #### Opening Balances Import
+        672 -  - ⭕ Create `importOpeningBalances()` function
+        673 -    - Parse all ledgers with closing balances
+        674 -    - Create ledger_accounts
+        675 -    - Create partners (for customers/suppliers)
+        676 -    - Create opening journal entry
+        677 -    - Validate Trial Balance
+        678 -  
+        679 -  #### Transaction History Import
+        680 -  - ⭕ Create `importTransactions()` function
+        681 -    - Convert Sales Voucher → Invoice + journal_entries
+        682 -    - Convert Purchase Voucher → Purchase Bill + journal_entries
+        683 -    - Convert Receipt → Payment Received
+        684 -    - Convert Payment → Payment Made
+        685 -    - Convert Journal → Journal Entry
+        686 -  - ⭕ Link imported records to original Tally voucher GUID
+        687 -  
+        688 -  #### Import UI
+        689 -  - ⭕ Create "Import from Tally" page
+        690 -    - File upload
+        691 -    - Import type selection (opening balances / transactions)
+        692 -    - Period selection
+        693 -    - Preview before import
+        694 -  - ⭕ Show import progress
+        695 -  - ⭕ Show import summary (records created, errors)
+        696 -  
+        697 -  #### Validation & Error Handling
+        698 -  - ⭕ Validate Trial Balance after import
+        699 -  - ⭕ Handle duplicate imports gracefully
+        700 -  - ⭕ Show import errors clearly
+        701 -  
+        702 -  #### Testing
+        703 -  - ⭕ Test opening balances import
+        704 -  - ⭕ Test transaction history import
+        705 -  - ⭕ Verify Trial Balance matches Tally
+        706 -  - ⭕ Test with sample Tally company data
+        707 -  
+        708 -  ### 7.11 Inventory-Accounting Integration (Week 7)
+        709 -  
+        710 -  #### Auto-Accounting Triggers
+        711 -  - ⭕ Create trigger: goods_dispatch → auto-create invoice
+        712 -    - Optional (user can enable/disable)
+        713 -    - Auto-fills invoice from dispatch data
+        714 -  - ⭕ Create trigger: goods_receipt → auto-create purchase bill
+        715 -    - Auto-fills bill from receipt data
+        716 -  - ⭕ Update stock_units table with accounting links
+        717 -    - Add journal_entry_id column
+        718 -    - Track which entry created/consumed the stock
+        719 -  
+        720 -  #### COGS Auto-Calculation
+        721 -  - ⭕ Implement COGS calculation on dispatch
+        722 -    - Query stock_units.purchase_rate (FIFO order)
+        723 -    - Create COGS journal entry:
+        724 -      - Dr: Cost of Goods Sold
+        725 -      - Cr: Inventory
+        726 -  - ⭕ Link COGS entry to dispatch
+        727 -  
+        728 -  #### Inventory Valuation Report
+        729 -  - ⭕ Create inventory valuation report
+        730 -    - Stock value from stock_units.purchase_rate
+        731 -    - Matches Balance Sheet "Inventory" account
+        732 -  - ⭕ Add reconciliation check
+        733 -    - Stock valuation = Inventory ledger balance
+        734 -  
+        735 -  #### End-to-End Testing
+        736 -  - ⭕ Test complete flow: Receipt → Bill → Payment
+        737 -    - Create goods receipt
+        738 -    - Auto-create purchase bill
+        739 -    - Record payment
+        740 -    - Verify journal entries
+        741 -    - Check Trial Balance
+        742 -  - ⭕ Test complete flow: Dispatch → Invoice → Payment → COGS
+        743 -    - Create goods dispatch
+        744 -    - Auto-create invoice
+        745 -    - Calculate COGS
+        746 -    - Record payment
+        747 -    - Verify all journal entries
+        748 -    - Check Trial Balance, P&L, Balance Sheet
+        749 -  
+        750 -  ### 7.12 UI/UX Development (Week 7)
+        751 -  
+        752 -  #### Navigation
+        753 -  - ⭕ Add "Accounting" section to dashboard navigation
+        754 -    - Invoices
+        755 -    - Payments
+        756 -    - Expenses
+        757 -    - Reports
+        758 -    - Settings
+        759 -  
+        760 -  #### Dashboard Widgets
+        761 -  - ⭕ Create accounting dashboard widgets
+        762 -    - Total Sales (current month)
+        763 -    - Total Purchases (current month)
+        764 -    - Outstanding Receivables
+        765 -    - Outstanding Payables
+        766 -    - Cash & Bank Balance
+        767 -    - Quick actions (Create Invoice, Record Payment)
+        768 -  
+        769 -  #### Settings Page
+        770 -  - ⭕ Create accounting settings page
+        771 -    - Company GSTIN
+        772 -    - Financial year start date
+        773 -    - Default GST rate
+        774 -    - E-Invoice settings
+        775 -    - Tally sync settings
+        776 -    - Auto-accounting toggles
+        777 -  
+        778 -  #### Help & Tooltips
+        779 -  - ⭕ Add tooltips to all accounting fields
+        780 -  - ⭕ Add help text for complex concepts
+        781 -    - What is a journal entry?
+        782 -    - How does GST calculation work?
+        783 -  
+        784 -  #### Mobile Responsiveness
+        785 -  - ⭕ Test all accounting pages on mobile
+        786 -  - ⭕ Fix layout issues
+        787 -  - ⭕ Optimize table displays for mobile
+        788 -  
+        789 -  #### Loading States
+        790 -  - ⭕ Add loading skeletons to report generation
+        791 -  - ⭕ Add progress indicators for import/export
+        792 -  
+        793 -  #### Error Boundaries
+        794 -  - ⭕ Add error boundaries to accounting module
+        795 -  - ⭕ Graceful error handling
+        796 -  
+        797 -  ### 7.13 Testing & Validation (Week 7)
+        798 -  
+        799 -  #### Unit Testing
+        800 -  - ⭕ Test double-entry validation function
+        801 -  - ⭕ Test GST calculation function
+        802 -  - ⭕ Test COGS calculation function
+        803 -  - ⭕ Test ledger balance calculation
+        804 -  - ⭕ Test journal entry creation
+        805 -  
+        806 -  #### Integration Testing
+        807 -  - ⭕ Test invoice creation from dispatch
+        808 -  - ⭕ Test purchase bill from receipt
+        809 -  - ⭕ Test payment allocation
+        810 -  - ⭕ Test expense posting
+        811 -  - ⭕ Test report generation accuracy
+        812 -  
+        813 -  #### End-to-End Testing
+        814 -  - ⭕ Complete sales cycle: Dispatch → Invoice → Payment
+        815 -  - ⭕ Complete purchase cycle: Receipt → Bill → Payment
+        816 -  - ⭕ Verify Trial Balance accuracy
+        817 -  - ⭕ Verify P&L accuracy
+        818 -  - ⭕ Verify Balance Sheet (Assets = Liabilities)
+        819 -  
+        820 -  #### GST Testing
+        821 -  - ⭕ Test intra-state GST (CGST + SGST)
+        822 -  - ⭕ Test inter-state GST (IGST)
+        823 -  - ⭕ Test GSTR-1 report accuracy
+        824 -  - ⭕ Test GSTR-3B calculations
+        825 -  - ⭕ Test E-Invoice IRN generation
+        826 -  
+        827 -  #### Tally Integration Testing
+        828 -  - ⭕ Export sample data to Tally XML
+        829 -  - ⭕ Import into Tally Prime
+        830 -  - ⭕ Verify Trial Balance matches exactly
+        831 -  - ⭕ Import Tally data (opening balances)
+        832 -  - ⭕ Verify Trial Balance after import
+        833 -  
+        834 -  #### Performance Testing
+        835 -  - ⭕ Test with 1000+ invoices
+        836 -  - ⭕ Test with 5000+ journal entries
+        837 -  - ⭕ Measure report generation time (target < 2s)
+        838 -  - ⭕ Test concurrent transactions
+        839 -  
+        840 -  #### Bug Fixes
+        841 -  - ⭕ Document all bugs found
+        842 -  - ⭕ Prioritize and fix critical bugs
+        843 -  - ⭕ Retest after fixes
+        844 -  
+        845 -  ### 7.14 Documentation & Deployment
+        846 -  
+        847 -  #### API Documentation
+        848 -  - ⭕ Document all server actions
+        849 -  - ⭕ Document database schema
+        850 -  - ⭕ Document journal entry structure
+        851 -  
+        852 -  #### User Guide
+        853 -  - ⭕ Create user guide for accounting module
+        854 -    - How to create invoices
+        855 -    - How to record payments
+        856 -    - How to track expenses
+        857 -    - How to generate reports
+        858 -    - How to import from Tally
+        859 -    - How to export to Tally
+        860 -  
+        861 -  #### Video Tutorials (Optional)
+        862 -  - ⭕ Create invoice tutorial
+        863 -  - ⭕ Create payment recording tutorial
+        864 -  - ⭕ Create reports tutorial
+        865 -  
+        866 -  #### Code Documentation
+        867 -  - ⭕ Add JSDoc comments to accounting functions
+        868 -  - ⭕ Document complex logic
+        869 -  - ⭕ Update README
+        870 -  
+        871 -  #### Database Backup
+        872 -  - ⭕ Create full database backup before deployment
+        873 -  - ⭕ Test restore procedure
+        874 -  
+        875 -  #### Staging Deployment
+        876 -  - ⭕ Run migrations in staging
+        877 -  - ⭕ Test accounting module in staging
+        878 -  - ⭕ Verify no breaking changes to inventory
+        879 -  
+        880 -  #### Production Deployment
+        881 -  - ⭕ Run migrations in production
+        882 -  - ⭕ Deploy code to production
+        883 -  - ⭕ Monitor for errors
+        884 -  - ⭕ Check performance metrics
+        885 -  
+        886 -  #### Post-Deployment Monitoring
+        887 -  - ⭕ Monitor error rates
+        888 -  - ⭕ Monitor performance (report generation time)
+        889 -  - ⭕ Check user feedback
+        890 -  - ⭕ Fix any critical issues
+        891 -  
+        892 -  #### Rollback Plan
+        893 -  - ⭕ Document rollback procedure
+        894 -  - ⭕ Test rollback in staging
+        895 -  - ⭕ Keep backup for 30 days
+        896 -  
+        897 -  ---
+        898 -  
+        899 -  **Last Updated:** 2025-01-25
+        900 -  **Current Phase:**
+        901 -  - Phase 1 ✅ COMPLETED - Authentication with Google OAuth + Email OTP
+        902 -  - Phase 2 ✅ COMPLETED - Performance Optimization (70-80% faster, 100% security score)
+        903 -  - Phase 3 ✅ COMPLETED - Goods Receipt Standardization (consistent display format)
+        904 -  - Phase 4-5 ⏳ PENDING - UI/UX Improvements, Backend Cleanup
+        905 -  - Phase 6 ⏳ IN PROGRESS - Testing & Validation (Auth ✅, Performance ✅)
+        906 -  - Phase 7 ⭕ READY TO START - Accounting Module Integration
+        907 -  
+        908 -  **Recent Completion:**
+        909 -  - Phase 3: Standardized goods receipts display system with centralized queries and reusable components
+        910 -  - Phase 6.1: Authentication testing completed (Google OAuth + Email OTP)
+        911 -  - Phase 6.2: Performance testing completed (all targets met)
+        912 -  
+        913 -  **Total Phase 7 Tasks:** 141 tasks across 14 categories (7-week implementation)
+        914 -  
+        915 -  **Key Dependencies:**
+        916 -  - 7.2 depends on 7.1 (need tables before creating engine)
+        917 -  - 7.3-7.6 depend on 7.2 (need engine before transactions)
+        918 -  - 7.7-7.8 depend on 7.3-7.6 (need data before reports)
+        919 -  - 7.9-7.10 depend on 7.1-7.7 (need complete system for Tally sync)
+        920 -  - 7.11 depends on 7.1-7.10 (integration is final piece)
+        921 -  - 7.12-7.14 are parallel/final tasks
+          1 +  # Bale Inventory App Refactor - Task List
+          2 +  
+          3 +  ## Legend
+          4 +  - ✅ Completed
+          5 +  - ⏳ In Progress
+          6 +  - ⏸️ Blocked/Waiting
+          7 +  - ❌ Cancelled
+          8 +  - 🔄 Needs Review
+          9 +  - ⭕ Not Started
+         10 +  ---
+         11 +  
+         12 +  ## Phase 4: UI/UX Improvements
+         13 +  
+         14 +  ### 4.1 Redesign Landing Page
+         15 +  - ⏳ Complete rewrite of `app/page.tsx`
+         16 +  - ⏳ New hero section with clear value proposition
+         17 +  - ⏳ Update CTAs (Google OAuth + Email OTP)
+         18 +  - ⏳ Remove all demo content
+         19 +  - ⏳ Add feature showcase
+         20 +  - ⏳ Add testimonials (optional)
+         21 +  - ⏳ Add pricing section (optional)
+         22 +  - ⏳ Update footer
+         23 +  - ⏳ Test responsive design
+         24 +  - ⏳ Test all links
+         25 +  
+         26 +  ### 4.2 Remove Demo UI Elements
+         27 +  - ⏳ Search codebase for "demo" (case-insensitive)
+         28 +  - ⏳ Remove from `app/dashboard/layout.tsx`
+         29 +  - ⏳ Remove from all feature pages
+         30 +  - ⏳ Remove "Demo Mode" badges
+         31 +  - ⏳ Remove "Upgrade Account" buttons
+         32 +  - ⏳ Remove demo restrictions display
+         33 +  - ⏳ Remove account type indicators
+         34 +  - ⏳ Remove demo limits display (e.g., "3/5 products")
+         35 +  
+         36 +  ### 4.3 Improve Dashboard Navigation
+         37 +  - ⏳ Update `components/DashboardNav.tsx`
+         38 +  - ⏳ Group menu items logically
+         39 +  - ⏳ Add icons to all items (if missing)
+         40 +  - ⏳ Improve active state indication
+         41 +  - ⏳ Improve mobile menu
+         42 +  - ⏳ Add keyboard shortcuts (optional)
+         43 +  - ⏳ Test navigation on mobile
+         44 +  
+         45 +  ### 4.4 Add Breadcrumbs
+         46 +  - ⏳ Create `components/Breadcrumbs.tsx`
+         47 +  - ⏳ Implement dynamic breadcrumb logic
+         48 +  - ⏳ Add to `app/dashboard/layout.tsx`
+         49 +  - ⏳ Test on various pages
+         50 +  - ⏳ Test on mobile
+         51 +  
+         52 +  ### 4.5 Improve Loading States
+         53 +  - ⏳ Add loading skeletons to dashboard
+         54 +  - ⏳ Add loading skeletons to all list pages
+         55 +  - ⏳ Add loading skeletons to detail pages
+         56 +  - ⏳ Add loading spinners to forms
+         57 +  - ⏳ Add loading states to buttons
+         58 +  - ⏳ Test all loading states
+         59 +  
+         60 +  ### 4.6 Improve Mobile Responsiveness
+         61 +  - ⏳ Test all pages on mobile
+         62 +  - ⏳ Fix any layout issues
+         63 +  - ⏳ Improve table responsiveness
+         64 +  - ⏳ Improve form responsiveness
+         65 +  - ⏳ Test on various screen sizes
+         66 +  
+         67 +  ---
+         68 +  
+         69 +  ## Phase 5: Backend Cleanup
+         70 +  
+         71 +  ### 5.1 Remove Demo Logic from Server Actions
+         72 +  - ⏳ Search for `is_demo` in codebase
+         73 +  - ⏳ Search for `isDemoUser` in codebase
+         74 +  - ⏳ Search for `checkDemoRestriction` in codebase
+         75 +  - ⏳ Remove demo checks from:
+         76 +    - `app/actions/products/*.ts`
+         77 +    - `app/actions/inventory/*.ts`
+         78 +    - `app/actions/partners/*.ts`
+         79 +    - `app/actions/sales/*.ts`
+         80 +    - `app/actions/warehouse/*.ts`
+         81 +    - `app/actions/staff/*.ts`
+         82 +  
+         83 +  ### 5.2 Remove Demo Constants
+         84 +  - ⏳ Search for `MAX_PRODUCTS`
+         85 +  - ⏳ Search for `MAX_PARTNERS`
+         86 +  - ⏳ Search for `MAX_SALES_ORDERS`
+         87 +  - ⏳ Search for `MAX_GOODS_RECEIPTS`
+         88 +  - ⏳ Search for `MAX_GOODS_DISPATCHES`
+         89 +  - ⏳ Remove all demo restriction constants
+         90 +  
+         91 +  ### 5.3 Clean Up API Routes
+         92 +  - ⏳ Review all API routes in `app/api/`
+         93 +  - ⏳ Remove demo-related logic
+         94 +  - ⏳ Remove invite-related routes (already deleted)
+         95 +  - ⏳ Remove upgrade-related routes (already deleted)
+         96 +  - ⏳ Add proper error handling
+         97 +  - ⏳ Add proper logging
+         98 +  
+         99 +  ### 5.4 Consolidate Duplicate Code
+        100 +  - ⏳ Identify common patterns
+        101 +  - ⏳ Extract form validation to `lib/validation/`
+        102 +  - ⏳ Extract data formatting to `lib/formatters/`
+        103 +  - ⏳ Extract common queries to `lib/queries/`
+        104 +  - ⏳ Extract reusable hooks to `lib/hooks/`
+        105 +  
+        106 +  ### 5.5 TypeScript Improvements
+        107 +  - ⏳ Generate types from Supabase schema
+        108 +  - ⏳ Create `lib/types/database.ts`
+        109 +  - ⏳ Create `lib/types/api.ts`
+        110 +  - ⏳ Create `lib/types/forms.ts`
+        111 +  - ⏳ Fix all `any` types
+        112 +  - ⏳ Add proper type exports
+        113 +  - ⏳ Run TypeScript compiler, fix errors
+        114 +  
+        115 +  ### 5.6 Error Handling
+        116 +  - ⏳ Create `lib/errors/handler.ts`
+        117 +  - ⏳ Create `lib/errors/types.ts`
+        118 +  - ⏳ Standardize error messages
+        119 +  - ⏳ Add error logging
+        120 +  - ⏳ Create error boundaries
+        121 +  - ⏳ Test error handling
+        122 +  
+        123 +  ### 5.7 Add Logging
+        124 +  - ⏳ Set up logging utility
+        125 +  - ⏳ Add logging to critical operations
+        126 +  - ⏳ Add performance logging
+        127 +  - ⏳ Add error logging
+        128 +  - ⏳ Test logging in production
+        129 +  
+        130 +  ---
+        131 +  
+        132 +  ## Phase 6: Testing & Validation
+        133 +  
+        134 +  ### 6.3 Feature Testing
+        135 +  - ⏳ Test create product
+        136 +  - ⏳ Test edit product
+        137 +  - ⏳ Test delete product
+        138 +  - ⏳ Test create partner
+        139 +  - ⏳ Test edit partner
+        140 +  - ⏳ Test delete partner
+        141 +  - ⏳ Test create goods receipt
+        142 +  - ⏳ Test view goods receipt
+        143 +  - ⏳ Test create goods dispatch
+        144 +  - ⏳ Test view goods dispatch
+        145 +  - ⏳ Test create sales order
+        146 +  - ⏳ Test view sales order
+        147 +  - ⏳ Test QR code generation
+        148 +  - ⏳ Test QR code scanning
+        149 +  - ⏳ Test warehouse switching
+        150 +  - ⏳ Test staff management
+        151 +  - ⏳ Test all pagination
+        152 +  - ⏳ Test all search/filters
+        153 +  - ⏳ Test all sort options
+        154 +  
+        155 +  ### 6.4 UI/UX Testing
+        156 +  - ⏳ Test landing page on desktop
+        157 +  - ⏳ Test landing page on mobile
+        158 +  - ⏳ Test dashboard on desktop
+        159 +  - ⏳ Test dashboard on mobile
+        160 +  - ⏳ Test all pages on mobile
+        161 +  - ⏳ Test breadcrumbs
+        162 +  - ⏳ Test navigation
+        163 +  - ⏳ Test loading states
+        164 +  - ⏳ Test error states
+        165 +  - ⏳ Verify no demo UI elements remain
+        166 +  
+        167 +  ### 6.5 Database Testing
+        168 +  - ⏳ Verify migrations ran successfully
+        169 +  - ⏳ Verify indexes created
+        170 +  - ⏳ Verify demo tables dropped
+        171 +  - ⏳ Verify demo columns removed
+        172 +  - ⏳ Test RLS policies
+        173 +  - ⏳ Test multi-tenancy isolation
+        174 +  - ⏳ Test data integrity
+        175 +  
+        176 +  ### 6.6 Bug Fixes
+        177 +  - ⏳ Create list of bugs found
+        178 +  - ⏳ Prioritize bugs
+        179 +  - ⏳ Fix critical bugs
+        180 +  - ⏳ Fix high-priority bugs
+        181 +  - ⏳ Fix medium-priority bugs
+        182 +  - ⏳ Retest after fixes
+        183 +  
+        184 +  ### 6.7 Code Quality
+        185 +  - ⏳ Run TypeScript compiler
+        186 +  - ⏳ Fix all TypeScript errors
+        187 +  - ⏳ Run ESLint
+        188 +  - ⏳ Fix linting issues
+        189 +  - ⏳ Run Prettier
+        190 +  - ⏳ Format code
+        191 +  - ⏳ Review code for dead code
+        192 +  - ⏳ Remove unused imports
+        193 +  - ⏳ Remove commented code
+        194 +  
+        195 +  ---
+        196 +  
+        197 +  ## Phase 7: Accounting Module Integration ⭕ READY TO START
+        198 +  
+        199 +  **Duration:** 7 weeks (Feb-Mar 2025)
+        200 +  **Final Confirmations:**
+        201 +  - ✅ Tally Import/Export 100% Ready
+        202 +  - ✅ Cash Management Complete (80% cash business support)
+        203 +  - ✅ Sandbox API Minimal Cost Strategy (₹20-600/month)
+        204 +  - ✅ Multi-Currency Support (USD, EUR, GBP)
+        205 +  - ✅ Navigation Compacted to 6 Items
+        206 +  
+        207 +  ### 7.1 Database Schema & Migrations (Week 1)
+        208 +  
+        209 +  #### Core Accounting Tables (8 tables)
+        210 +  - ⭕ Create `ledger_accounts` table
+        211 +    - name, account_group_id (FK), account_type
+        212 +    - current_balance, balance_type ('debit'/'credit')
+        213 +    - partner_id (FK - for customer/supplier ledgers)
+        214 +    - is_system_ledger (Cash, Bank, Sales, etc.)
+        215 +    - currency_id (FK - for multi-currency support)
+        216 +  - ⭕ Create `journal_entries` table
+        217 +    - entry_number, transaction_type, transaction_id
+        218 +    - entry_date, narration, batch_id (FK - maker/checker)
+        219 +    - imported_from_tally, tally_voucher_guid
+        220 +    - created_by, approved_by, approval_date
+        221 +  - ⭕ Create `journal_entry_lines` table
+        222 +    - journal_entry_id (FK), ledger_account_id (FK)
+        223 +    - debit_amount, credit_amount
+        224 +    - bill_reference (for bill-wise tracking)
+        225 +    - currency_id, exchange_rate, amount_in_base_currency
+        226 +  - ⭕ Create `account_groups` table
+        227 +    - name, parent_group_id (FK), group_type
+        228 +    - nature ('Asset', 'Liability', 'Income', 'Expense')
+        229 +    - is_system_group (28 standard Tally groups)
+        230 +  - ⭕ Create `gst_settings` table (per company)
+        231 +    - gstin, state_code, default_gst_rate
+        232 +    - sandbox_api_key, sandbox_client_secret
+        233 +    - e_invoice_enabled, e_invoice_threshold (₹5L)
+        234 +  - ⭕ Create `batches` table (maker/checker workflow)
+        235 +    - batch_number, created_by, status ('draft'/'approved'/'rejected')
+        236 +    - entry_count, total_dr, total_cr
+        237 +    - submitted_date, approved_by, approved_date
+        238 +  - ⭕ Create `asset_types` table (currencies)
+        239 +    - code (INR, USD, EUR, GBP), symbol (₹, $, €, £)
+        240 +    - name, is_base_currency
+        241 +  - ⭕ Create `accounting_periods` table
+        242 +    - period_name (FY 2024-25, Jan 2025)
+        243 +    - start_date, end_date, is_closed
+        244 +  
+        245 +  #### Multi-Currency & Exchange (2 tables)
+        246 +  - ⭕ Create `exchange_rates` table
+        247 +    - from_currency_id (FK), to_currency_id (FK)
+        248 +    - rate, effective_date
+        249 +    - created_at, updated_at
+        250 +  - ⭕ Create `opening_stock` table (Tally import)
+        251 +    - product_id (FK), opening_quantity
+        252 +    - opening_value, as_on_date
+        253 +  
+        254 +  #### Inventory-Tally Integration (4 tables)
+        255 +  - ⭕ Create `stock_groups` table (Tally hierarchy)
+        256 +    - name, parent_group_id (FK - for nested groups)
+        257 +    - description, is_system_group
+        258 +  - ⭕ Create `stock_categories` table
+        259 +    - name, description, is_active
+        260 +  - ⭕ Create `units_of_measure` table
+        261 +    - code (PCS, KG, LTR, MTR), name
+        262 +    - symbol, decimal_places, is_system_unit
+        263 +  - ⭕ Create `unit_conversions` table
+        264 +    - from_unit_id (FK), to_unit_id (FK)
+        265 +    - conversion_factor (1 KG = 1000 GM)
+        266 +  
+        267 +  #### User-Facing Transaction Tables (5 tables)
+        268 +  - ⭕ Create `invoices` table
+        269 +    - invoice_number, customer_id, dispatch_id (FK)
+        270 +    - invoice_date, due_date, subtotal, gst_amount, total_amount
+        271 +    - payment_status ('unpaid', 'partial', 'paid')
+        272 +    - currency_id (FK), exchange_rate, total_in_base_currency
+        273 +    - tally_voucher_guid, e_invoice_irn, e_invoice_qr
+        274 +  - ⭕ Create `payments_received` table
+        275 +    - payment_number, customer_id, invoice_id (FK)
+        276 +    - amount, payment_method, payment_date
+        277 +    - bank_account_id (FK), cheque_number, upi_ref
+        278 +    - currency_id, exchange_rate
+        279 +  - ⭕ Create `purchase_bills` table
+        280 +    - bill_number, supplier_id, receipt_id (FK)
+        281 +    - bill_date, due_date, subtotal, gst_amount, total_amount
+        282 +    - payment_status, currency_id, exchange_rate
+        283 +    - tally_voucher_guid
+        284 +  - ⭕ Create `payments_made` table
+        285 +    - payment_number, supplier_id, bill_id (FK)
+        286 +    - amount, payment_method, payment_date
+        287 +    - bank_account_id (FK), cheque_number
+        288 +    - currency_id, exchange_rate
+        289 +  - ⭕ Create `expenses` table
+        290 +    - expense_number, category, amount
+        291 +    - payment_method, expense_date, description
+        292 +    - ledger_account_id (FK), payment_account_id (FK)
+        293 +  
+        294 +  #### Cash Management Tables (6 tables) 🆕
+        295 +  - ⭕ Create `cash_bank_accounts` table
+        296 +    - account_name, account_type ('cash'/'bank'/'petty_cash')
+        297 +    - account_number (for banks), bank_name, ifsc_code
+        298 +    - current_balance, currency_id (FK)
+        299 +    - is_active, created_at
+        300 +  - ⭕ Create `cash_denominations` table (daily counting)
+        301 +    - cash_account_id (FK), denomination_date
+        302 +    - notes_2000, notes_500, notes_200, notes_100, notes_50
+        303 +    - notes_20, notes_10, coins_10, coins_5, coins_2, coins_1
+        304 +    - total_calculated, total_declared, variance
+        305 +    - counted_by, verified_by
+        306 +  - ⭕ Create `petty_cash_floats` table
+        307 +    - float_number, custodian_id (FK to staff)
+        308 +    - float_amount, allocated_date
+        309 +    - current_balance, status ('active'/'closed')
+        310 +  - ⭕ Create `petty_cash_expenses` table
+        311 +    - expense_number, float_id (FK)
+        312 +    - category, amount, expense_date
+        313 +    - description, receipt_number
+        314 +    - approved_by
+        315 +  - ⭕ Create `petty_cash_replenishments` table
+        316 +    - replenishment_number, float_id (FK)
+        317 +    - amount, replenishment_date
+        318 +    - payment_account_id (FK), voucher_number
+        319 +  - ⭕ Create `contra_entries` table (Cash ↔ Bank transfers)
+        320 +    - contra_number, from_account_id (FK), to_account_id (FK)
+        321 +    - amount, transfer_date, narration
+        322 +    - journal_entry_id (FK)
+        323 +  
+        324 +  #### Compliance & Supporting Tables (4 tables)
+        325 +  - ⭕ Create `compliance_limits` table
+        326 +    - limit_type ('269ST'/'40A3'), limit_amount
+        327 +    - effective_from, effective_to
+        328 +    - description (Section 269ST: ₹2L cash receipt limit)
+        329 +  - ⭕ Create `bank_statements` table (reconciliation)
+        330 +    - bank_account_id (FK), statement_date
+        331 +    - transaction_type ('credit'/'debit'), amount
+        332 +    - reference_number, description
+        333 +    - reconciled, reconciled_with (payment_id or receipt_id)
+        334 +  - ⭕ Create `tally_import_logs` table
+        335 +    - import_date, period_from, period_to
+        336 +    - import_type ('opening_balances'/'transactions'/'masters')
+        337 +    - status ('success'/'failed'), records_processed
+        338 +    - error_details, file_url
+        339 +  - ⭕ Create `e_invoice_logs` table (Sandbox API tracking)
+        340 +    - invoice_id (FK), request_date
+        341 +    - api_endpoint, request_payload, response_payload
+        342 +    - irn, ack_number, ack_date
+        343 +    - status ('success'/'failed'), error_message
+        344 +    - cost_incurred (₹0.50 per IRN)
+        345 +  
+        346 +  #### Database Triggers & Functions
+        347 +  - ⭕ Create double-entry validation trigger
+        348 +    - Enforces Dr = Cr before INSERT on journal_entries
+        349 +    - Raises exception if unbalanced
+        350 +  - ⭕ Create auto-ledger creation trigger
+        351 +    - Auto-creates ledger when new partner created
+        352 +    - Links partner to ledger_account
+        353 +  - ⭕ Create COGS calculation function (FIFO)
+        354 +    - Calculates cost based on stock_units purchase_rate
+        355 +    - Returns weighted average cost
+        356 +  - ⭕ Create ledger balance calculation function
+        357 +    - Real-time balance from journal_entry_lines
+        358 +    - Returns current balance + balance_type
+        359 +  - ⭕ Create cash compliance check trigger 🆕
+        360 +    - Before INSERT on payments_received/payments_made
+        361 +    - Checks if cash payment/receipt exceeds Section 269ST (₹2L) or 40A(3) (₹10K)
+        362 +    - Raises warning or blocks transaction
+        363 +  - ⭕ Create denomination variance alert trigger 🆕
+        364 +    - After INSERT on cash_denominations
+        365 +    - If variance > ₹500, send alert to admin
+        366 +  
+        367 +  #### Indexing & Performance
+        368 +  - ⭕ Add indexes on invoices(company_id, invoice_date)
+        369 +  - ⭕ Add indexes on journal_entries(company_id, entry_date, batch_id)
+        370 +  - ⭕ Add indexes on journal_entry_lines(ledger_account_id, journal_entry_id)
+        371 +  - ⭕ Add indexes on ledger_accounts(partner_id, currency_id)
+        372 +  - ⭕ Add indexes on payments_received(invoice_id, customer_id)
+        373 +  - ⭕ Add indexes on cash_bank_accounts(account_type, is_active) 🆕
+        374 +  - ⭕ Add indexes on cash_denominations(cash_account_id, denomination_date) 🆕
+        375 +  - ⭕ Add indexes on exchange_rates(from_currency_id, to_currency_id, effective_date) 🆕
+        376 +  
+        377 +  #### Data Seeding
+        378 +  - ⭕ Seed 28 standard account groups
+        379 +    - Assets: Current Assets, Fixed Assets, Bank Accounts, Cash-in-Hand, Stock-in-Hand, Sundry Debtors
+        380 +    - Liabilities: Current Liabilities, Sundry Creditors, Duties & Taxes, Capital Account
+        381 +    - Income: Sales, Direct Income, Indirect Income
+        382 +    - Expense: Purchase, Direct Expenses, Indirect Expenses
+        383 +  - ⭕ Seed system ledgers for each company
+        384 +    - Cash-in-Hand, Bank Account (Default), Sales, Purchases
+        385 +    - CGST Output, SGST Output, IGST Output
+        386 +    - CGST Input, SGST Input, IGST Input
+        387 +    - Cost of Goods Sold, Inventory
+        388 +    - Exchange Gain, Exchange Loss 🆕
+        389 +  - ⭕ Seed default currencies 🆕
+        390 +    - INR (base), USD, EUR, GBP with symbols
+        391 +  - ⭕ Seed default units of measure 🆕
+        392 +    - PCS, KG, LTR, MTR, DZNS, GRMS, BOX
+        393 +  - ⭕ Seed compliance limits 🆕
+        394 +    - Section 269ST: ₹2,00,000 cash receipt limit
+        395 +    - Section 40A(3): ₹10,000 cash payment limit
+        396 +  - ⭕ Seed default expense categories 🆕
+        397 +    - Rent, Salaries, Transport, Utilities, Marketing, Office Supplies
+        398 +  
+        399 +  ### 7.2 Core Accounting Engine (Week 2)
+        400 +  
+        401 +  #### Double-Entry Logic
+        402 +  - ⭕ Create `createJournalEntry()` function
+        403 +    - Accepts transaction_type, transaction_id, date, lines[]
+        404 +    - Validates Dr = Cr before save
+        405 +    - Auto-generates entry_number
+        406 +    - Supports batch creation (maker/checker)
+        407 +  - ⭕ Create `validateDoubleEntry()` function
+        408 +    - Checks total Dr = total Cr
+        409 +    - Returns validation errors
+        410 +  - ⭕ Create `reverseJournalEntry()` function
+        411 +    - Creates opposite entry for cancellations
+        412 +    - Links to original entry
+        413 +  
+        414 +  #### Ledger Management
+        415 +  - ⭕ Create `getOrCreateLedger()` function
+        416 +    - Finds existing ledger or creates new
+        417 +    - Auto-assigns to correct account group
+        418 +  - ⭕ Create `calculateLedgerBalance()` function
+        419 +    - Sums all Dr/Cr entries for ledger
+        420 +    - Returns balance + balance_type
+        421 +  - ⭕ Create `getLedgerStatement()` function
+        422 +    - Returns all transactions for ledger
+        423 +    - With running balance
+        424 +  
+        425 +  #### GST Calculator
+        426 +  - ⭕ Create `calculateGST()` function
+        427 +    - Accepts: amount, customer_state, company_state, gst_rate
+        428 +    - Returns: {cgst, sgst, igst, total_gst}
+        429 +    - Logic: Same state → CGST+SGST, Different state → IGST
+        430 +  - ⭕ Create `getGSTRate()` function
+        431 +    - Gets rate from hsn_code or default company rate
+        432 +  
+        433 +  #### Multi-Currency Support 🆕
+        434 +  - ⭕ Create `getExchangeRate()` function
+        435 +    - Gets latest exchange rate from exchange_rates table
+        436 +    - Falls back to manual entry if not found
+        437 +  - ⭕ Create `convertCurrency()` function
+        438 +    - Converts amount from one currency to another
+        439 +    - Uses exchange_rates table
+        440 +  - ⭕ Create `recordExchangeGainLoss()` function
+        441 +    - Calculates and records exchange gain/loss on payment
+        442 +    - Creates journal entry: Exchange Gain/Loss Dr/Cr, Ledger Cr/Dr
+        443 +  
+        444 +  #### COGS Calculator
+        445 +  - ⭕ Create `calculateCOGS()` function (FIFO method)
+        446 +    - Accepts: stock_units[] dispatched
+        447 +    - Queries stock_units.purchase_rate in FIFO order
+        448 +    - Returns: total_cost
+        449 +  - ⭕ Create `createCOGSEntry()` function
+        450 +    - Auto-creates journal entry:
+        451 +      - Dr: Cost of Goods Sold
+        452 +      - Cr: Inventory
+        453 +  
+        454 +  #### Cash Compliance Checker 🆕
+        455 +  - ⭕ Create `checkCashCompliance()` function
+        456 +    - Checks if cash transaction exceeds limits
+        457 +    - Section 269ST: Cash receipt > ₹2L from one person/day
+        458 +    - Section 40A(3): Cash payment > ₹10K per transaction
+        459 +    - Returns: {compliant: boolean, limit_exceeded, limit_type}
+        460 +  - ⭕ Create `logComplianceViolation()` function
+        461 +    - Logs violations to compliance_violations table
+        462 +    - Sends alert to admin
+        463 +  
+        464 +  #### Testing
+        465 +  - ⭕ Test double-entry validation (should reject unbalanced entries)
+        466 +  - ⭕ Test GST calculation (intra-state vs inter-state)
+        467 +  - ⭕ Test COGS calculation with multiple stock units
+        468 +  - ⭕ Test ledger balance calculation
+        469 +  - ⭕ Test multi-currency conversion 🆕
+        470 +  - ⭕ Test exchange gain/loss calculation 🆕
+        471 +  - ⭕ Test cash compliance checks 🆕
+        472 +  
+        473 +  ### 7.3 Auto-Integration - Inventory to Accounting (Week 3)
+        474 +  
+        475 +  #### Goods Dispatch → Invoice Auto-Creation
+        476 +  - ⭕ Update `completeGoodsDispatch()` server action
+        477 +    - After dispatch created, auto-create invoice
+        478 +    - Link invoice_id to goods_dispatch
+        479 +    - Display invoice details in dispatch detail page
+        480 +  - ⭕ Create `autoCreateInvoiceFromDispatch()` function
+        481 +    - Creates invoice record from dispatch data
+        482 +    - Auto-fills: customer, items, quantities, amounts
+        483 +    - Calculates GST based on customer state
+        484 +    - Creates journal entries:
+        485 +      - Dr: Customer (Sundry Debtors)
+        486 +      - Cr: Sales
+        487 +      - Cr: CGST Output / SGST Output (or IGST Output)
+        488 +    - Creates COGS entry:
+        489 +      - Dr: Cost of Goods Sold
+        490 +      - Cr: Inventory
+        491 +    - If amount > ₹5L and customer has GSTIN:
+        492 +      - Generate E-Invoice IRN via Sandbox API
+        493 +      - Embed IRN and QR code in invoice
+        494 +  
+        495 +  #### Goods Receipt → Purchase Bill Auto-Creation
+        496 +  - ⭕ Update `completeGoodsReceipt()` server action
+        497 +    - After receipt created, auto-create purchase bill
+        498 +    - Link bill_id to goods_receipt
+        499 +    - Display bill details in receipt detail page
+        500 +  - ⭕ Create `autoCreatePurchaseBillFromReceipt()` function
+        501 +    - Creates purchase_bill record from receipt data
+        502 +    - Auto-fills: supplier, items, quantities, amounts
+        503 +    - Calculates GST input credit
+        504 +    - Creates journal entries:
+        505 +      - Dr: Purchases
+        506 +      - Dr: CGST Input / SGST Input (or IGST Input)
+        507 +      - Cr: Supplier (Sundry Creditors)
+        508 +  
+        509 +  #### Dispatch/Receipt Detail Page Updates
+        510 +  - ⭕ Update `/dashboard/inventory/goods-dispatches/[id]` page
+        511 +    - Add "Invoice Details" section
+        512 +    - Show invoice number, amount, GST breakdown
+        513 +    - Show E-Invoice IRN (if generated)
+        514 +    - Add "View Invoice PDF" button
+        515 +    - Add "Record Payment" button
+        516 +  - ⭕ Update `/dashboard/inventory/goods-receipts/[id]` page
+        517 +    - Add "Purchase Bill Details" section
+        518 +    - Show bill number, amount, GST breakdown
+        519 +    - Add "View Bill PDF" button
+        520 +    - Add "Record Payment" button
+        521 +  
+        522 +  #### Invoice/Bill PDF Generation
+        523 +  - ⭕ Create invoice PDF template
+        524 +    - Company letterhead, logo
+        525 +    - GST-compliant format (as per GSTN guidelines)
+        526 +    - E-Invoice QR code (if applicable)
+        527 +    - Item details with HSN, GST breakdown
+        528 +  - ⭕ Create purchase bill PDF template
+        529 +    - Similar to invoice but for purchases
+        530 +  - ⭕ Add "Download PDF" button to dispatch/receipt detail pages
+        531 +  
+        532 +  #### E-Invoice Integration (Sandbox API) 🆕
+        533 +  - ⭕ Create `generateEInvoice()` function
+        534 +    - Checks if invoice amount > ₹5L and customer has GSTIN
+        535 +    - Calls Sandbox API: POST /einvoice/generate
+        536 +    - Request payload: invoice data in JSON format
+        537 +    - Response: IRN, AckNo, AckDate, QRCode
+        538 +    - Stores in e_invoice_logs table
+        539 +    - Updates invoice record with IRN and QR
+        540 +    - Cost: ₹0.50 per IRN (logged in e_invoice_logs)
+        541 +  - ⭕ Handle E-Invoice API errors
+        542 +    - Network errors, auth failures, validation errors
+        543 +    - Retry logic (max 3 attempts)
+        544 +    - If failed, allow manual invoice (with warning)
+        545 +    - Log all attempts in e_invoice_logs
+        546 +  
+        547 +  #### Testing
+        548 +  - ⭕ Test dispatch → invoice auto-creation
+        549 +    - Verify invoice created correctly
+        550 +    - Verify journal entries correct
+        551 +    - Verify COGS entry correct
+        552 +  - ⭕ Test receipt → purchase bill auto-creation
+        553 +    - Verify bill created correctly
+        554 +    - Verify journal entries correct
+        555 +  - ⭕ Test GST calculation (intra-state vs inter-state)
+        556 +  - ⭕ Test E-Invoice IRN generation 🆕
+        557 +    - Mock Sandbox API for testing
+        558 +    - Verify IRN stored correctly
+        559 +    - Verify QR code embedded in PDF
+        560 +  - ⭕ Test E-Invoice error handling 🆕
+        561 +    - Network failure, invalid GSTIN, etc.
+        562 +  
+        563 +  ### 7.4 Accounts Section - Cash & Payments (Week 4)
+        564 +  
+        565 +  #### Cash Accounts Management 🆕
+        566 +  - ⭕ Create `/dashboard/accounts/cash` page
+        567 +    - List all cash/bank accounts with balances
+        568 +    - Filter by account type (Cash/Bank/Petty Cash)
+        569 +    - Actions: View Details, Add Account
+        570 +  - ⭕ Create `/dashboard/accounts/cash/[id]` page
+        571 +    - Account details (name, type, current balance)
+        572 +    - Transaction history (all receipts and payments)
+        573 +    - If type = 'cash': Show "Daily Count" button
+        574 +    - If type = 'bank': Show "Reconciliation" button
+        575 +    - If type = 'petty_cash': Show "Replenish" button
+        576 +  - ⭕ Create "Add Cash/Bank Account" form
+        577 +    - Account name, type selection
+        578 +    - If bank: account number, bank name, IFSC
+        579 +    - Opening balance, currency
+        580 +  
+        581 +  #### Daily Cash Counting 🆕
+        582 +  - ⭕ Create `/dashboard/accounts/cash/[id]/count` page
+        583 +    - Date picker (default: today)
+        584 +    - Denomination entry form:
+        585 +      - ₹2000 × ___ = ___
+        586 +      - ₹500 × ___ = ___
+        587 +      - ... (all denominations)
+        588 +      - Total Calculated: ___
+        589 +    - Declared Amount: ___ (manual entry)
+        590 +    - Variance: ___ (auto-calculated)
+        591 +    - Counted By: ___ (current user)
+        592 +    - Verified By: ___ (dropdown - other staff)
+        593 +    - Save button
+        594 +  - ⭕ Create `recordCashCount()` server action
+        595 +    - Saves to cash_denominations table
+        596 +    - If variance > ₹500, send alert to admin
+        597 +    - Updates cash_bank_accounts.current_balance
+        598 +  
+        599 +  #### Petty Cash Management 🆕
+        600 +  - ⭕ Create `/dashboard/accounts/petty-cash` page
+        601 +    - List all petty cash floats
+        602 +    - Show custodian, float amount, current balance
+        603 +    - Actions: View Details, Replenish, Close Float
+        604 +  - ⭕ Create `/dashboard/accounts/petty-cash/[id]` page
+        605 +    - Float details (custodian, allocated date, balance)
+        606 +    - Expense history
+        607 +    - Replenishment history
+        608 +    - "Add Expense" button
+        609 +    - "Replenish Float" button
+        610 +  - ⭕ Create "Add Petty Cash Expense" form
+        611 +    - Category (dropdown), amount, date
+        612 +    - Description, receipt number
+        613 +    - Creates petty_cash_expense record
+        614 +    - Creates journal entry: Expense Dr, Petty Cash Cr
+        615 +  - ⭕ Create "Replenish Float" form
+        616 +    - Amount, payment account (dropdown)
+        617 +    - Creates petty_cash_replenishment record
+        618 +    - Creates contra entry: Petty Cash Dr, Bank Cr
+        619 +  
+        620 +  #### Contra Entries (Cash ↔ Bank Transfers) 🆕
+        621 +  - ⭕ Create `/dashboard/accounts/contra` page
+        622 +    - List all contra entries
+        623 +    - Filter by date range
+        624 +    - Actions: View Details, Add Contra
+        625 +  - ⭕ Create "Add Contra Entry" form
+        626 +    - From Account (dropdown - cash/bank)
+        627 +    - To Account (dropdown - cash/bank)
+        628 +    - Amount, transfer date, narration
+        629 +    - Creates contra_entries record
+        630 +    - Creates journal entry:
+        631 +      - Dr: To Account
+        632 +      - Cr: From Account
+        633 +  
+        634 +  #### Payment Recording
+        635 +  - ⭕ Create `/dashboard/accounts/payments-in` page (Payments Received)
+        636 +    - List all payments received
+        637 +    - Filter by customer, date range, payment method
+        638 +    - Actions: View Details, Record Payment
+        639 +  - ⭕ Create `/dashboard/accounts/payments-out` page (Payments Made)
+        640 +    - List all payments made
+        641 +    - Filter by supplier, date range, payment method
+        642 +    - Actions: View Details, Record Payment
+        643 +  - ⭕ Create "Record Payment Received" form
+        644 +    - Customer (dropdown)
+        645 +    - Amount, payment method, payment date
+        646 +    - If method = 'bank': select bank account, cheque/UPI ref
+        647 +    - If method = 'cash': select cash account
+        648 +    - Invoice allocation (multiple invoices supported)
+        649 +    - 💡 Cash Compliance Check:
+        650 +      - If cash > ₹2L from same customer on same day → Show warning
+        651 +      - Log in compliance_violations table
+        652 +    - Creates payment_received record
+        653 +    - Creates journal entry:
+        654 +      - Dr: Cash/Bank Account
+        655 +      - Cr: Customer (Sundry Debtors)
+        656 +    - Updates invoice payment_status
+        657 +  - ⭕ Create "Record Payment Made" form
+        658 +    - Supplier (dropdown)
+        659 +    - Amount, payment method, payment date
+        660 +    - If method = 'bank': select bank account, cheque number
+        661 +    - If method = 'cash': select cash account
+        662 +    - Bill allocation (multiple bills supported)
+        663 +    - 💡 Cash Compliance Check:
+        664 +      - If cash > ₹10K → Show warning (Section 40A(3))
+        665 +      - Log in compliance_violations table
+        666 +    - Creates payment_made record
+        667 +    - Creates journal entry:
+        668 +      - Dr: Supplier (Sundry Creditors)
+        669 +      - Cr: Cash/Bank Account
+        670 +    - Updates bill payment_status
+        671 +  
+        672 +  #### Bank Reconciliation 🆕
+        673 +  - ⭕ Create `/dashboard/accounts/cash/[id]/reconcile` page (for bank accounts)
+        674 +    - Import bank statement (CSV/Excel upload)
+        675 +    - Shows unreconciled transactions
+        676 +    - Match with payments_received/payments_made
+        677 +    - Mark as reconciled
+        678 +  - ⭕ Create `importBankStatement()` function
+        679 +    - Parses CSV/Excel
+        680 +    - Saves to bank_statements table
+        681 +  - ⭕ Create `reconcileTransaction()` function
+        682 +    - Links bank_statement to payment_id
+        683 +    - Updates reconciled flag
+        684 +  
+        685 +  #### Sales Orders (Moved from Inventory) 🆕
+        686 +  - ⭕ Move `/dashboard/sales-orders` to `/dashboard/accounts/sales-orders`
+        687 +  - ⭕ Update DashboardNav.tsx to remove standalone Sales Orders link
+        688 +  - ⭕ Add Sales Orders as sub-item under Accounts section
+        689 +  - ⭕ Update all internal links from `/dashboard/sales-orders` to `/dashboard/accounts/sales-orders`
+        690 +  
+        691 +  #### Testing
+        692 +  - ⭕ Test cash account creation
+        693 +  - ⭕ Test daily cash counting 🆕
+        694 +    - Enter denominations
+        695 +    - Verify variance calculation
+        696 +    - Verify alert sent if variance > ₹500
+        697 +  - ⭕ Test petty cash expense recording 🆕
+        698 +  - ⭕ Test petty cash replenishment 🆕
+        699 +  - ⭕ Test contra entries 🆕
+        700 +  - ⭕ Test payment received recording
+        701 +    - Allocate to multiple invoices
+        702 +    - Verify invoice payment_status updates
+        703 +    - Test cash compliance warning (>₹2L) 🆕
+        704 +  - ⭕ Test payment made recording
+        705 +    - Allocate to multiple bills
+        706 +    - Test cash compliance warning (>₹10K) 🆕
+        707 +  - ⭕ Test bank reconciliation 🆕
+        708 +  
+        709 +  ### 7.5 Reports Section (Week 5)
+        710 +  
+        711 +  #### Financial Reports
+        712 +  - ⭕ Create `/dashboard/reports/trial-balance` page
+        713 +    - Date range filter
+        714 +    - Table: Ledger Name | Dr Amount | Cr Amount
+        715 +    - Total row (validates Dr = Cr)
+        716 +    - Export to Excel/PDF
+        717 +    - Drill-down to ledger statement
+        718 +  - ⭕ Create `generateTrialBalance()` function
+        719 +    - Groups by ledger_account
+        720 +    - Sums all Dr/Cr from journal_entry_lines
+        721 +    - Returns: {ledgers: [{name, dr, cr}], total_dr, total_cr}
+        722 +  
+        723 +  - ⭕ Create `/dashboard/reports/profit-loss` page
+        724 +    - Period selection (This Month, Last Month, This Year, Custom)
+        725 +    - Comparative columns (This Year vs Last Year)
+        726 +    - Structure:
+        727 +      - Revenue (Sales + Other Income)
+        728 +      - - Cost of Goods Sold
+        729 +      - = Gross Profit
+        730 +      - - Operating Expenses (Rent, Salaries, etc.)
+        731 +      - = Net Profit
+        732 +    - Export to Excel/PDF
+        733 +  - ⭕ Create `generateProfitLoss()` function
+        734 +    - Filters journal_entry_lines by period
+        735 +    - Groups by account_group nature ('Income'/'Expense')
+        736 +    - Calculates Gross Profit, Net Profit
+        737 +  
+        738 +  - ⭕ Create `/dashboard/reports/balance-sheet` page
+        739 +    - As on date selection
+        740 +    - Comparative columns (This Year vs Last Year)
+        741 +    - Structure:
+        742 +      - Assets (Current + Fixed)
+        743 +      - Liabilities (Current + Long-term)
+        744 +      - Capital + Profit/Loss
+        745 +    - Validates: Assets = Liabilities + Capital
+        746 +    - Export to Excel/PDF
+        747 +  - ⭕ Create `generateBalanceSheet()` function
+        748 +    - Filters ledger balances by date
+        749 +    - Groups by account_group nature ('Asset'/'Liability')
+        750 +    - Returns: {assets: [], liabilities: [], capital}
+        751 +  
+        752 +  - ⭕ Create `/dashboard/reports/cash-flow` page
+        753 +    - Period selection
+        754 +    - Structure:
+        755 +      - Operating Activities (Net Profit + Adjustments)
+        756 +      - Investing Activities (Asset purchases/sales)
+        757 +      - Financing Activities (Loans, Capital)
+        758 +    - Export to Excel/PDF
+        759 +  - ⭕ Create `generateCashFlowStatement()` function
+        760 +  
+        761 +  #### Outstanding Reports
+        762 +  - ⭕ Create `/dashboard/reports/receivables` page (AR Aging)
+        763 +    - Customer-wise outstanding
+        764 +    - Aging buckets: 0-30, 31-60, 61-90, 90+ days
+        765 +    - Total outstanding, overdue amount
+        766 +    - Drill-down to customer ledger
+        767 +    - Export to Excel/PDF
+        768 +  - ⭕ Create `generateARAgingReport()` function
+        769 +    - Queries unpaid/partial invoices
+        770 +    - Calculates aging based on due_date
+        771 +    - Groups by customer
+        772 +  
+        773 +  - ⭕ Create `/dashboard/reports/payables` page (AP Aging)
+        774 +    - Supplier-wise payables
+        775 +    - Aging buckets: 0-30, 31-60, 61-90, 90+
+        776 +    - Export to Excel/PDF
+        777 +  - ⭕ Create `generateAPAgingReport()` function
+        778 +  
+        779 +  #### Ledger Statement
+        780 +  - ⭕ Create `/dashboard/reports/ledger-statement` page
+        781 +    - Ledger selection (dropdown - all ledgers)
+        782 +    - Date range filter
+        783 +    - Table: Date | Particulars | Dr | Cr | Balance
+        784 +    - Running balance column
+        785 +    - Export to Excel/PDF
+        786 +  - ⭕ Create `generateLedgerStatement()` function
+        787 +    - Queries journal_entry_lines for selected ledger
+        788 +    - Calculates running balance
+        789 +  
+        790 +  #### Reports Dashboard
+        791 +  - ⭕ Create `/dashboard/reports` landing page
+        792 +    - Quick links to all reports
+        793 +    - Summary widgets:
+        794 +      - Current Month Sales
+        795 +      - Current Month Purchases
+        796 +      - Total Receivables
+        797 +      - Total Payables
+        798 +      - Cash & Bank Balance
+        799 +  
+        800 +  #### Export Functionality
+        801 +  - ⭕ Implement Excel export for all reports
+        802 +    - Use library: xlsx or exceljs
+        803 +    - Formatted sheets with headers, totals
+        804 +  - ⭕ Implement PDF export for all reports
+        805 +    - Use library: jspdf or puppeteer
+        806 +    - Professional formatting
+        807 +  
+        808 +  #### Testing
+        809 +  - ⭕ Test Trial Balance accuracy
+        810 +    - Manually verify Dr = Cr
+        811 +    - Compare with test dataset
+        812 +  - ⭕ Test P&L accuracy
+        813 +    - Verify revenue, expenses, net profit calculations
+        814 +  - ⭕ Test Balance Sheet
+        815 +    - Verify Assets = Liabilities + Capital
+        816 +  - ⭕ Test AR/AP Aging
+        817 +    - Verify aging bucket calculations
+        818 +    - Verify overdue amounts
+        819 +  - ⭕ Test Ledger Statement
+        820 +    - Verify running balance
+        821 +  - ⭕ Test all exports (Excel, PDF)
+        822 +  
+        823 +  ### 7.6 GST Compliance & E-Invoice (Week 5)
+        824 +  
+        825 +  #### GST Settings
+        826 +  - ⭕ Create `/dashboard/settings/gst` page
+        827 +    - Company GSTIN input
+        828 +    - State selection
+        829 +    - Default GST rate (18%)
+        830 +    - Sandbox API credentials (API Key, Client Secret)
+        831 +    - E-Invoice toggle (Enable/Disable)
+        832 +    - E-Invoice threshold (default: ₹5,00,000)
+        833 +    - Save settings to gst_settings table
+        834 +  
+        835 +  #### GSTR-1 Report (Local Calculation - FREE) 🆕
+        836 +  - ⭕ Create `/dashboard/reports/gstr-1` page
+        837 +    - Month selection (e.g., January 2025)
+        838 +    - Calculate locally (no API call needed):
+        839 +      - **B2B Section:** All invoices with customer GSTIN
+        840 +        - Table: GSTIN | Invoice No | Date | Value | Taxable | IGST | CGST | SGST
+        841 +      - **B2C (Large):** Invoices without GSTIN, amount > ₹2.5L
+        842 +        - State-wise summary: State | Value | IGST | CGST | SGST
+        843 +      - **B2C (Others):** Invoices without GSTIN, amount ≤ ₹2.5L
+        844 +        - State-wise summary
+        845 +      - **HSN Summary:** Item-wise with quantities
+        846 +        - HSN | Description | UQC | Total Qty | Taxable Value | IGST | CGST | SGST
+        847 +    - Export to JSON (GSTN format - for upload to GST portal)
+        848 +    - Export to Excel (for review)
+        849 +  - ⭕ Create `generateGSTR1()` function
+        850 +    - Queries invoices for selected month
+        851 +    - Filters by customer GSTIN (B2B vs B2C)
+        852 +    - Calculates state-wise summaries
+        853 +    - Generates HSN summary from invoice_items
+        854 +    - Returns JSON in GSTN format
+        855 +    - **Cost: ₹0** (calculated locally)
+        856 +  
+        857 +  #### GSTR-3B Summary (Local Calculation - FREE) 🆕
+        858 +  - ⭕ Create `/dashboard/reports/gstr-3b` page
+        859 +    - Month selection
+        860 +    - Calculate locally (no API call needed):
+        861 +      - **Outward Supplies:**
+        862 +        - Taxable value, IGST, CGST, SGST (from sales)
+        863 +      - **Input Tax Credit:**
+        864 +        - ITC available from purchases
+        865 +        - ITC reversed (if any)
+        866 +        - Net ITC available
+        867 +      - **Tax Liability:**
+        868 +        - IGST, CGST, SGST payable
+        869 +        - ITC set-off
+        870 +        - Net tax payable (Cash)
+        871 +    - Export to Excel
+        872 +  - ⭕ Create `generateGSTR3B()` function
+        873 +    - Queries invoices (sales) and purchase_bills for month
+        874 +    - Sums GST from invoices (Output Tax)
+        875 +    - Sums GST from purchase_bills (Input Tax Credit)
+        876 +    - Calculates net tax liability
+        877 +    - **Cost: ₹0** (calculated locally)
+        878 +  
+        879 +  #### E-Invoice Integration (Sandbox API - Minimal Usage) 🆕
+        880 +  - ⭕ Create `generateEInvoiceIRN()` function
+        881 +    - **Only called if:**
+        882 +      - E-Invoice enabled in gst_settings
+        883 +      - Invoice amount > threshold (₹5L)
+        884 +      - Customer has GSTIN
+        885 +    - API Call: POST https://api.sandbox.co.in/einvoice/v2/eInvoice/generate
+        886 +    - Headers: x-cleartax-auth-token (from Sandbox credentials)
+        887 +    - Request Payload:
+        888 +      ```json
+        889 +      {
+        890 +        "Version": "1.1",
+        891 +        "TranDtls": {"TaxSch": "GST", "SupTyp": "B2B"},
+        892 +        "DocDtls": {"Typ": "INV", "No": "INV/2025/001", "Dt": "25/01/2025"},
+        893 +        "SellerDtls": {"Gstin": "...", "LglNm": "...", "Addr1": "...", "Loc": "...", "Pin": "...", "Stcd": "..."},
+        894 +        "BuyerDtls": {"Gstin": "...", "LglNm": "...", "Addr1": "...", "Loc": "...", "Pin": "...", "Stcd": "..."},
+        895 +        "ItemList": [{"SlNo": "1", "PrdDesc": "...", "HsnCd": "...", "Qty": 10, "Unit": "PCS", "UnitPrice": 100, "TotAmt": 1000, "AssAmt": 
+            + 1000, "GstRt": 18, "IgstAmt": 180, "TotItemVal": 1180}],
+        896 +        "ValDtls": {"AssVal": 10000, "IgstVal": 1800, "TotInvVal": 11800}
+        897 +      }
+        898 +      ```
+        899 +    - Response:
+        900 +      ```json
+        901 +      {
+        902 +        "Irn": "ad6f8e0af09887e27d5d249e12345678901234567890123456789012345678901234",
+        903 +        "AckNo": 112410000123456,
+        904 +        "AckDt": "2025-01-25 10:30:00",
+        905 +        "SignedQRCode": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ij..."
+        906 +      }
+        907 +      ```
+        908 +    - Store in e_invoice_logs table
+        909 +    - Update invoice record: irn, ack_no, ack_date, qr_code
+        910 +    - **Cost: ~₹0.50 per IRN**
+        911 +    - **Estimated Monthly Cost:**
+        912 +      - If 40 invoices > ₹5L/month → ₹20/month
+        913 +      - If 1200 invoices > ₹5L/month → ₹600/month
+        914 +  
+        915 +  - ⭕ Handle E-Invoice API Errors
+        916 +    - Network timeout, invalid GSTIN, duplicate IRN
+        917 +    - Retry logic (max 3 attempts, exponential backoff)
+        918 +    - If all retries fail:
+        919 +      - Mark invoice as "E-Invoice Failed"
+        920 +      - Allow manual invoice (without IRN)
+        921 +      - Send alert to admin
+        922 +    - Log all attempts in e_invoice_logs (request, response, error)
+        923 +  
+        924 +  #### E-Invoice QR Code in PDF
+        925 +  - ⭕ Update invoice PDF template
+        926 +    - If invoice has IRN:
+        927 +      - Embed QR code from SignedQRCode
+        928 +      - Display IRN below QR code
+        929 +      - Display Ack No and Ack Date
+        930 +    - If invoice doesn't have IRN (amount < ₹5L or no GSTIN):
+        931 +      - Regular invoice (no QR)
+        932 +  
+        933 +  #### GST Returns Dashboard
+        934 +  - ⭕ Create `/dashboard/reports/gst-dashboard` page
+        935 +    - Current month summary:
+        936 +      - GSTR-1 status (Prepared/Not Prepared)
+        937 +      - GSTR-3B status
+        938 +      - Tax liability this month
+        939 +      - E-Invoices generated (count)
+        940 +      - E-Invoice API cost this month
+        941 +    - Quick actions:
+        942 +      - Prepare GSTR-1
+        943 +      - Prepare GSTR-3B
+        944 +      - View E-Invoice Logs
+        945 +  
+        946 +  #### Testing
+        947 +  - ⭕ Test GSTR-1 generation 🆕
+        948 +    - Verify B2B section (all invoices with GSTIN)
+        949 +    - Verify B2C section (state-wise summary)
+        950 +    - Verify HSN summary
+        951 +    - Verify JSON export format (validate against GSTN schema)
+        952 +  - ⭕ Test GSTR-3B generation 🆕
+        953 +    - Verify outward supplies calculation
+        954 +    - Verify input tax credit calculation
+        955 +    - Verify net tax liability
+        956 +  - ⭕ Test E-Invoice IRN generation 🆕
+        957 +    - Mock Sandbox API for testing
+        958 +    - Verify IRN stored correctly
+        959 +    - Verify QR code embedded in invoice PDF
+        960 +    - Verify cost logged in e_invoice_logs
+        961 +  - ⭕ Test E-Invoice error handling 🆕
+        962 +    - Mock API failures (timeout, invalid GSTIN, etc.)
+        963 +    - Verify retry logic
+        964 +    - Verify error logged in e_invoice_logs
+        965 +    - Verify alert sent to admin
+        966 +  
+        967 +  ### 7.7 Tally Import/Export (Week 6)
+        968 +  
+        969 +  #### Tally XML Export
+        970 +  - ⭕ Create `/dashboard/reports/tally-export` page
+        971 +    - Date range selection (e.g., 01/04/2024 to 31/03/2025)
+        972 +    - Export type selection:
+        973 +      - Masters Only (Ledgers, Groups, Stock Items)
+        974 +      - Transactions Only (Vouchers)
+        975 +      - Full Export (Masters + Transactions)
+        976 +    - Preview (show counts: X ledgers, Y vouchers)
+        977 +    - Download XML button
+        978 +  - ⭕ Create `exportToTallyXML()` function
+        979 +    - Generates Tally-compatible XML structure:
+        980 +      ```xml
+        981 +      <ENVELOPE>
+        982 +        <HEADER>
+        983 +          <TALLYREQUEST>Import Data</TALLYREQUEST>
+        984 +        </HEADER>
+        985 +        <BODY>
+        986 +          <IMPORTDATA>
+        987 +            <REQUESTDESC>
+        988 +              <REPORTNAME>All Masters</REPORTNAME>
+        989 +            </REQUESTDESC>
+        990 +            <REQUESTDATA>
+        991 +              <!-- Account Groups -->
+        992 +              <TALLYMESSAGE>
+        993 +                <GROUP NAME="Sundry Debtors" ACTION="Create">
+        994 +                  <PARENT>Current Assets</PARENT>
+        995 +                  <NATURE>Asset</NATURE>
+        996 +                </GROUP>
+        997 +              </TALLYMESSAGE>
+        998 +              <!-- Ledgers -->
+        999 +              <TALLYMESSAGE>
+       1000 +                <LEDGER NAME="Customer ABC" ACTION="Create">
+       1001 +                  <PARENT>Sundry Debtors</PARENT>
+       1002 +                  <OPENINGBALANCE>5000</OPENINGBALANCE>
+       1003 +                  <ISBILLWISEON>Yes</ISBILLWISEON>
+       1004 +                </LEDGER>
+       1005 +              </TALLYMESSAGE>
+       1006 +              <!-- Stock Groups -->
+       1007 +              <TALLYMESSAGE>
+       1008 +                <STOCKGROUP NAME="Raw Materials" ACTION="Create">
+       1009 +                  <PARENT>Primary</PARENT>
+       1010 +                </STOCKGROUP>
+       1011 +              </TALLYMESSAGE>
+       1012 +              <!-- Stock Items -->
+       1013 +              <TALLYMESSAGE>
+       1014 +                <STOCKITEM NAME="Product XYZ" ACTION="Create">
+       1015 +                  <PARENT>Raw Materials</PARENT>
+       1016 +                  <BASEUNITS>PCS</BASEUNITS>
+       1017 +                  <OPENINGBALANCE>100</OPENINGBALANCE>
+       1018 +                  <OPENINGVALUE>10000</OPENINGVALUE>
+       1019 +                </STOCKITEM>
+       1020 +              </TALLYMESSAGE>
+       1021 +              <!-- Vouchers (Sales, Purchase, Payment, Receipt) -->
+       1022 +              <TALLYMESSAGE>
+       1023 +                <VOUCHER VOUCHERTYPENAME="Sales" ACTION="Create">
+       1024 +                  <DATE>20250125</DATE>
+       1025 +                  <VOUCHERNUMBER>INV/2025/001</VOUCHERNUMBER>
+       1026 +                  <PARTYLEDGERNAME>Customer ABC</PARTYLEDGERNAME>
+       1027 +                  <ALLLEDGERENTRIES.LIST>
+       1028 +                    <LEDGERNAME>Sales</LEDGERNAME>
+       1029 +                    <AMOUNT>-10000</AMOUNT>
+       1030 +                  </ALLLEDGERENTRIES.LIST>
+       1031 +                  <ALLLEDGERENTRIES.LIST>
+       1032 +                    <LEDGERNAME>CGST Output</LEDGERNAME>
+       1033 +                    <AMOUNT>-900</AMOUNT>
+       1034 +                  </ALLLEDGERENTRIES.LIST>
+       1035 +                  <ALLLEDGERENTRIES.LIST>
+       1036 +                    <LEDGERNAME>SGST Output</LEDGERNAME>
+       1037 +                    <AMOUNT>-900</AMOUNT>
+       1038 +                  </ALLLEDGERENTRIES.LIST>
+       1039 +                  <ALLLEDGERENTRIES.LIST>
+       1040 +                    <LEDGERNAME>Customer ABC</LEDGERNAME>
+       1041 +                    <AMOUNT>11800</AMOUNT>
+       1042 +                  </ALLLEDGERENTRIES.LIST>
+       1043 +                </VOUCHER>
+       1044 +              </TALLYMESSAGE>
+       1045 +            </REQUESTDATA>
+       1046 +          </IMPORTDATA>
+       1047 +        </BODY>
+       1048 +      </ENVELOPE>
+       1049 +      ```
+       1050 +    - Maps database tables to Tally XML:
+       1051 +      - account_groups → <GROUP>
+       1052 +      - ledger_accounts → <LEDGER>
+       1053 +      - stock_groups → <STOCKGROUP>
+       1054 +      - products → <STOCKITEM>
+       1055 +      - invoices → <VOUCHER VOUCHERTYPENAME="Sales">
+       1056 +      - purchase_bills → <VOUCHER VOUCHERTYPENAME="Purchase">
+       1057 +      - payments_received → <VOUCHER VOUCHERTYPENAME="Receipt">
+       1058 +      - payments_made → <VOUCHER VOUCHERTYPENAME="Payment">
+       1059 +      - journal_entries → <VOUCHER VOUCHERTYPENAME="Journal">
+       1060 +    - Returns XML file for download
+       1061 +  
+       1062 +  #### Tally XML Import
+       1063 +  - ⭕ Create `/dashboard/reports/tally-import` page
+       1064 +    - File upload (XML from Tally)
+       1065 +    - Import type selection:
+       1066 +      - Opening Balances (Ledgers with opening balances)
+       1067 +      - Transaction History (All vouchers)
+       1068 +      - Masters Only (Ledgers, Groups, Stock Items)
+       1069 +    - Period selection (e.g., 01/04/2024 to 31/03/2025)
+       1070 +    - Preview before import (show counts)
+       1071 +    - Import button
+       1072 +    - Progress indicator
+       1073 +    - Import summary (X ledgers created, Y vouchers imported, Z errors)
+       1074 +  - ⭕ Create `importFromTallyXML()` function
+       1075 +    - Parses Tally XML file
+       1076 +    - Validates XML structure
+       1077 +    - Extracts:
+       1078 +      - <GROUP> → account_groups table
+       1079 +      - <LEDGER> → ledger_accounts table + partners table (if customer/supplier)
+       1080 +      - <STOCKGROUP> → stock_groups table
+       1081 +      - <STOCKITEM> → products table (with opening stock)
+       1082 +      - <VOUCHER> → invoices/purchase_bills/payments/journal_entries
+       1083 +    - Links imported records using tally_voucher_guid (GUID field in XML)
+       1084 +    - Prevents duplicate imports (checks if GUID already exists)
+       1085 +    - Validates Trial Balance after import (Dr = Cr)
+       1086 +    - Logs import in tally_import_logs table
+       1087 +  
+       1088 +  #### Opening Balances Import
+       1089 +  - ⭕ Create `importOpeningBalances()` function
+       1090 +    - Extracts all <LEDGER> with <OPENINGBALANCE>
+       1091 +    - Creates ledger_accounts with opening balances
+       1092 +    - Creates partners for Sundry Debtors/Creditors
+       1093 +    - Creates opening journal entry:
+       1094 +      - Dr: All Dr opening balances
+       1095 +      - Cr: All Cr opening balances
+       1096 +    - Validates Trial Balance
+       1097 +  
+       1098 +  #### Transaction History Import
+       1099 +  - ⭕ Create `importTransactions()` function
+       1100 +    - Converts Tally vouchers to database records:
+       1101 +      - Sales Voucher → invoice + journal_entry + journal_entry_lines
+       1102 +      - Purchase Voucher → purchase_bill + journal_entry + journal_entry_lines
+       1103 +      - Receipt Voucher → payment_received + journal_entry + journal_entry_lines
+       1104 +      - Payment Voucher → payment_made + journal_entry + journal_entry_lines
+       1105 +      - Journal Voucher → journal_entry + journal_entry_lines
+       1106 +    - Links to tally_voucher_guid for traceability
+       1107 +  
+       1108 +  #### Validation & Error Handling
+       1109 +  - ⭕ Validate XML structure
+       1110 +    - Check if file is valid Tally XML
+       1111 +    - Check if required fields present
+       1112 +  - ⭕ Validate Trial Balance after import
+       1113 +    - Sum all Dr/Cr entries
+       1114 +    - If Dr ≠ Cr, rollback import and show error
+       1115 +  - ⭕ Handle duplicate imports
+       1116 +    - Check if tally_voucher_guid already exists
+       1117 +    - Skip duplicates, log in import summary
+       1118 +  - ⭕ Show clear error messages
+       1119 +    - Invalid XML, missing fields, Trial Balance mismatch
+       1120 +  
+       1121 +  #### Testing
+       1122 +  - ⭕ Export sample data to Tally XML
+       1123 +    - Create test dataset (10 ledgers, 20 invoices, 10 payments)
+       1124 +    - Export to XML
+       1125 +    - Manually verify XML structure
+       1126 +  - ⭕ Import XML into Tally Prime
+       1127 +    - Open Tally Prime
+       1128 +    - Import → XML
+       1129 +    - Verify Trial Balance matches exactly
+       1130 +    - Verify vouchers imported correctly
+       1131 +  - ⭕ Import Tally data (opening balances)
+       1132 +    - Export from Tally Prime (Masters + Opening Balances)
+       1133 +    - Import into Bale app
+       1134 +    - Verify Trial Balance after import
+       1135 +  - ⭕ Import transaction history
+       1136 +    - Export from Tally Prime (Vouchers for 1 month)
+       1137 +    - Import into Bale app
+       1138 +    - Verify all vouchers imported
+       1139 +    - Verify Trial Balance matches Tally
+       1140 +  
+       1141 +  ### 7.8 Navigation Compaction & Route Restructuring (Week 7) 🆕
+       1142 +  
+       1143 +  #### Update DashboardNav Component
+       1144 +  - ⭕ Update `components/layouts/DashboardNav.tsx`
+       1145 +    - Reduce navigationItems array from 10 to 6:
+       1146 +      ```typescript
+       1147 +      const navigationItems = [
+       1148 +        { name: 'Overview', href: '/dashboard', icon: ... },
+       1149 +        { name: 'Inventory', href: '/dashboard/inventory', icon: ..., subItems: [
+       1150 +          { name: 'Products', href: '/dashboard/inventory/products' },
+       1151 +          { name: 'Stock Units', href: '/dashboard/inventory/stock-units' },
+       1152 +          { name: 'Goods Receipts', href: '/dashboard/inventory/goods-receipts' },
+       1153 +          { name: 'Goods Dispatch', href: '/dashboard/inventory/goods-dispatches' },
+       1154 +          { name: 'Job Works', href: '/dashboard/inventory/job-works' },
+       1155 +          { name: 'Warehouses', href: '/dashboard/inventory/warehouses' },
+       1156 +        ]},
+       1157 +        { name: 'Partners', href: '/dashboard/partners', icon: ... },
+       1158 +        { name: 'Accounts', href: '/dashboard/accounts', icon: ..., subItems: [
+       1159 +          { name: 'Cash Accounts', href: '/dashboard/accounts/cash' },
+       1160 +          { name: 'Payments In', href: '/dashboard/accounts/payments-in' },
+       1161 +          { name: 'Payments Out', href: '/dashboard/accounts/payments-out' },
+       1162 +          { name: 'Sales Orders', href: '/dashboard/accounts/sales-orders' },
+       1163 +          { name: 'Petty Cash', href: '/dashboard/accounts/petty-cash' },
+       1164 +          { name: 'Contra Entries', href: '/dashboard/accounts/contra' },
+       1165 +        ]},
+       1166 +        { name: 'Reports', href: '/dashboard/reports', icon: ..., subItems: [
+       1167 +          { name: 'Trial Balance', href: '/dashboard/reports/trial-balance' },
+       1168 +          { name: 'Profit & Loss', href: '/dashboard/reports/profit-loss' },
+       1169 +          { name: 'Balance Sheet', href: '/dashboard/reports/balance-sheet' },
+       1170 +          { name: 'GSTR-1', href: '/dashboard/reports/gstr-1' },
+       1171 +          { name: 'GSTR-3B', href: '/dashboard/reports/gstr-3b' },
+       1172 +          { name: 'Receivables', href: '/dashboard/reports/receivables' },
+       1173 +          { name: 'Payables', href: '/dashboard/reports/payables' },
+       1174 +          { name: 'Tally Export', href: '/dashboard/reports/tally-export' },
+       1175 +          { name: 'Tally Import', href: '/dashboard/reports/tally-import' },
+       1176 +        ]},
+       1177 +        { name: 'Settings', href: '/dashboard/settings', icon: ..., subItems: [
+       1178 +          { name: 'Company', href: '/dashboard/settings/company' },
+       1179 +          { name: 'Users', href: '/dashboard/settings/users' },
+       1180 +          { name: 'Staff', href: '/dashboard/settings/staff' },
+       1181 +          { name: 'GST & E-Invoice', href: '/dashboard/settings/gst' },
+       1182 +          { name: 'Accounting', href: '/dashboard/settings/accounting' },
+       1183 +        ]},
+       1184 +      ];
+       1185 +      ```
+       1186 +    - Add submenu dropdown functionality
+       1187 +      - Desktop: Dropdown on hover/click
+       1188 +      - Mobile: Collapsible accordion
+       1189 +  
+       1190 +  #### Route Restructuring
+       1191 +  - ⭕ Create redirects in `next.config.js` or middleware
+       1192 +    - `/dashboard/sales-orders` → `/dashboard/accounts/sales-orders`
+       1193 +    - `/dashboard/job-works` → `/dashboard/inventory/job-works`
+       1194 +    - `/dashboard/staff` → `/dashboard/settings/staff`
+       1195 +    - `/dashboard/warehouses` → `/dashboard/inventory/warehouses`
+       1196 +    - `/dashboard/products` → `/dashboard/inventory/products`
+       1197 +  - OR move folders:
+       1198 +    - Move `app/dashboard/sales-orders/` to `app/dashboard/accounts/sales-orders/`
+       1199 +    - Move `app/dashboard/job-works/` to `app/dashboard/inventory/job-works/`
+       1200 +    - Move `app/dashboard/staff/` to `app/dashboard/settings/staff/`
+       1201 +    - Move `app/dashboard/warehouses/` to `app/dashboard/inventory/warehouses/`
+       1202 +    - Move `app/dashboard/products/` to `app/dashboard/inventory/products/`
+       1203 +  
+       1204 +  #### Update All Internal Links
+       1205 +  - ⭕ Search codebase for old routes:
+       1206 +    - Search: `/dashboard/sales-orders` → Replace: `/dashboard/accounts/sales-orders`
+       1207 +    - Search: `/dashboard/job-works` → Replace: `/dashboard/inventory/job-works`
+       1208 +    - Search: `/dashboard/staff` → Replace: `/dashboard/settings/staff`
+       1209 +    - Search: `/dashboard/warehouses` → Replace: `/dashboard/inventory/warehouses`
+       1210 +    - Search: `/dashboard/products` → Replace: `/dashboard/inventory/products`
+       1211 +  - ⭕ Update all `<Link>` components, `router.push()`, `redirect()` calls
+       1212 +  
+       1213 +  #### Add Breadcrumbs Component (if not exists)
+       1214 +  - ⭕ Create `components/Breadcrumbs.tsx`
+       1215 +    - Dynamic breadcrumb based on pathname
+       1216 +    - Example: Overview > Inventory > Goods Receipts > GR-2025-001
+       1217 +  - ⭕ Add to `app/dashboard/layout.tsx` (below navigation, above page content)
+       1218 +  
+       1219 +  #### Progressive Disclosure Strategy
+       1220 +  - ⭕ Ensure most-used features are directly accessible:
+       1221 +    - Inventory → default view shows Products, Stock Units, Goods Receipts, Dispatch
+       1222 +    - Accounts → default view shows Cash Accounts with balances
+       1223 +    - Reports → default view shows quick links to all reports
+       1224 +  - ⭕ Less-used features in submenus or contextual buttons:
+       1225 +    - "Create Invoice" button on Goods Dispatch detail page (not separate page)
+       1226 +    - "Record Payment" button on Invoice detail page
+       1227 +    - "Replenish Float" button on Petty Cash detail page
+       1228 +  
+       1229 +  #### Testing
+       1230 +  - ⭕ Test navigation on desktop
+       1231 +    - Verify all 6 main items visible
+       1232 +    - Verify submenus work (hover/click)
+       1233 +    - Verify active state indication
+       1234 +  - ⭕ Test navigation on mobile
+       1235 +    - Verify hamburger menu
+       1236 +    - Verify submenus collapse/expand
+       1237 +    - Verify all links accessible
+       1238 +  - ⭕ Test all redirects
+       1239 +    - Old URLs should redirect to new URLs
+       1240 +    - No 404 errors
+       1241 +  - ⭕ Test breadcrumbs
+       1242 +    - Verify correct breadcrumb on all pages
+       1243 +    - Verify breadcrumb links work
+       1244 +  - ⭕ Test all internal links
+       1245 +    - No broken links
+       1246 +    - All routes resolve correctly
+       1247 +  
+       1248 +  ### 7.9 Multi-Currency Features (Week 7) 🆕
+       1249 +  
+       1250 +  #### Currency Management
+       1251 +  - ⭕ Create `/dashboard/settings/currencies` page
+       1252 +    - List all currencies (INR, USD, EUR, GBP)
+       1253 +    - Show base currency (INR - cannot be changed)
+       1254 +    - Add new currency form (code, symbol, name)
+       1255 +    - Mark currency as active/inactive
+       1256 +  - ⭕ Seed default currencies
+       1257 +    - INR (₹, base), USD ($), EUR (€), GBP (£)
+       1258 +  
+       1259 +  #### Exchange Rate Management
+       1260 +  - ⭕ Create `/dashboard/settings/exchange-rates` page
+       1261 +    - Table: From Currency | To Currency | Rate | Effective Date
+       1262 +    - Add exchange rate form
+       1263 +      - From currency (dropdown)
+       1264 +      - To currency (dropdown)
+       1265 +      - Rate (e.g., 1 USD = 83.5 INR)
+       1266 +      - Effective date (default: today)
+       1267 +    - Edit/Delete exchange rates
+       1268 +    - Import exchange rates (CSV/API integration with exchange rate API - optional)
+       1269 +  - ⭕ Create `getExchangeRate()` function
+       1270 +    - Gets latest exchange rate for given date
+       1271 +    - Falls back to manual entry if not found
+       1272 +  
+       1273 +  #### Multi-Currency Invoices
+       1274 +  - ⭕ Update invoice creation form
+       1275 +    - Add currency selection (dropdown - INR, USD, EUR, GBP)
+       1276 +    - If currency ≠ INR:
+       1277 +      - Show exchange rate field (auto-filled from exchange_rates, editable)
+       1278 +      - Show amount in selected currency
+       1279 +      - Show amount in INR (base currency) - read-only, auto-calculated
+       1280 +    - Example: Invoice in USD
+       1281 +      - Amount: $1,000
+       1282 +      - Exchange Rate: 1 USD = 83.5 INR
+       1283 +      - Amount in INR: ₹83,500
+       1284 +  - ⭕ Update invoice PDF
+       1285 +    - If currency ≠ INR:
+       1286 +      - Show both currencies: "Total: $1,000 (₹83,500 @ 83.5)"
+       1287 +  
+       1288 +  #### Multi-Currency Payments
+       1289 +  - ⭕ Update payment received form
+       1290 +    - Add currency selection
+       1291 +    - If currency ≠ invoice currency:
+       1292 +      - Calculate exchange gain/loss
+       1293 +      - Example:
+       1294 +        - Invoice: $1,000 @ 83.5 = ₹83,500 (receivable)
+       1295 +        - Payment: $1,000 @ 84.0 = ₹84,000 (received)
+       1296 +        - Exchange Gain: ₹500
+       1297 +      - Create journal entry:
+       1298 +        - Dr: Bank Account (INR) ₹84,000
+       1299 +        - Cr: Customer (Sundry Debtors) ₹83,500
+       1300 +        - Cr: Exchange Gain ₹500
+       1301 +  - ⭕ Create `calculateExchangeGainLoss()` function
+       1302 +    - Compares invoice exchange rate vs payment exchange rate
+       1303 +    - Returns gain or loss amount
+       1304 +  
+       1305 +  #### Multi-Currency Bank Accounts
+       1306 +  - ⭕ Update cash/bank account creation form
+       1307 +    - Add currency selection (default: INR)
+       1308 +    - Allow multiple bank accounts in different currencies
+       1309 +    - Example: FCNR Account (USD), Regular Account (INR)
+       1310 +  - ⭕ Update cash/bank account listing
+       1311 +    - Show balance with currency symbol
+       1312 +    - Example: $5,000, ₹1,50,000, €2,000
+       1313 +  
+       1314 +  #### Multi-Currency Reporting
+       1315 +  - ⭕ Update Trial Balance report
+       1316 +    - Option to view in base currency (INR) or any currency
+       1317 +    - If viewing in USD:
+       1318 +      - Convert all INR balances to USD using latest exchange rate
+       1319 +  - ⭕ Update P&L and Balance Sheet
+       1320 +    - Default: Base currency (INR)
+       1321 +    - Option to view in other currencies
+       1322 +  
+       1323 +  #### Testing
+       1324 +  - ⭕ Test multi-currency invoice creation
+       1325 +    - Create invoice in USD
+       1326 +    - Verify exchange rate applied
+       1327 +    - Verify amount in INR calculated correctly
+       1328 +  - ⭕ Test multi-currency payment
+       1329 +    - Record payment in USD for USD invoice
+       1330 +    - Verify no exchange gain/loss
+       1331 +    - Record payment in USD for USD invoice with different rate
+       1332 +    - Verify exchange gain/loss calculated
+       1333 +  - ⭕ Test multi-currency bank accounts
+       1334 +    - Create USD bank account
+       1335 +    - Record transactions in USD
+       1336 +    - Verify balance tracked correctly
+       1337 +  - ⭕ Test multi-currency reports
+       1338 +    - View Trial Balance in USD
+       1339 +    - Verify conversion correct
+       1340 +  
+       1341 +  ### 7.10 End-to-End Testing (Week 7)
+       1342 +  
+       1343 +  #### Complete Sales Cycle
+       1344 +  - ⭕ Test: Goods Dispatch → Invoice → Payment → COGS
+       1345 +    - Step 1: Create goods dispatch (scan QR codes, select customer)
+       1346 +    - Step 2: Complete dispatch → auto-create invoice
+       1347 +    - Step 3: Verify invoice created with correct amounts, GST
+       1348 +    - Step 4: Verify journal entries:
+       1349 +      - Dr: Customer ₹11,800
+       1350 +      - Cr: Sales ₹10,000
+       1351 +      - Cr: CGST Output ₹900
+       1352 +      - Cr: SGST Output ₹900
+       1353 +    - Step 5: Verify COGS entry:
+       1354 +      - Dr: Cost of Goods Sold ₹7,000
+       1355 +      - Cr: Inventory ₹7,000
+       1356 +    - Step 6: Record payment received (₹11,800)
+       1357 +    - Step 7: Verify payment journal entry:
+       1358 +      - Dr: Bank Account ₹11,800
+       1359 +      - Cr: Customer ₹11,800
+       1360 +    - Step 8: Verify invoice payment_status = 'paid'
+       1361 +    - Step 9: Generate Trial Balance → verify Dr = Cr
+       1362 +    - Step 10: Generate P&L → verify Sales, COGS, Gross Profit
+       1363 +    - Step 11: Generate Balance Sheet → verify Assets = Liabilities
+       1364 +  
+       1365 +  #### Complete Purchase Cycle
+       1366 +  - ⭕ Test: Goods Receipt → Purchase Bill → Payment
+       1367 +    - Step 1: Create goods receipt (select supplier, enter quantities)
+       1368 +    - Step 2: Complete receipt → auto-create purchase bill
+       1369 +    - Step 3: Verify bill created with correct amounts, GST
+       1370 +    - Step 4: Verify journal entries:
+       1371 +      - Dr: Purchases ₹10,000
+       1372 +      - Dr: CGST Input ₹900
+       1373 +      - Dr: SGST Input ₹900
+       1374 +      - Cr: Supplier ₹11,800
+       1375 +    - Step 5: Record payment made (₹11,800)
+       1376 +    - Step 6: Verify payment journal entry:
+       1377 +      - Dr: Supplier ₹11,800
+       1378 +      - Cr: Bank Account ₹11,800
+       1379 +    - Step 7: Verify bill payment_status = 'paid'
+       1380 +    - Step 8: Generate Trial Balance → verify Dr = Cr
+       1381 +  
+       1382 +  #### Cash Management Cycle 🆕
+       1383 +  - ⭕ Test: Daily Cash Counting
+       1384 +    - Step 1: Open cash account detail page
+       1385 +    - Step 2: Click "Daily Count"
+       1386 +    - Step 3: Enter denominations (₹2000 × 5, ₹500 × 10, etc.)
+       1387 +    - Step 4: Verify total calculated correctly
+       1388 +    - Step 5: Enter declared amount (different from calculated)
+       1389 +    - Step 6: Verify variance calculated
+       1390 +    - Step 7: Save → verify alert sent if variance > ₹500
+       1391 +  - ⭕ Test: Petty Cash Management
+       1392 +    - Step 1: Create petty cash float (₹10,000)
+       1393 +    - Step 2: Record expense (Stationery ₹500)
+       1394 +    - Step 3: Verify journal entry:
+       1395 +      - Dr: Stationery Expense ₹500
+       1396 +      - Cr: Petty Cash ₹500
+       1397 +    - Step 4: Verify float balance updated (₹9,500)
+       1398 +    - Step 5: Replenish float (₹5,000 from bank)
+       1399 +    - Step 6: Verify contra entry:
+       1400 +      - Dr: Petty Cash ₹5,000
+       1401 +      - Cr: Bank Account ₹5,000
+       1402 +    - Step 7: Verify float balance updated (₹14,500)
+       1403 +  - ⭕ Test: Compliance Checks
+       1404 +    - Step 1: Record cash payment > ₹10K
+       1405 +    - Step 2: Verify warning shown (Section 40A(3))
+       1406 +    - Step 3: Record cash receipt > ₹2L from same customer on same day
+       1407 +    - Step 4: Verify warning shown (Section 269ST)
+       1408 +    - Step 5: Verify logged in compliance_violations table
+       1409 +  
+       1410 +  #### GST & E-Invoice Cycle 🆕
+       1411 +  - ⭕ Test: GSTR-1 Generation
+       1412 +    - Step 1: Create 10 invoices (5 B2B with GSTIN, 5 B2C without)
+       1413 +    - Step 2: Go to Reports > GSTR-1
+       1414 +    - Step 3: Select month
+       1415 +    - Step 4: Verify B2B section shows 5 invoices
+       1416 +    - Step 5: Verify B2C section shows state-wise summary
+       1417 +    - Step 6: Verify HSN summary correct
+       1418 +    - Step 7: Export to JSON → verify format
+       1419 +  - ⭕ Test: GSTR-3B Generation
+       1420 +    - Step 1: Create invoices and purchase bills for a month
+       1421 +    - Step 2: Go to Reports > GSTR-3B
+       1422 +    - Step 3: Verify outward supplies (from sales)
+       1423 +    - Step 4: Verify input tax credit (from purchases)
+       1424 +    - Step 5: Verify net tax liability calculated correctly
+       1425 +  - ⭕ Test: E-Invoice IRN Generation
+       1426 +    - Step 1: Enable E-Invoice in settings
+       1427 +    - Step 2: Set threshold = ₹5,00,000
+       1428 +    - Step 3: Create invoice for ₹6,00,000 with customer GSTIN
+       1429 +    - Step 4: Complete dispatch → auto-generate IRN
+       1430 +    - Step 5: Verify IRN stored in invoice record
+       1431 +    - Step 6: Verify QR code embedded in invoice PDF
+       1432 +    - Step 7: Verify cost logged in e_invoice_logs (₹0.50)
+       1433 +    - Step 8: Create invoice for ₹3,00,000 → verify no IRN generated
+       1434 +  
+       1435 +  #### Tally Integration Cycle
+       1436 +  - ⭕ Test: Tally Export
+       1437 +    - Step 1: Create test dataset (10 ledgers, 20 invoices, 10 payments)
+       1438 +    - Step 2: Go to Reports > Tally Export
+       1439 +    - Step 3: Select date range, export type = Full
+       1440 +    - Step 4: Download XML
+       1441 +    - Step 5: Open Tally Prime → Import XML
+       1442 +    - Step 6: Verify Trial Balance in Tally matches app
+       1443 +    - Step 7: Verify vouchers imported correctly
+       1444 +  - ⭕ Test: Tally Import (Opening Balances)
+       1445 +    - Step 1: Export from Tally Prime (Masters + Opening Balances)
+       1446 +    - Step 2: Go to Reports > Tally Import
+       1447 +    - Step 3: Upload XML, select import type = Opening Balances
+       1448 +    - Step 4: Preview → verify ledgers count
+       1449 +    - Step 5: Import → verify Trial Balance after import
+       1450 +    - Step 6: Verify partners created for customers/suppliers
+       1451 +  - ⭕ Test: Tally Import (Transactions)
+       1452 +    - Step 1: Export from Tally Prime (Vouchers for 1 month)
+       1453 +    - Step 2: Upload XML, select import type = Transactions
+       1454 +    - Step 3: Import → verify all vouchers imported
+       1455 +    - Step 4: Verify no duplicates if re-imported
+       1456 +    - Step 5: Verify Trial Balance matches Tally
+       1457 +  
+       1458 +  #### Multi-Currency Cycle 🆕
+       1459 +  - ⭕ Test: Multi-Currency Invoice & Payment
+       1460 +    - Step 1: Add exchange rate (1 USD = 83.5 INR)
+       1461 +    - Step 2: Create invoice in USD ($1,000)
+       1462 +    - Step 3: Verify amount in INR (₹83,500)
+       1463 +    - Step 4: Record payment in USD with different rate (84.0)
+       1464 +    - Step 5: Verify exchange gain (₹500) recorded
+       1465 +    - Step 6: Verify journal entry:
+       1466 +      - Dr: Bank Account ₹84,000
+       1467 +      - Cr: Customer ₹83,500
+       1468 +      - Cr: Exchange Gain ₹500
+       1469 +  
+       1470 +  #### Performance Testing
+       1471 +  - ⭕ Test with large datasets
+       1472 +    - 1,000+ invoices
+       1473 +    - 5,000+ journal entries
+       1474 +    - Measure report generation time (target: < 2 seconds)
+       1475 +  - ⭕ Test concurrent transactions
+       1476 +    - Multiple users creating invoices simultaneously
+       1477 +    - Verify no double-entry validation failures
+       1478 +  
+       1479 +  #### Bug Documentation & Fixes
+       1480 +  - ⭕ Document all bugs found during testing
+       1481 +    - Create bug list with priority (Critical, High, Medium, Low)
+       1482 +  - ⭕ Fix all critical bugs before deployment
+       1483 +  - ⭕ Retest after fixes
+       1484 +  
+       1485 +  ### 7.11 Documentation & Deployment (Week 7)
+       1486 +  
+       1487 +  #### Code Documentation
+       1488 +  - ⭕ Add JSDoc comments to all accounting functions
+       1489 +    - `createJournalEntry()`, `calculateGST()`, `calculateCOGS()`, etc.
+       1490 +    - Document parameters, return types, examples
+       1491 +  - ⭕ Update README.md
+       1492 +    - Add accounting module section
+       1493 +    - Features, tech stack, setup instructions
+       1494 +  
+       1495 +  #### User Guide
+       1496 +  - ⭕ Create user guide (Markdown or PDF)
+       1497 +    - Section 1: How to create invoices
+       1498 +    - Section 2: How to record payments
+       1499 +    - Section 3: How to track expenses
+       1500 +    - Section 4: How to manage cash accounts 🆕
+       1501 +    - Section 5: How to generate reports
+       1502 +    - Section 6: How to prepare GST returns 🆕
+       1503 +    - Section 7: How to import from Tally
+       1504 +    - Section 8: How to export to Tally
+       1505 +    - Section 9: Multi-currency transactions 🆕
+       1506 +  
+       1507 +  #### Database Backup
+       1508 +  - ⭕ Create full database backup before deployment
+       1509 +    - Run: `pg_dump -h <host> -U <user> -d <database> > backup_pre_phase7.sql`
+       1510 +  - ⭕ Test restore procedure
+       1511 +    - Create test database
+       1512 +    - Restore from backup
+       1513 +    - Verify data integrity
+       1514 +  
+       1515 +  #### Staging Deployment
+       1516 +  - ⭕ Run migrations in staging
+       1517 +    - Create all 29 tables
+       1518 +    - Seed data (account groups, ledgers, currencies, etc.)
+       1519 +    - Verify RLS policies
+       1520 +  - ⭕ Test accounting module in staging
+       1521 +    - Complete sales cycle
+       1522 +    - Complete purchase cycle
+       1523 +    - Generate reports
+       1524 +    - Test Tally import/export
+       1525 +  - ⭕ Verify no breaking changes to inventory module
+       1526 +    - Test goods receipt
+       1527 +    - Test goods dispatch
+       1528 +    - Test QR scanning
+       1529 +  
+       1530 +  #### Production Deployment
+       1531 +  - ⭕ Schedule deployment (off-peak hours)
+       1532 +  - ⭕ Announce maintenance window to users
+       1533 +  - ⭕ Run migrations in production
+       1534 +    - Monitor for errors
+       1535 +    - Verify migration success
+       1536 +  - ⭕ Deploy code to production
+       1537 +    - Build Next.js app: `npm run build`
+       1538 +    - Deploy to Vercel/hosting
+       1539 +  - ⭕ Monitor for errors
+       1540 +    - Check server logs
+       1541 +    - Check Sentry/error tracking
+       1542 +    - Check database performance
+       1543 +  
+       1544 +  #### Post-Deployment Monitoring
+       1545 +  - ⭕ Monitor error rates (first 24 hours)
+       1546 +    - Target: < 0.1% error rate
+       1547 +  - ⭕ Monitor performance
+       1548 +    - Report generation time: < 2s
+       1549 +    - Invoice creation: < 500ms
+       1550 +  - ⭕ Collect user feedback
+       1551 +    - Survey users after 1 week
+       1552 +    - Address critical issues immediately
+       1553 +  - ⭕ Fix any critical issues
+       1554 +    - Hotfix deployment if needed
+       1555 +  
+       1556 +  #### Rollback Plan
+       1557 +  - ⭕ Document rollback procedure
+       1558 +    - Restore database from backup
+       1559 +    - Revert code to previous version
+       1560 +  - ⭕ Test rollback in staging
+       1561 +    - Verify all features work after rollback
+       1562 +  - ⭕ Keep backup for 30 days minimum
+       1563 +  
+       1564 +  ---
+       1565 +  
+       1566 +  **Last Updated:** 2025-01-26
+       1567 +  **Current Phase:**
+       1568 +  - Phase 1 ✅ COMPLETED - Authentication with Google OAuth + Email OTP
+       1569 +  - Phase 2 ✅ COMPLETED - Performance Optimization (70-80% faster, 100% security score)
+       1570 +  - Phase 3 ✅ COMPLETED - Goods Receipt Standardization (consistent display format)
+       1571 +  - Phase 4-5 ⏳ PENDING - UI/UX Improvements, Backend Cleanup
+       1572 +  - Phase 6 ⏳ IN PROGRESS - Testing & Validation (Auth ✅, Performance ✅)
+       1573 +  - Phase 7 ⭕ READY TO START - Accounting Module Integration (7 weeks, Feb-Mar 2025)
+       1574 +  
+       1575 +  **Recent Completion:**
+       1576 +  - Phase 3: Standardized goods receipts display system with centralized queries and reusable components
+       1577 +  - Phase 6.1: Authentication testing completed (Google OAuth + Email OTP)
+       1578 +  - Phase 6.2: Performance testing completed (all targets met)
+       1579 +  - Phase 7 Planning: Complete database schema (29 tables), navigation compaction (6 items), final confirmations on Tally/Cash/Sandbox
+       1580 +  
+       1581 +  **Total Phase 7 Tasks:** 200+ tasks across 11 categories (7-week implementation)
+       1582 +  
+       1583 +  **Key Phase 7 Features:**
+       1584 +  - ✅ **Complete Database Schema:** 29 tables covering all accounting, cash, multi-currency, and Tally integration needs
+       1585 +  - ✅ **Navigation Compaction:** Reduced from 10 to 6 items (Overview, Inventory, Partners, Accounts, Reports, Settings)
+       1586 +  - ✅ **Cash Management:** Daily denomination counting, petty cash, Section 269ST & 40A(3) compliance
+       1587 +  - ✅ **Multi-Currency:** USD, EUR, GBP support with exchange rates and gain/loss tracking
+       1588 +  - ✅ **Tally Integration:** 100% XML import/export compatibility
+       1589 +  - ✅ **Sandbox API:** Minimal cost strategy (₹20-600/month for e-invoicing only)
+       1590 +  - ✅ **Auto-Integration:** 80% automated (Dispatch → Invoice, Receipt → Bill)
+       1591 +  - ✅ **GST Compliance:** Local GSTR-1/3B generation (FREE), E-Invoice via Sandbox
+       1592 +  
+       1593 +  **Key Dependencies:**
+       1594 +  - 7.2 depends on 7.1 (need tables before creating engine)
+       1595 +  - 7.3 depends on 7.2 (need engine before auto-integration)
+       1596 +  - 7.4 depends on 7.2 (need engine before cash management)
+       1597 +  - 7.5 depends on 7.3-7.4 (need data before reports)
+       1598 +  - 7.6 depends on 7.3 (need invoices before GST reports)
+       1599 +  - 7.7 depends on 7.1-7.6 (need complete system for Tally sync)
+       1600 +  - 7.8-7.9 can run in parallel with 7.1-7.7
+       1601 +  - 7.10-7.11 are final testing and deployment tasks
+       1602   \ No newline at end of file
+
+● Perfect! I've successfully updated the .todo.md file with comprehensive Phase 7 implementation tasks. Here's what was added:
+
+  Summary of Updates to .todo.md
+
+  Phase 7: Accounting Module Integration (7 weeks, 200+ tasks)
+
+  Key Additions:
+
+  1. Complete Database Schema (7.1) - 29 tables organized by category:
+    - Core Accounting (8 tables): ledger_accounts, journal_entries, journal_entry_lines, account_groups, gst_settings, batches, asset_types,
+  accounting_periods
+    - Multi-Currency (2 tables): exchange_rates, opening_stock
+    - Inventory-Tally Integration (4 tables): stock_groups, stock_categories, units_of_measure, unit_conversions
+    - User-Facing Transactions (5 tables): invoices, payments_received, purchase_bills, payments_made, expenses
+    - Cash Management (6 tables) 🆕: cash_bank_accounts, cash_denominations, petty_cash_floats, petty_cash_expenses, petty_cash_replenishments,
+  contra_entries
+    - Compliance & Supporting (4 tables): compliance_limits, bank_statements, tally_import_logs, e_invoice_logs
+  2. Navigation Compaction Section (7.8) 🆕:
+    - Update DashboardNav.tsx from 10 to 6 items
+    - Route restructuring (sales-orders → accounts, job-works → inventory, staff → settings)
+    - Update all internal links
+    - Add breadcrumbs component
+    - Progressive disclosure strategy
+  3. Cash Management Features (7.4) 🆕:
+    - Daily denomination counting with variance alerts
+    - Petty cash float management
+    - Contra entries (Cash ↔ Bank transfers)
+    - Section 269ST (₹2L) and 40A(3) (₹10K) compliance checks
+  4. Multi-Currency Features (7.9) 🆕:
+    - Currency management (INR, USD, EUR, GBP)
+    - Exchange rate management
+    - Multi-currency invoices and payments
+    - Exchange gain/loss calculation
+    - Multi-currency reports
+  5. Sandbox API Minimal Cost Strategy (7.6) 🆕:
+    - GSTR-1 and GSTR-3B calculated locally (FREE)
+    - E-Invoice IRN only for invoices >₹5L with GSTIN
+    - Estimated cost: ₹20-600/month (vs ₹5,000/month traditional)
+
+  Final Confirmations Documented:
+  - ✅ Tally Import/Export 100% Ready (with comprehensive mapping table)
+  - ✅ Cash Management Complete (80% cash business support)
+  - ✅ Sandbox API Minimal Cost Strategy (₹20-600/month)
+  - ✅ Multi-Currency Support (USD, EUR, GBP)
+  - ✅ Navigation Compacted to 6 Items
+
+  All tasks are now clearly organized by week with dependencies noted. The project is ready to start Phase 7 implementation!
+
+
+

@@ -1,0 +1,2399 @@
+
+ ▐▛███▜▌   Claude Code v2.0.27
+▝▜█████▛▘  Sonnet 4.5 · Claude Pro
+  ▘▘ ▝▝    C:\Users\Chirag\Bale Inventorye
+
+> /mcp 
+  ⎿  Authentication successful. Connected to supabase.
+
+> read .claude.md and .todo.md for phase 7 part 3 
+
+● I'll read both files to understand Phase 7 Part 3 requirements.
+
+● Read(.claude.md)
+  ⎿  Read 573 lines
+
+● Read(.todo.md)
+  ⎿  Read 1579 lines
+
+● I've reviewed both files. Phase 7 Part 3 refers to 7.3 Auto-Integration - Inventory to Accounting (Week 3).
+
+  However, there's a critical dependency issue:
+
+  Current Status
+
+  - ✅ 7.2 Core Accounting Engine - Completed (Lean MVP with 6 functions)
+  - ❌ 7.1 Database Schema & Migrations - NOT STARTED (all 29 tables still need to be created)
+  - ⭕ 7.3 Auto-Integration - Cannot start without 7.1 complete
+
+  The Problem
+
+  Phase 7.3 requires the database tables from 7.1 to function:
+  - invoices table
+  - purchase_bills table
+  - journal_entries table
+  - journal_entry_lines table
+  - ledger_accounts table
+  - gst_settings table
+  - e_invoice_logs table
+  - And 22 more accounting tables...
+
+  What Phase 7.3 Will Do
+
+  Main Goal: Automatically create invoices when goods are dispatched, and purchase bills when goods are received.
+
+  Key Features:
+  1. Goods Dispatch → Invoice (Auto)
+    - When user completes a goods dispatch, system auto-creates invoice
+    - Calculates GST (CGST+SGST or IGST based on customer state)
+    - Creates double-entry journal entries
+    - Creates COGS (Cost of Goods Sold) entry
+    - Generates E-Invoice IRN if amount > ₹5L and customer has GSTIN
+  2. Goods Receipt → Purchase Bill (Auto)
+    - When user completes a goods receipt, system auto-creates purchase bill
+    - Calculates GST input credit
+    - Creates journal entries
+  3. Enhanced Detail Pages
+    - Adds "Invoice Section" to goods dispatch detail page
+    - Adds "Purchase Bill Section" to goods receipt detail page
+    - Shows payment status, amounts, GST breakdown
+    - Provides "Download PDF" and "Record Payment" buttons
+  4. E-Invoice Integration
+    - Integrates with Sandbox API for government-mandated e-invoicing
+    - Only triggers for invoices > ₹5 lakh with customer GSTIN
+    - Embeds IRN and QR code in invoice PDF
+    - Costs ~₹0.50 per invoice
+
+  My Recommendation
+
+  Before we start 7.3, we should:
+                                                                                                                                                           
+● User answered Claude's questions:
+  ⎿
+     · Phase 7.1 (Database Schema) hasn't been started yet, but it's required for Phase 7.3 to work. How would you like to proceed? → All tables have been 
+     created
+
+● Perfect! If all tables have been created, then we can proceed with Phase 7.3: Auto-Integration.
+
+  Let me verify the database setup first, then present the complete implementation plan.
+
+● Read(lib\accounting)
+  ⎿  Error: EISDIR: illegal operation on a directory, read
+
+● Search(pattern: "lib/accounting/**/*.ts")
+  ⎿  Found 5 files (ctrl+o to expand)
+
+● Read(lib\accounting\README.md)
+  ⎿  Read 255 lines
+
+● Search(pattern: "app/actions/**/*dispatch*.ts")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+● Search(pattern: "app/actions/**/*receipt*.ts")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+● Search(pattern: "app/dashboard/inventory/goods-dispatches/[id]/**/*.tsx")
+  ⎿  Found 0 files 
+
+● Search(pattern: "app/dashboard/inventory/goods-receipts/[id]/**/*.tsx")
+  ⎿  Found 0 files 
+
+● Search(pattern: "app/dashboard/inventory/goods-dispatches/[id]/*.tsx")
+  ⎿  Found 0 files 
+
+● Search(pattern: "app/dashboard/inventory/goods-receipts/[id]/*.tsx")
+  ⎿  Found 0 files 
+
+● Search(pattern: "app/dashboard/inventory/goods-dispatches/**/*.tsx")
+  ⎿  Found 0 files 
+
+● Search(pattern: "app/dashboard/inventory/goods-receipts/**/*.tsx")
+  ⎿  Found 10 files (ctrl+o to expand)
+
+● Search(pattern: "app/dashboard/inventory/**/*dispatch*.tsx")
+  ⎿  Found 3 files (ctrl+o to expand)
+
+● Read(app\actions\inventory\goods-dispatch.ts)
+  ⎿  Read 100 lines
+
+● Read(app\actions\inventory\goods-dispatch.ts)
+  ⎿  Read 100 lines
+
+● Read(app\actions\inventory\goods-receipts.ts)
+  ⎿  Read 50 lines
+
+● Read(app\dashboard\inventory\goods-dispatch\[id]\GoodsDispatchClient.tsx)
+  ⎿  Read 68 lines
+
+● Read(app\dashboard\inventory\goods-receipts\[id]\page.tsx)
+  ⎿  Read 46 lines
+
+● Perfect! I have enough context. Let me now present a comprehensive plan for Phase 7.3: Auto-Integration (Inventory to Accounting).
+  ⎿  User rejected Claude's plan:
+     ╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+     │ Phase 7.3: Auto-Integration - Inventory to Accounting                                                                                                   │
+     │                                                                                                                                                         │
+     │ Overview                                                                                                                                                │
+     │                                                                                                                                                         │
+     │ Automatically create invoices from goods dispatches and purchase bills from goods receipts, with full accounting integration (journal entries, GST,     │
+     │ COGS).                                                                                                                                                  │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Part 1: Core Auto-Creation Functions (lib/accounting/)                                                                                                  │
+     │                                                                                                                                                         │
+     │ 1.1 Create lib/accounting/invoice.ts                                                                                                                    │
+     │                                                                                                                                                         │
+     │ New file with functions:                                                                                                                                │
+     │ - autoCreateInvoiceFromDispatch() - Creates invoice + journal entries from dispatch                                                                     │
+     │ - autoCreatePurchaseBillFromReceipt() - Creates purchase bill + journal entries from receipt                                                            │
+     │ - generateInvoiceNumber() - Format: INV-YYYY-MM-XXXXX                                                                                                   │
+     │ - generateBillNumber() - Format: BILL-YYYY-MM-XXXXX                                                                                                     │
+     │                                                                                                                                                         │
+     │ What each function does:                                                                                                                                │
+     │ 1. Fetch dispatch/receipt data with items                                                                                                               │
+     │ 2. Calculate totals and GST (using calculateGST() from Phase 7.2)                                                                                       │
+     │ 3. Create invoice/bill record in database                                                                                                               │
+     │ 4. Get or create customer/supplier ledger (using getOrCreateLedger())                                                                                   │
+     │ 5. Create journal entries:                                                                                                                              │
+     │   - Invoice: Dr Customer, Cr Sales, Cr CGST/SGST/IGST                                                                                                   │
+     │   - COGS: Dr Cost of Goods Sold, Cr Inventory                                                                                                           │
+     │   - Bill: Dr Purchases + Dr CGST/SGST/IGST, Cr Supplier                                                                                                 │
+     │ 6. Return invoice/bill ID                                                                                                                               │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Part 2: E-Invoice Integration                                                                                                                           │
+     │                                                                                                                                                         │
+     │ 2.1 Create lib/accounting/e-invoice.ts                                                                                                                  │
+     │                                                                                                                                                         │
+     │ Functions:                                                                                                                                              │
+     │ - generateEInvoice() - Calls Sandbox API for IRN generation                                                                                             │
+     │ - formatEInvoicePayload() - Converts invoice to Sandbox API format                                                                                      │
+     │ - handleEInvoiceError() - Retry logic (max 3 attempts)                                                                                                  │
+     │                                                                                                                                                         │
+     │ Integration:                                                                                                                                            │
+     │ - Only calls API if: amount > ₹5L AND customer has GSTIN AND e-invoice enabled                                                                          │
+     │ - Stores response in e_invoice_logs table                                                                                                               │
+     │ - Updates invoice with IRN, QR code                                                                                                                     │
+     │ - Costs ~₹0.50 per call                                                                                                                                 │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Part 3: Update Server Actions                                                                                                                           │
+     │                                                                                                                                                         │
+     │ 3.1 Modify app/actions/inventory/goods-dispatch.ts                                                                                                      │
+     │                                                                                                                                                         │
+     │ Add after dispatch creation (around line 199):                                                                                                          │
+     │ // Auto-create invoice if dispatch_to_partner_id exists                                                                                                 │
+     │ if (dispatch.dispatch_to_partner_id) {                                                                                                                  │
+     │   const invoice = await autoCreateInvoiceFromDispatch(                                                                                                  │
+     │     dispatch.id,                                                                                                                                        │
+     │     companyId,                                                                                                                                          │
+     │     userId                                                                                                                                              │
+     │   );                                                                                                                                                    │
+     │                                                                                                                                                         │
+     │   // Generate E-Invoice if eligible                                                                                                                     │
+     │   if (invoice.total_amount >= 500000) {                                                                                                                 │
+     │     await generateEInvoice(invoice.id);                                                                                                                 │
+     │   }                                                                                                                                                     │
+     │ }                                                                                                                                                       │
+     │                                                                                                                                                         │
+     │ 3.2 Modify app/actions/inventory/goods-receipts.ts                                                                                                      │
+     │                                                                                                                                                         │
+     │ Add after receipt creation:                                                                                                                             │
+     │ // Auto-create purchase bill if received_from_partner_id exists                                                                                         │
+     │ if (receipt.received_from_partner_id) {                                                                                                                 │
+     │   await autoCreatePurchaseBillFromReceipt(                                                                                                              │
+     │     receipt.id,                                                                                                                                         │
+     │     companyId,                                                                                                                                          │
+     │     userId                                                                                                                                              │
+     │   );                                                                                                                                                    │
+     │ }                                                                                                                                                       │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Part 4: Update Detail Pages UI                                                                                                                          │
+     │                                                                                                                                                         │
+     │ 4.1 Update Goods Dispatch Detail Page                                                                                                                   │
+     │                                                                                                                                                         │
+     │ File: app/dashboard/inventory/goods-dispatch/[id]/page.tsx                                                                                              │
+     │                                                                                                                                                         │
+     │ Add query to fetch invoice:                                                                                                                             │
+     │ const { data: invoice } = await supabase                                                                                                                │
+     │   .from('invoices')                                                                                                                                     │
+     │   .select('*, payments_received(*)')                                                                                                                    │
+     │   .eq('dispatch_id', id)                                                                                                                                │
+     │   .single();                                                                                                                                            │
+     │                                                                                                                                                         │
+     │ Pass to component:                                                                                                                                      │
+     │ <GoodsDispatchDetail dispatch={dispatch} invoice={invoice} />                                                                                           │
+     │                                                                                                                                                         │
+     │ 4.2 Create Invoice Section Component                                                                                                                    │
+     │                                                                                                                                                         │
+     │ New file: components/inventory/InvoiceSection.tsx                                                                                                       │
+     │                                                                                                                                                         │
+     │ Shows:                                                                                                                                                  │
+     │ - Invoice number, date, due date                                                                                                                        │
+     │ - Amounts: Subtotal, GST breakdown, Total                                                                                                               │
+     │ - Payment status badge (Unpaid/Partial/Paid)                                                                                                            │
+     │ - E-Invoice IRN + QR code (if generated)                                                                                                                │
+     │ - Buttons: [Download PDF] [Record Payment]                                                                                                              │
+     │                                                                                                                                                         │
+     │ 4.3 Update Goods Receipt Detail Page                                                                                                                    │
+     │                                                                                                                                                         │
+     │ Similar to dispatch page, but shows:                                                                                                                    │
+     │ - Purchase bill details                                                                                                                                 │
+     │ - Payment status                                                                                                                                        │
+     │ - [Download PDF] [Record Payment] buttons                                                                                                               │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Part 5: PDF Generation                                                                                                                                  │
+     │                                                                                                                                                         │
+     │ 5.1 Create lib/pdf/invoice-template.ts                                                                                                                  │
+     │                                                                                                                                                         │
+     │ Uses: jsPDF or Puppeteer                                                                                                                                │
+     │                                                                                                                                                         │
+     │ Template includes:                                                                                                                                      │
+     │ - Company letterhead                                                                                                                                    │
+     │ - GST-compliant format (per GSTN guidelines)                                                                                                            │
+     │ - Item details with HSN codes                                                                                                                           │
+     │ - GST breakdown (CGST/SGST or IGST)                                                                                                                     │
+     │ - E-Invoice QR code (if applicable)                                                                                                                     │
+     │ - IRN number                                                                                                                                            │
+     │                                                                                                                                                         │
+     │ 5.2 Create API route                                                                                                                                    │
+     │                                                                                                                                                         │
+     │ File: app/api/invoices/[id]/pdf/route.ts                                                                                                                │
+     │ - Generates PDF on-the-fly                                                                                                                              │
+     │ - Returns as downloadable file                                                                                                                          │
+     │ - Caches for 1 hour                                                                                                                                     │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Part 6: Payment Recording UI (Basic)                                                                                                                    │
+     │                                                                                                                                                         │
+     │ 6.1 Create app/dashboard/accounts/payments-in/new/page.tsx                                                                                              │
+     │                                                                                                                                                         │
+     │ Simple form:                                                                                                                                            │
+     │ - Customer dropdown (from partners)                                                                                                                     │
+     │ - Amount, payment date                                                                                                                                  │
+     │ - Payment method (Cash/Bank)                                                                                                                            │
+     │ - Invoice selection (checkboxes for unpaid invoices)                                                                                                    │
+     │ - Submit → creates payment record + journal entry                                                                                                       │
+     │                                                                                                                                                         │
+     │ 6.2 Server action                                                                                                                                       │
+     │                                                                                                                                                         │
+     │ File: app/actions/accounting/payments.ts                                                                                                                │
+     │ - recordPaymentReceived() - Creates payment + journal entry                                                                                             │
+     │ - Updates invoice payment_status                                                                                                                        │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Part 7: Database Queries                                                                                                                                │
+     │                                                                                                                                                         │
+     │ 7.1 Create lib/queries/invoices.ts                                                                                                                      │
+     │                                                                                                                                                         │
+     │ Functions:                                                                                                                                              │
+     │ - getInvoiceByDispatchId()                                                                                                                              │
+     │ - getInvoiceWithPayments()                                                                                                                              │
+     │ - getUnpaidInvoicesByCustomer()                                                                                                                         │
+     │                                                                                                                                                         │
+     │ 7.2 Create lib/queries/purchase-bills.ts                                                                                                                │
+     │                                                                                                                                                         │
+     │ Functions:                                                                                                                                              │
+     │ - getBillByReceiptId()                                                                                                                                  │
+     │ - getUnpaidBillsBySupplier()                                                                                                                            │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Part 8: Testing Checklist                                                                                                                               │
+     │                                                                                                                                                         │
+     │ Test Complete Sales Flow:                                                                                                                               │
+     │                                                                                                                                                         │
+     │ 1. Create goods dispatch → verify invoice auto-created                                                                                                  │
+     │ 2. Check journal entries: Dr Customer, Cr Sales, Cr GST                                                                                                 │
+     │ 3. Check COGS entry: Dr COGS, Cr Inventory                                                                                                              │
+     │ 4. View dispatch detail page → invoice section appears                                                                                                  │
+     │ 5. Download invoice PDF                                                                                                                                 │
+     │ 6. Record payment → verify invoice marked as "Paid"                                                                                                     │
+     │ 7. Check Trial Balance → Dr = Cr                                                                                                                        │
+     │                                                                                                                                                         │
+     │ Test E-Invoice:                                                                                                                                         │
+     │                                                                                                                                                         │
+     │ 1. Create invoice > ₹5L with customer GSTIN                                                                                                             │
+     │ 2. Verify Sandbox API called                                                                                                                            │
+     │ 3. Verify IRN stored in database                                                                                                                        │
+     │ 4. Verify QR code in PDF                                                                                                                                │
+     │ 5. Test error handling (mock API failure)                                                                                                               │
+     │                                                                                                                                                         │
+     │ Test Purchase Flow:                                                                                                                                     │
+     │                                                                                                                                                         │
+     │ 1. Create goods receipt → verify bill auto-created                                                                                                      │
+     │ 2. Check journal entries                                                                                                                                │
+     │ 3. View receipt detail page → bill section appears                                                                                                      │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Files to Create/Modify                                                                                                                                  │
+     │                                                                                                                                                         │
+     │ New Files (12):                                                                                                                                         │
+     │ 1. lib/accounting/invoice.ts (auto-creation logic)                                                                                                      │
+     │ 2. lib/accounting/e-invoice.ts (Sandbox API integration)                                                                                                │
+     │ 3. lib/pdf/invoice-template.ts (PDF generation)                                                                                                         │
+     │ 4. lib/pdf/bill-template.ts                                                                                                                             │
+     │ 5. lib/queries/invoices.ts                                                                                                                              │
+     │ 6. lib/queries/purchase-bills.ts                                                                                                                        │
+     │ 7. components/inventory/InvoiceSection.tsx                                                                                                              │
+     │ 8. components/inventory/PurchaseBillSection.tsx                                                                                                         │
+     │ 9. app/api/invoices/[id]/pdf/route.ts                                                                                                                   │
+     │ 10. app/api/bills/[id]/pdf/route.ts                                                                                                                     │
+     │ 11. app/dashboard/accounts/payments-in/new/page.tsx                                                                                                     │
+     │ 12. app/actions/accounting/payments.ts                                                                                                                  │
+     │                                                                                                                                                         │
+     │ Modify (4):                                                                                                                                             │
+     │ 1. app/actions/inventory/goods-dispatch.ts (add auto-invoice call)                                                                                      │
+     │ 2. app/actions/inventory/goods-receipts.ts (add auto-bill call)                                                                                         │
+     │ 3. app/dashboard/inventory/goods-dispatch/[id]/page.tsx (add invoice query)                                                                             │
+     │ 4. app/dashboard/inventory/goods-receipts/[id]/page.tsx (add bill query)                                                                                │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Environment Variables Needed                                                                                                                            │
+     │                                                                                                                                                         │
+     │ SANDBOX_API_KEY=your_sandbox_api_key                                                                                                                    │
+     │ SANDBOX_CLIENT_SECRET=your_sandbox_secret                                                                                                               │
+     │ SANDBOX_API_URL=https://api.sandbox.co.in                                                                                                               │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Estimated Time: 5-7 days                                                                                                                                │
+     │                                                                                                                                                         │
+     │ - Day 1-2: Auto-creation functions + E-Invoice integration                                                                                              │
+     │ - Day 3-4: Update server actions + detail pages                                                                                                         │
+     │ - Day 5: PDF generation                                                                                                                                 │
+     │ - Day 6: Payment recording UI                                                                                                                           │
+     │ - Day 7: Testing and bug fixes                                                                                                                          │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Success Criteria                                                                                                                                        │
+     │                                                                                                                                                         │
+     │ ✅ Invoice auto-created when dispatch completed                                                                                                          │
+     │ ✅ Purchase bill auto-created when receipt completed✅ Journal entries balanced (Dr = Cr)                                                                 │
+     │ ✅ GST calculated correctly (intra/inter state)                                                                                                          │
+     │ ✅ E-Invoice IRN generated for eligible invoices                                                                                                         │
+     │ ✅ Invoice/Bill sections appear on detail pages                                                                                                          │
+     │ ✅ PDF downloads work                                                                                                                                    │
+     │ ✅ Payment recording updates invoice status                                                                                                              │
+     │ ✅ Trial Balance remains balanced                                                                                                                        │
+     │                                                                                                                                                         │
+     │ ---                                                                                                                                                     │
+     │ Ready to proceed?                                                                                                                                       │
+     ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+> I have just one problem instead of auto-integration we need an approval workflow since discount, partial orders, final amount anything can change and it 
+should accomodate it plus after invoices there should be option to file GST there in there itself or a separate place where all these orders will be 
+collected with tags like pending, paid for GST 
+
+● Excellent feedback! This is much more practical for real-world business scenarios. Let me revise the plan completely.
+
+  Phase 7.3 (REVISED): Approval Workflow + GST Filing Dashboard
+
+  Key Changes from Original Plan:
+
+  ❌ Remove: Auto-creation on dispatch/receipt completion
+
+  ✅ Add: Draft → Review → Approve workflow
+
+  ✅ Add: Central GST filing dashboard with tags
+
+  ---
+  New Workflow Design
+
+  Sales Flow:
+
+  Goods Dispatch Created (Pending)
+      ↓
+  User clicks "Create Invoice from Dispatch"
+      ↓
+  DRAFT INVOICE PAGE (Editable Form)
+  ├─ Pre-filled from dispatch data
+  ├─ User can:
+  │  ├─ Add/remove items
+  │  ├─ Apply discounts (%)
+  │  ├─ Adjust quantities (partial fulfillment)
+  │  ├─ Change final amounts
+  │  ├─ Edit GST rate
+  │  └─ Add payment terms
+      ↓
+  User clicks "Save Draft" → Status: "Draft"
+      ↓
+  User clicks "Approve & Finalize"
+      ↓
+  SYSTEM CREATES:
+  ├─ Final invoice record
+  ├─ Journal entries (Dr Customer, Cr Sales, Cr GST)
+  ├─ COGS entry
+  ├─ E-Invoice IRN (if amount > ₹5L)
+  └─ Status: "Approved - Unpaid"
+
+  Purchase Flow:
+
+  Goods Receipt Created
+      ↓
+  User clicks "Create Bill from Receipt"
+      ↓
+  DRAFT BILL PAGE (Editable)
+  ├─ Review received items
+  ├─ Match with supplier's invoice
+  ├─ Adjust amounts if needed
+  └─ Apply input tax credit
+      ↓
+  Approve & Finalize
+      ↓
+  Creates bill + journal entries
+
+  ---
+  Revised Implementation Plan
+
+  Part 1: Draft Invoice Creation
+
+  1.1 Add button to Goods Dispatch detail page:
+  {!invoice && (
+    <Link href={`/dashboard/inventory/goods-dispatch/${id}/create-invoice`}>
+      <button>Create Invoice from Dispatch</button>
+    </Link>
+  )}
+
+  1.2 Create Draft Invoice Page
+  File: app/dashboard/inventory/goods-dispatch/[id]/create-invoice/page.tsx
+
+  Form fields:
+  - Customer (pre-filled, read-only)
+  - Invoice date, due date
+  - Items table (editable):
+    - Product | Dispatched Qty | Unit Price | Discount % | Final Amount
+    - Can remove items
+    - Can adjust quantities
+  - Discounts:
+    - Line-item discount
+    - Overall discount (%)
+  - GST:
+    - Auto-calculated (can be overridden)
+    - Shows CGST/SGST or IGST
+  - Additional charges:
+    - Transport, packing, etc.
+  - Payment terms (text)
+  - Notes (text)
+  - Preview Invoice PDF (button)
+  - Actions:
+    - [Save as Draft] → status: "draft"
+    - [Approve & Finalize] → creates invoice + journal entries
+
+  1.3 Server Action
+  File: app/actions/accounting/invoices.ts
+  - createDraftInvoice() - Saves draft without journal entries
+  - finalizeDraftInvoice() - Creates journal entries, E-Invoice, locks invoice
+
+  ---
+  Part 2: Invoice Approval Workflow
+
+  2.1 Invoice can have statuses:
+  type InvoiceStatus =
+    | 'draft'           // User editing
+    | 'pending_approval' // Submitted but not approved
+    | 'approved'        // Finalized, journal entries created
+    | 'cancelled'       // Voided
+
+  2.2 After approval:
+  - Invoice becomes read-only
+  - Journal entries created
+  - E-Invoice generated (if eligible)
+  - Can record payments
+  - Cannot edit (must create credit note to modify)
+
+  ---
+  Part 3: GST Filing Dashboard
+
+  Location: /dashboard/accounts/gst-filing (or /dashboard/reports/gst-filing)
+
+  3.1 Main Dashboard Shows:
+
+  Filters:
+  - Date Range: [Month/Quarter selector]
+  - GST Filing Status: [All | Not Filed | Filed | Excluded]
+  - Payment Status: [All | Unpaid | Partial | Paid]
+  - Customer: [Dropdown]
+
+  Table:
+  | Select | Invoice No | Date   | Customer | GSTIN    | Taxable Value | CGST | SGST | IGST   | Total   | Payment Status | GST Status | Actions |
+  |--------|------------|--------|----------|----------|---------------|------|------|--------|---------|----------------|------------|---------|
+  | ☐      | INV-001    | 15-Jan | ABC Ltd  | 27XXX... | ₹10,000       | ₹900 | ₹900 | -      | ₹11,800 | Paid           | Filed      | 👁️     |
+  | ☐      | INV-002    | 20-Jan | XYZ Co   | 24XXX... | ₹25,000       | -    | -    | ₹4,500 | ₹29,500 | Unpaid         | Not Filed  | 👁️     |
+
+  Bulk Actions (after selecting invoices):
+  - [Mark as Filed]
+  - [Generate GSTR-1 JSON] → Downloads JSON for selected invoices
+  - [Exclude from GST] → For cancelled/voided invoices
+  - [Export to Excel]
+
+  Summary Cards (top of page):
+  ┌─────────────────────┬─────────────────────┬─────────────────────┐
+  │ Total Invoices      │ Total GST Liability │ Filed vs Pending    │
+  │ 45 invoices         │ ₹1,25,000          │ 30 Filed / 15 Pending│
+  └─────────────────────┴─────────────────────┴─────────────────────┘
+
+  3.2 Quick Actions Panel:
+  Current Period: January 2025
+  ├─ B2B Invoices: 30 (₹10,50,000)
+  ├─ B2C Large: 10 (₹5,20,000)
+  ├─ B2C Others: 5 (₹80,000)
+  ├─ Total GST: ₹2,10,000
+  └─ [Generate GSTR-1 for Jan 2025]
+
+  3.3 Invoice Detail View:
+  When clicking on invoice:
+  - Full invoice details
+  - Payment history
+  - GST filing status
+  - E-Invoice IRN (if generated)
+  - Tags: [Paid] [Filed in GSTR-1] [B2B]
+  - Actions:
+    - Record Payment
+    - Download PDF
+    - Mark as Filed
+    - Void/Cancel
+
+  ---
+  Part 4: Database Schema Updates
+
+  4.1 Add columns to invoices table:
+  ALTER TABLE invoices ADD COLUMN status text DEFAULT 'draft';
+  ALTER TABLE invoices ADD COLUMN gst_filing_status text DEFAULT 'not_filed';
+  ALTER TABLE invoices ADD COLUMN discount_percent numeric(5,2);
+  ALTER TABLE invoices ADD COLUMN discount_amount numeric(15,2);
+  ALTER TABLE invoices ADD COLUMN additional_charges numeric(15,2);
+  ALTER TABLE invoices ADD COLUMN payment_terms text;
+  ALTER TABLE invoices ADD COLUMN finalized_at timestamptz;
+  ALTER TABLE invoices ADD COLUMN finalized_by uuid REFERENCES users(id);
+
+  4.2 Add invoice tags table:
+  CREATE TABLE invoice_tags (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    invoice_id uuid REFERENCES invoices(id),
+    tag text, -- 'filed_gstr1', 'filed_gstr3b', 'excluded', 'b2b', 'b2c_large', 'b2c_small'
+    created_at timestamptz DEFAULT now()
+  );
+
+  ---
+  Part 5: Purchase Bill - Similar Workflow
+
+  File: app/dashboard/inventory/goods-receipts/[id]/create-bill/page.tsx
+
+  - Pre-fill from receipt
+  - User enters supplier's bill number, date
+  - Match amounts with supplier invoice
+  - Adjust if needed (discounts, transport charges)
+  - Approve → creates bill + journal entries
+
+  ---
+  Updated File Structure
+
+  New Files (15):
+  1. app/dashboard/inventory/goods-dispatch/[id]/create-invoice/page.tsx - Draft invoice form
+  2. app/dashboard/inventory/goods-receipts/[id]/create-bill/page.tsx - Draft bill form
+  3. app/dashboard/accounts/gst-filing/page.tsx - GST dashboard
+  4. app/dashboard/accounts/gst-filing/[id]/page.tsx - Invoice detail in GST context
+  5. app/actions/accounting/invoices.ts - Draft/finalize functions
+  6. app/actions/accounting/purchase-bills.ts - Draft/finalize functions
+  7. app/actions/accounting/gst-filing.ts - Mark as filed, generate GSTR-1
+  8. components/accounting/DraftInvoiceForm.tsx - Reusable form
+  9. components/accounting/InvoiceItemsTable.tsx - Editable items table
+  10. components/accounting/GSTFilingTable.tsx - Main table component
+  11. lib/accounting/invoice.ts - Invoice creation logic
+  12. lib/accounting/gst-filing.ts - GSTR-1 generation logic
+  13. lib/queries/invoices.ts - Invoice queries
+  14. lib/pdf/invoice-template.ts - PDF generation
+  15. lib/types/accounting.ts - TypeScript types
+
+  Modified Files (4):
+  1. app/dashboard/inventory/goods-dispatch/[id]/page.tsx - Add "Create Invoice" button
+  2. app/dashboard/inventory/goods-receipts/[id]/page.tsx - Add "Create Bill" button
+  3. Database migration - Add new columns and tables
+  4. Navigation - Add GST Filing link
+
+  ---
+  Success Criteria
+
+  ✅ Draft invoice can be created from dispatch
+  ✅ User can edit amounts, discounts, quantities
+  ✅ Invoice preview works before finalization
+  ✅ Approval creates journal entries (balanced)
+  ✅ GST Filing dashboard shows all invoices
+  ✅ Can filter by date, status, payment
+  ✅ Bulk selection works for GSTR-1 generation
+  ✅ Generate GSTR-1 JSON for selected period
+  ✅ Mark invoices as "Filed"
+  ✅ E-Invoice generated only after approval
+
+  ---
+  Questions for You:
+
+  1. GST Filing Location: Should it be under /dashboard/accounts/gst-filing OR /dashboard/reports/gst?
+  2. Approval Roles: Do you want a separate "approver" role, or can the same user who creates draft also approve?
+  3. E-Invoice: Should E-Invoice be generated immediately on approval, or should there be a separate "Generate E-Invoice" button?
+  4. Partial Dispatch: If only 50 units dispatched out of 100 ordered, should invoice be for 50 or allow user to choose?
+
+  Ready to proceed with this revised approach?
+
+> But as per my original condition it needs to be part of the 6 navigation only 
+
+● Perfect! Let me revise the plan to fit within the 6-item navigation structure from your .claude.md:
+
+  ---
+  Phase 7.3 (REVISED): Approval Workflow Within 6-Item Navigation
+
+  Navigation Placement
+
+  📦 Inventory (Dispatch/Receipt pages)
+
+  - Goods Dispatch detail page → "Create Invoice" button
+  - Goods Receipt detail page → "Create Bill" button
+  - Draft invoice/bill creation forms live here
+
+  💰 Accounts
+
+  - Invoices (new sub-item)
+    - List all invoices (Draft, Approved, Paid)
+    - Filter by status, customer, date
+  - Purchase Bills (new sub-item)
+    - List all bills
+  - Payments In (existing)
+    - Record payments, allocate to invoices
+  - Payments Out (existing)
+    - Record supplier payments
+  - Sales Orders, Cash Accounts, Petty Cash, Contra (existing)
+
+  📈 Reports
+
+  - GSTR-1 (enhanced)
+    - Invoice selection table with filters
+    - Tags: Filed/Not Filed, B2B/B2C
+    - Bulk select → Generate GSTR-1 JSON
+    - Mark as filed
+  - GSTR-3B (enhanced)
+    - Similar workflow for input credit
+  - Trial Balance, P&L, Balance Sheet (existing)
+
+  ---
+  Complete User Journey
+
+  Journey 1: Sales Invoice Creation
+
+  1. Inventory → Goods Dispatch → [View Dispatch GD-2025-001]
+     ├─ Shows dispatch details
+     └─ Button: [Create Invoice from This Dispatch]
+          ↓
+  2. Inventory → Create Invoice (Form Page)
+     Route: /dashboard/inventory/goods-dispatch/[id]/create-invoice
+     ├─ Pre-filled from dispatch
+     ├─ User edits: quantities, discounts, final amounts
+     ├─ [Save as Draft] → Goes to Accounts → Invoices (Draft tab)
+     └─ [Approve & Finalize] → Creates journal entries, changes status
+          ↓
+  3. Accounts → Invoices → [View Invoice INV-2025-001]
+     ├─ Shows invoice details, payment status
+     ├─ [Record Payment] → Opens payment form
+     └─ [Download PDF]
+          ↓
+  4. Reports → GSTR-1
+     ├─ Shows all approved invoices for selected period
+     ├─ Filter: Not Filed (shows INV-2025-001)
+     ├─ Select invoices for current month
+     ├─ [Generate GSTR-1 JSON] → Downloads file
+     └─ [Mark as Filed] → Updates status
+
+  Journey 2: Purchase Bill Creation
+
+  1. Inventory → Goods Receipt → [View Receipt GR-2025-001]
+     └─ Button: [Create Bill from This Receipt]
+          ↓
+  2. Inventory → Create Bill (Form Page)
+     Route: /dashboard/inventory/goods-receipts/[id]/create-bill
+     ├─ Match with supplier's invoice
+     └─ [Approve & Finalize]
+          ↓
+  3. Accounts → Purchase Bills → [List view]
+     ├─ [Record Payment]
+     └─ Used for GSTR-3B input credit
+          ↓
+  4. Reports → GSTR-3B
+     ├─ Shows all bills (for input tax credit)
+     └─ Generate GSTR-3B summary
+
+  ---
+  Updated Navigation Structure (No Changes Needed!)
+
+  Your existing 6-item structure already accommodates this:
+
+  💰 Accounts (Enhanced sub-items)
+
+  {
+    name: 'Accounts',
+    href: '/dashboard/accounts',
+    subItems: [
+      { name: 'Invoices', href: '/dashboard/accounts/invoices' },        // NEW
+      { name: 'Purchase Bills', href: '/dashboard/accounts/bills' },     // NEW
+      { name: 'Cash Accounts', href: '/dashboard/accounts/cash' },
+      { name: 'Payments In', href: '/dashboard/accounts/payments-in' },
+      { name: 'Payments Out', href: '/dashboard/accounts/payments-out' },
+      { name: 'Sales Orders', href: '/dashboard/accounts/sales-orders' },
+      { name: 'Petty Cash', href: '/dashboard/accounts/petty-cash' },
+      { name: 'Contra Entries', href: '/dashboard/accounts/contra' },
+    ]
+  }
+
+  📈 Reports (Enhanced existing)
+
+  {
+    name: 'Reports',
+    href: '/dashboard/reports',
+    subItems: [
+      { name: 'Trial Balance', href: '/dashboard/reports/trial-balance' },
+      { name: 'Profit & Loss', href: '/dashboard/reports/profit-loss' },
+      { name: 'Balance Sheet', href: '/dashboard/reports/balance-sheet' },
+      { name: 'GSTR-1', href: '/dashboard/reports/gstr-1' },              // ENHANCED
+      { name: 'GSTR-3B', href: '/dashboard/reports/gstr-3b' },            // ENHANCED
+      { name: 'Receivables', href: '/dashboard/reports/receivables' },
+      { name: 'Payables', href: '/dashboard/reports/payables' },
+      { name: 'Tally Export', href: '/dashboard/reports/tally-export' },
+      { name: 'Tally Import', href: '/dashboard/reports/tally-import' },
+    ]
+  }
+
+  ---
+  File Structure (Routes)
+
+  Under Inventory (Draft Creation):
+
+  app/dashboard/inventory/
+  ├─ goods-dispatch/
+  │  └─ [id]/
+  │     ├─ page.tsx (shows dispatch, has "Create Invoice" button)
+  │     └─ create-invoice/
+  │        └─ page.tsx (draft invoice form) ← NEW
+  ├─ goods-receipts/
+  │  └─ [id]/
+  │     ├─ page.tsx (shows receipt, has "Create Bill" button)
+  │     └─ create-bill/
+  │        └─ page.tsx (draft bill form) ← NEW
+
+  Under Accounts (Invoice Management):
+
+  app/dashboard/accounts/
+  ├─ invoices/
+  │  ├─ page.tsx (list all invoices with tabs: Draft/Approved/Paid) ← NEW
+  │  └─ [id]/
+  │     └─ page.tsx (invoice detail, payment history) ← NEW
+  ├─ bills/
+  │  ├─ page.tsx (list all purchase bills) ← NEW
+  │  └─ [id]/
+  │     └─ page.tsx (bill detail) ← NEW
+  ├─ payments-in/ (existing, enhanced)
+  ├─ payments-out/ (existing, enhanced)
+
+  Under Reports (GST Filing):
+
+  app/dashboard/reports/
+  ├─ gstr-1/
+  │  └─ page.tsx (enhanced with invoice selection table) ← ENHANCED
+  ├─ gstr-3b/
+  │  └─ page.tsx (enhanced with bill selection table) ← ENHANCED
+
+  ---
+  Revised Implementation Plan
+
+  Part 1: Invoice/Bill Draft Creation (Inventory Section)
+
+  Files:
+  1. app/dashboard/inventory/goods-dispatch/[id]/create-invoice/page.tsx
+  2. app/dashboard/inventory/goods-receipts/[id]/create-bill/page.tsx
+  3. components/accounting/DraftInvoiceForm.tsx
+  4. components/accounting/DraftBillForm.tsx
+
+  Buttons added to:
+  - app/dashboard/inventory/goods-dispatch/[id]/page.tsx
+  - app/dashboard/inventory/goods-receipts/[id]/page.tsx
+
+  ---
+  Part 2: Invoice/Bill Management (Accounts Section)
+
+  Files:
+  1. app/dashboard/accounts/invoices/page.tsx (list view with tabs)
+  2. app/dashboard/accounts/invoices/[id]/page.tsx (detail view)
+  3. app/dashboard/accounts/bills/page.tsx
+  4. app/dashboard/accounts/bills/[id]/page.tsx
+
+  Features:
+  - Filter by status (Draft/Approved/Paid)
+  - Search by customer/invoice number
+  - Bulk actions
+  - Record payment link
+
+  ---
+  Part 3: GST Filing (Reports Section)
+
+  Enhanced files:
+  1. app/dashboard/reports/gstr-1/page.tsx (add invoice selection table)
+  2. app/dashboard/reports/gstr-3b/page.tsx (add bill selection table)
+
+  New features:
+  - Invoice Selection Table:
+    - Checkbox selection
+    - Filters: Date range, Filed status, Payment status
+    - Tags: B2B, B2C Large, B2C Others
+    - Summary: Total taxable value, total GST
+  - Actions:
+    - [Generate GSTR-1 JSON] for selected invoices
+    - [Mark as Filed]
+    - [Export to Excel]
+
+  ---
+  Part 4: Server Actions
+
+  Files:
+  1. app/actions/accounting/invoices.ts
+    - createDraftInvoice()
+    - finalizeDraftInvoice() (creates journal entries)
+    - recordPayment()
+    - markAsFiled()
+  2. app/actions/accounting/purchase-bills.ts
+    - Similar functions for bills
+  3. app/actions/accounting/gst.ts
+    - generateGSTR1Json(invoiceIds[])
+    - generateGSTR3BJson(billIds[])
+
+  ---
+  Part 5: Database Updates
+
+  -- Add to invoices table
+  ALTER TABLE invoices ADD COLUMN status text DEFAULT 'draft';
+  ALTER TABLE invoices ADD COLUMN gst_filed boolean DEFAULT false;
+  ALTER TABLE invoices ADD COLUMN gst_filing_period text; -- '2025-01'
+  ALTER TABLE invoices ADD COLUMN invoice_category text; -- 'b2b', 'b2c_large', 'b2c_small'
+
+  -- Similar for purchase_bills table
+
+  ---
+  Summary: How It Fits in 6 Items
+
+  | Navigation Item | What's Added                                                                      |
+  |-----------------|-----------------------------------------------------------------------------------|
+  | 📦 Inventory    | Draft invoice/bill creation pages (accessible from dispatch/receipt detail pages) |
+  | 💰 Accounts     | 2 new sub-items: "Invoices" and "Purchase Bills" for managing all invoices/bills  |
+  | 📈 Reports      | Enhanced GSTR-1 and GSTR-3B pages with invoice selection and filing workflow      |
+  | 👥 Partners     | No changes                                                                        |
+  | 📊 Overview     | No changes                                                                        |
+  | ⚙️ Settings     | No changes                                                                        |
+
+  ---
+  Answers to Your Questions:
+
+  1. GST Filing Location: Under Reports → GSTR-1 and Reports → GSTR-3B (enhanced existing pages)
+  2. Approval Roles: Same user can create and approve (for small businesses). Can add role check later if needed.
+  3. E-Invoice: Generate immediately on approval (automatic for amount > ₹5L with GSTIN)
+  4. Partial Dispatch: Invoice defaults to dispatched quantity, but user can edit before finalizing.
+
+  ---
+  Ready to proceed with this structure?
+
+> No need for separate approver role since we have permissions and only admin can have create permissions, permissions are very limited for staff, separate 
+generate e-invoice button, allow users to chose to raise partial invoice or full invoice, user should be able to collect partial payments too 
+
+● Perfect! Let me finalize the plan with these requirements:
+  ⎿  User rejected Claude's plan:
+     ╭────────────────────────────────────────────────────────────────────────────────────────╮
+     │ Phase 7.3: Invoice/Bill Workflow with Approval, Partial Payments & GST Filing          │
+     │                                                                                        │
+     │ Key Requirements                                                                       │
+     │                                                                                        │
+     │ ✅ Use existing permissions (only admin can create invoices/bills)                      │
+     │ ✅ Separate "Generate E-Invoice" button (manual trigger)                                │
+     │ ✅ Allow partial invoicing (invoice 50 out of 100 dispatched units)                     │
+     │ ✅ Allow partial payments with balance tracking                                         │
+     │ ✅ Fits within 6-item navigation structure                                              │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Navigation Structure (No Changes to Main 6)                                            │
+     │                                                                                        │
+     │ 💰 Accounts (2 new sub-items added)                                                    │
+     │                                                                                        │
+     │ - Invoices ← NEW (list all sales invoices)                                             │
+     │ - Purchase Bills ← NEW (list all purchase bills)                                       │
+     │ - Cash Accounts                                                                        │
+     │ - Payments In                                                                          │
+     │ - Payments Out                                                                         │
+     │ - Sales Orders                                                                         │
+     │ - Petty Cash                                                                           │
+     │ - Contra Entries                                                                       │
+     │                                                                                        │
+     │ 📈 Reports (2 enhanced pages)                                                          │
+     │                                                                                        │
+     │ - GSTR-1 ← ENHANCED (invoice selection + filing)                                       │
+     │ - GSTR-3B ← ENHANCED (bill selection + filing)                                         │
+     │ - Trial Balance, P&L, Balance Sheet, etc.                                              │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Complete User Workflows                                                                │
+     │                                                                                        │
+     │ Workflow 1: Partial Invoice Creation                                                   │
+     │                                                                                        │
+     │ Step 1: View Goods Dispatch                                                            │
+     │ Route: /dashboard/inventory/goods-dispatch/[id]                                        │
+     │ ├─ Dispatch shows: 100 units dispatched                                                │
+     │ ├─ Current status: "pending" or "in_transit"                                           │
+     │ └─ Button: [Create Invoice from This Dispatch]                                         │
+     │      ↓                                                                                 │
+     │ Step 2: Create Invoice Form (With Partial Selection)                                   │
+     │ Route: /dashboard/inventory/goods-dispatch/[id]/create-invoice                         │
+     │ ┌─────────────────────────────────────────────────────┐                                │
+     │ │ Invoice Type:                                       │                                │
+     │ │ ○ Full Invoice (all dispatched items)              │                                 │
+     │ │ ● Partial Invoice (select items/quantities)        │                                 │
+     │ │                                                     │                                │
+     │ │ Items from Dispatch:                                │                                │
+     │ │ ┌───────────────────────────────────────────────┐  │                                 │
+     │ │ │ ☑ Product A │ Dispatched: 50 │ Invoice: [30] │  │                                  │
+     │ │ │ ☑ Product B │ Dispatched: 30 │ Invoice: [30] │  │                                  │
+     │ │ │ ☐ Product C │ Dispatched: 20 │ Invoice: [ 0] │  │                                  │
+     │ │ └───────────────────────────────────────────────┘  │                                 │
+     │ │                                                     │                                │
+     │ │ Unit Price: ₹1,000                                  │                                │
+     │ │ Line Discount: 5% (₹50/unit)                        │                                │
+     │ │ Subtotal: ₹57,000                                   │                                │
+     │ │ CGST (9%): ₹5,130                                   │                                │
+     │ │ SGST (9%): ₹5,130                                   │                                │
+     │ │ Additional Charges: ₹500 (transport)                │                                │
+     │ │ Total: ₹67,760                                      │                                │
+     │ │                                                     │                                │
+     │ │ [Save as Draft] [Finalize Invoice]                 │                                 │
+     │ └─────────────────────────────────────────────────────┘                                │
+     │      ↓                                                                                 │
+     │ Step 3: Invoice Created                                                                │
+     │ ├─ Status: "draft" → User can still edit                                               │
+     │ ├─ Status: "finalized" → Creates journal entries, locks invoice                        │
+     │ └─ Remaining units (20) can be invoiced later                                          │
+     │      ↓                                                                                 │
+     │ Step 4: View Invoice Detail                                                            │
+     │ Route: /dashboard/accounts/invoices/[id]                                               │
+     │ ├─ Shows invoice, payment status (Unpaid: ₹67,760)                                     │
+     │ ├─ [Record Payment] → Allows partial payment                                           │
+     │ ├─ [Generate E-Invoice] → Calls Sandbox API (if amount > ₹5L)                          │
+     │ └─ [Download PDF]                                                                      │
+     │                                                                                        │
+     │ Workflow 2: Partial Payment Recording                                                  │
+     │                                                                                        │
+     │ Step 1: Click "Record Payment" from Invoice                                            │
+     │ Route: /dashboard/accounts/payments-in/new?invoice_id=inv-123                          │
+     │ ┌─────────────────────────────────────────────────────┐                                │
+     │ │ Invoice: INV-2025-001                               │                                │
+     │ │ Customer: ABC Traders                               │                                │
+     │ │ Total Amount: ₹67,760                               │                                │
+     │ │ Paid So Far: ₹0                                     │                                │
+     │ │ Outstanding: ₹67,760                                │                                │
+     │ │                                                     │                                │
+     │ │ Payment Amount: [30,000] ← User enters partial     │                                 │
+     │ │ Payment Method: ● Cash ○ Bank ○ Cheque ○ UPI      │                                  │
+     │ │ Payment Date: [26-Jan-2025]                         │                                │
+     │ │ Reference: [TXN123456]                              │                                │
+     │ │                                                     │                                │
+     │ │ After this payment:                                 │                                │
+     │ │ ├─ Paid: ₹30,000                                    │                                │
+     │ │ └─ Remaining: ₹37,760                               │                                │
+     │ │                                                     │                                │
+     │ │ [Record Payment]                                    │                                │
+     │ └─────────────────────────────────────────────────────┘                                │
+     │      ↓                                                                                 │
+     │ Invoice Status Updates:                                                                │
+     │ ├─ Payment 1: ₹30,000 → Status: "partial" (₹37,760 pending)                            │
+     │ ├─ Payment 2: ₹37,760 → Status: "paid" (₹0 pending)                                    │
+     │                                                                                        │
+     │ Workflow 3: E-Invoice Generation (Manual)                                              │
+     │                                                                                        │
+     │ Step 1: View Finalized Invoice                                                         │
+     │ Route: /dashboard/accounts/invoices/[id]                                               │
+     │ ├─ Invoice amount: ₹6,00,000 (> ₹5L threshold)                                         │
+     │ ├─ Customer has GSTIN: Yes                                                             │
+     │ └─ E-Invoice Status: "Not Generated"                                                   │
+     │      ↓                                                                                 │
+     │ Step 2: User Clicks "Generate E-Invoice"                                               │
+     │ ├─ System checks: Amount > ₹5L? Customer GSTIN?                                        │
+     │ ├─ Calls Sandbox API                                                                   │
+     │ ├─ Receives: IRN, AckNo, QRCode                                                        │
+     │ └─ Updates invoice record                                                              │
+     │      ↓                                                                                 │
+     │ Step 3: E-Invoice Generated                                                            │
+     │ ├─ Shows IRN: ABC123...XYZ789                                                          │
+     │ ├─ Shows QR Code image                                                                 │
+     │ ├─ [Download E-Invoice PDF] ← PDF with IRN & QR                                        │
+     │ └─ Status: "E-Invoice Generated"                                                       │
+     │                                                                                        │
+     │ Workflow 4: GST Filing                                                                 │
+     │                                                                                        │
+     │ Step 1: Navigate to GSTR-1                                                             │
+     │ Route: /dashboard/reports/gstr-1                                                       │
+     │ ┌─────────────────────────────────────────────────────┐                                │
+     │ │ GSTR-1 Filing for January 2025                      │                                │
+     │ │                                                     │                                │
+     │ │ Filters:                                            │                                │
+     │ │ ├─ Period: [January 2025]                          │                                 │
+     │ │ ├─ Filing Status: [Not Filed ▼]                    │                                 │
+     │ │ └─ Payment Status: [All ▼]                         │                                 │
+     │ │                                                     │                                │
+     │ │ Summary:                                            │                                │
+     │ │ ├─ Total Invoices: 45                              │                                 │
+     │ │ ├─ B2B (with GSTIN): 30 (₹15,00,000)               │                                 │
+     │ │ ├─ B2C Large (>₹2.5L): 10 (₹5,00,000)              │                                 │
+     │ │ └─ B2C Others: 5 (₹1,00,000)                       │                                 │
+     │ │                                                     │                                │
+     │ │ Invoice Selection Table:                            │                                │
+     │ │ ┌─────────────────────────────────────────────┐    │                                 │
+     │ │ │ ☑│INV-001│15-Jan│ABC Ltd│27XX│₹10K│₹1.8K│   │    │                                 │
+     │ │ │ ☑│INV-002│20-Jan│XYZ Co│24XX│₹25K│₹4.5K│   │    │                                  │
+     │ │ │ ☐│INV-003│25-Jan│PQR Ind│─  │₹15K│₹2.7K│   │    │                                  │
+     │ │ └─────────────────────────────────────────────┘    │                                 │
+     │ │                                                     │                                │
+     │ │ Selected: 2 invoices (₹35,000 taxable, ₹6,300 GST) │                                 │
+     │ │                                                     │                                │
+     │ │ [Select All] [Generate GSTR-1 JSON] [Mark as Filed]│                                 │
+     │ └─────────────────────────────────────────────────────┘                                │
+     │      ↓                                                                                 │
+     │ Step 2: Generate GSTR-1 JSON                                                           │
+     │ ├─ Downloads JSON file (GSTN portal format)                                            │
+     │ ├─ User uploads to GST portal manually                                                 │
+     │ └─ Returns to mark as "Filed"                                                          │
+     │      ↓                                                                                 │
+     │ Step 3: Mark as Filed                                                                  │
+     │ ├─ Updates invoice.gst_filed = true                                                    │
+     │ ├─ Sets invoice.gst_filing_period = '2025-01'                                          │
+     │ └─ Invoices disappear from "Not Filed" filter                                          │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Database Schema Updates                                                                │
+     │                                                                                        │
+     │ invoices table - Add columns:                                                          │
+     │                                                                                        │
+     │ ALTER TABLE invoices ADD COLUMN status text DEFAULT 'draft';                           │
+     │   -- 'draft', 'finalized', 'cancelled'                                                 │
+     │                                                                                        │
+     │ ALTER TABLE invoices ADD COLUMN payment_status text DEFAULT 'unpaid';                  │
+     │   -- 'unpaid', 'partial', 'paid'                                                       │
+     │                                                                                        │
+     │ ALTER TABLE invoices ADD COLUMN total_paid numeric(15,2) DEFAULT 0;                    │
+     │ ALTER TABLE invoices ADD COLUMN balance_due numeric(15,2);                             │
+     │                                                                                        │
+     │ ALTER TABLE invoices ADD COLUMN discount_percent numeric(5,2);                         │
+     │ ALTER TABLE invoices ADD COLUMN discount_amount numeric(15,2);                         │
+     │ ALTER TABLE invoices ADD COLUMN additional_charges numeric(15,2);                      │
+     │                                                                                        │
+     │ ALTER TABLE invoices ADD COLUMN gst_filed boolean DEFAULT false;                       │
+     │ ALTER TABLE invoices ADD COLUMN gst_filing_period text; -- '2025-01'                   │
+     │ ALTER TABLE invoices ADD COLUMN invoice_category text;                                 │
+     │   -- 'b2b', 'b2c_large', 'b2c_small'                                                   │
+     │                                                                                        │
+     │ ALTER TABLE invoices ADD COLUMN e_invoice_status text DEFAULT 'not_generated';         │
+     │   -- 'not_generated', 'generated', 'failed'                                            │
+     │                                                                                        │
+     │ ALTER TABLE invoices ADD COLUMN finalized_at timestamptz;                              │
+     │ ALTER TABLE invoices ADD COLUMN finalized_by uuid REFERENCES users(id);                │
+     │                                                                                        │
+     │ invoice_items table - Track partial invoicing:                                         │
+     │                                                                                        │
+     │ -- Link to dispatch items to track partial invoicing                                   │
+     │ ALTER TABLE invoice_items ADD COLUMN dispatch_item_id uuid                             │
+     │   REFERENCES goods_dispatch_items(id);                                                 │
+     │                                                                                        │
+     │ ALTER TABLE invoice_items ADD COLUMN invoiced_quantity numeric(15,3);                  │
+     │ -- If dispatch had 100 units, invoice can be for 50 units                              │
+     │                                                                                        │
+     │ Track partial invoicing at dispatch level:                                             │
+     │                                                                                        │
+     │ ALTER TABLE goods_dispatch_items ADD COLUMN invoiced_quantity numeric(15,3) DEFAULT 0; │
+     │ -- Sum of all invoiced quantities for this dispatch item                               │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Files to Create                                                                        │
+     │                                                                                        │
+     │ Part 1: Invoice Creation (8 files)                                                     │
+     │                                                                                        │
+     │ 1. Invoice creation page:                                                              │
+     │ - app/dashboard/inventory/goods-dispatch/[id]/create-invoice/page.tsx                  │
+     │   - Form with partial item selection                                                   │
+     │   - Discount, additional charges                                                       │
+     │   - Save draft / Finalize buttons                                                      │
+     │                                                                                        │
+     │ 2. Components:                                                                         │
+     │ - components/accounting/InvoiceItemSelector.tsx                                        │
+     │   - Shows dispatched items with checkboxes                                             │
+     │   - Quantity input for partial invoicing                                               │
+     │ - components/accounting/InvoicePricingSection.tsx                                      │
+     │   - Subtotal, discounts, GST, total calculation                                        │
+     │                                                                                        │
+     │ 3. Server actions:                                                                     │
+     │ - app/actions/accounting/invoices.ts                                                   │
+     │   - createDraftInvoice() - Saves draft                                                 │
+     │   - finalizeDraftInvoice() - Creates journal entries, locks invoice                    │
+     │   - generateEInvoice() - Calls Sandbox API                                             │
+     │   - updateInvoiceItems() - For editing drafts                                          │
+     │                                                                                        │
+     │ 4. Library functions:                                                                  │
+     │ - lib/accounting/invoice.ts                                                            │
+     │   - calculateInvoiceTotals() - Subtotal, GST, total                                    │
+     │   - createInvoiceJournalEntry() - Dr Customer, Cr Sales, Cr GST                        │
+     │   - createCOGSEntry() - Dr COGS, Cr Inventory                                          │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Part 2: Invoice Management (6 files)                                                   │
+     │                                                                                        │
+     │ 5. Invoice list page:                                                                  │
+     │ - app/dashboard/accounts/invoices/page.tsx                                             │
+     │   - Tabs: All | Draft | Finalized | Paid | Overdue                                     │
+     │   - Filters: Customer, date range, amount                                              │
+     │   - Search by invoice number                                                           │
+     │                                                                                        │
+     │ 6. Invoice detail page:                                                                │
+     │ - app/dashboard/accounts/invoices/[id]/page.tsx                                        │
+     │   - Invoice details                                                                    │
+     │   - Payment history table                                                              │
+     │   - E-Invoice status & button                                                          │
+     │   - Actions: Record Payment, Generate E-Invoice, Download PDF, Edit (if draft)         │
+     │                                                                                        │
+     │ 7. Components:                                                                         │
+     │ - components/accounting/InvoiceDetailView.tsx                                          │
+     │ - components/accounting/PaymentHistoryTable.tsx                                        │
+     │ - components/accounting/EInvoiceSection.tsx                                            │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Part 3: Payment Recording (4 files)                                                    │
+     │                                                                                        │
+     │ 8. Payment form:                                                                       │
+     │ - app/dashboard/accounts/payments-in/new/page.tsx                                      │
+     │   - Can link to invoice (pre-fill from URL param)                                      │
+     │   - Allow partial amount entry                                                         │
+     │   - Payment method selection                                                           │
+     │   - Shows running balance                                                              │
+     │                                                                                        │
+     │ 9. Server actions:                                                                     │
+     │ - app/actions/accounting/payments.ts                                                   │
+     │   - recordPaymentReceived() - Creates payment + journal entry                          │
+     │   - allocatePaymentToInvoice() - Updates invoice balance                               │
+     │   - checkPaymentStatus() - Updates invoice payment_status                              │
+     │                                                                                        │
+     │ 10. Components:                                                                        │
+     │ - components/accounting/PaymentAllocationForm.tsx                                      │
+     │   - Can allocate one payment to multiple invoices                                      │
+     │   - Shows outstanding amounts                                                          │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Part 4: E-Invoice Integration (3 files)                                                │
+     │                                                                                        │
+     │ 11. E-Invoice library:                                                                 │
+     │ - lib/accounting/e-invoice.ts                                                          │
+     │   - generateEInvoiceIRN() - Sandbox API call                                           │
+     │   - formatEInvoicePayload() - Convert invoice to API format                            │
+     │   - retryEInvoiceGeneration() - Retry logic (3 attempts)                               │
+     │                                                                                        │
+     │ 12. API route:                                                                         │
+     │ - app/api/accounting/e-invoice/generate/route.ts                                       │
+     │   - POST endpoint for E-Invoice generation                                             │
+     │   - Handles Sandbox API communication                                                  │
+     │   - Stores logs in e_invoice_logs table                                                │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Part 5: GST Filing Dashboard (5 files)                                                 │
+     │                                                                                        │
+     │ 13. GSTR-1 page (enhanced):                                                            │
+     │ - app/dashboard/reports/gstr-1/page.tsx                                                │
+     │   - Invoice selection table                                                            │
+     │   - Filters: period, filing status, payment status                                     │
+     │   - Summary cards: B2B, B2C Large, B2C Others                                          │
+     │   - Bulk actions: Generate JSON, Mark as Filed                                         │
+     │                                                                                        │
+     │ 14. Components:                                                                        │
+     │ - components/accounting/GSTInvoiceSelectionTable.tsx                                   │
+     │   - Checkbox selection                                                                 │
+     │   - Filters and search                                                                 │
+     │   - Summary totals                                                                     │
+     │ - components/accounting/GSTFilingSummary.tsx                                           │
+     │   - Summary cards for B2B/B2C breakdown                                                │
+     │                                                                                        │
+     │ 15. Server actions:                                                                    │
+     │ - app/actions/accounting/gst-filing.ts                                                 │
+     │   - generateGSTR1Json() - Creates GSTN format JSON                                     │
+     │   - markInvoicesAsFiled() - Bulk update                                                │
+     │   - getGSTFilingSummary() - Calculate totals                                           │
+     │                                                                                        │
+     │ 16. Library:                                                                           │
+     │ - lib/accounting/gst-filing.ts                                                         │
+     │   - formatGSTR1Payload() - Convert invoices to GSTN JSON                               │
+     │   - categorizeInvoice() - B2B vs B2C Large vs B2C Others                               │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Part 6: Purchase Bills (Similar to Invoices - 4 files)                                 │
+     │                                                                                        │
+     │ 17. Bill creation:                                                                     │
+     │ - app/dashboard/inventory/goods-receipts/[id]/create-bill/page.tsx                     │
+     │                                                                                        │
+     │ 18. Bill list:                                                                         │
+     │ - app/dashboard/accounts/bills/page.tsx                                                │
+     │                                                                                        │
+     │ 19. Bill detail:                                                                       │
+     │ - app/dashboard/accounts/bills/[id]/page.tsx                                           │
+     │                                                                                        │
+     │ 20. Server actions:                                                                    │
+     │ - app/actions/accounting/purchase-bills.ts                                             │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Part 7: PDF Generation (2 files)                                                       │
+     │                                                                                        │
+     │ 21. Invoice PDF:                                                                       │
+     │ - lib/pdf/invoice-template.ts                                                          │
+     │   - GST-compliant format                                                               │
+     │   - E-Invoice QR code (if generated)                                                   │
+     │                                                                                        │
+     │ 22. API route:                                                                         │
+     │ - app/api/accounting/invoices/[id]/pdf/route.ts                                        │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Part 8: Queries & Types (3 files)                                                      │
+     │                                                                                        │
+     │ 23. Queries:                                                                           │
+     │ - lib/queries/invoices.ts                                                              │
+     │   - getInvoicesByStatus()                                                              │
+     │   - getInvoicesByCustomer()                                                            │
+     │   - getInvoicesForGSTR1()                                                              │
+     │                                                                                        │
+     │ 24. Types:                                                                             │
+     │ - lib/types/accounting.ts                                                              │
+     │   - InvoiceFormData                                                                    │
+     │   - PaymentFormData                                                                    │
+     │   - GSTR1Data                                                                          │
+     │                                                                                        │
+     │ 25. Navigation update:                                                                 │
+     │ - components/layouts/DashboardNav.tsx                                                  │
+     │   - Add "Invoices" and "Purchase Bills" to Accounts submenu                            │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Total Files: 25 files                                                                  │
+     │                                                                                        │
+     │ - New: 23 files                                                                        │
+     │ - Modified: 2 files (dispatch/receipt detail pages for "Create Invoice/Bill" buttons)  │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Success Criteria                                                                       │
+     │                                                                                        │
+     │ ✅ Admin can create invoice from dispatch (partial or full)                             │
+     │ ✅ Staff cannot create invoices (permission check)                                      │
+     │ ✅ User can save draft and edit later                                                   │
+     │ ✅ Finalize invoice creates journal entries (balanced)                                  │
+     │ ✅ Record partial payments, track balance                                               │
+     │ ✅ Manual "Generate E-Invoice" button works                                             │
+     │ ✅ E-Invoice shows IRN and QR code                                                      │
+     │ ✅ GSTR-1 page shows invoice selection table                                            │
+     │ ✅ Can filter by filing status (Filed/Not Filed)                                        │
+     │ ✅ Generate GSTR-1 JSON for selected invoices                                           │
+     │ ✅ Mark invoices as filed                                                               │
+     │ ✅ Same workflow for purchase bills                                                     │
+     │                                                                                        │
+     │ ---                                                                                    │
+     │ Ready to proceed with implementation?                                                  │
+     ╰────────────────────────────────────────────────────────────────────────────────────────╯
+
+> We have Sandbox API for GST filing, after selecting invoices, it should take to a page of Sandbox Auth and then to GST filing portal through Sandbox API 
+
+● Excellent! This is much better - direct GST filing through Sandbox API instead of manual JSON upload. Let me revise the GST filing workflow:
+
+  ---
+  Revised GST Filing Workflow with Sandbox API
+
+  Workflow: GSTR-1 Filing via Sandbox API
+
+  Step 1: Select Invoices for Filing
+  Route: /dashboard/reports/gstr-1
+  ┌─────────────────────────────────────────────────────┐
+  │ GSTR-1 Filing for January 2025                      │
+  │                                                     │
+  │ Invoice Selection Table:                            │
+  │ ┌─────────────────────────────────────────────┐    │
+  │ │ ☑│INV-001│15-Jan│ABC Ltd│27XX│₹10K│₹1.8K│   │    │
+  │ │ ☑│INV-002│20-Jan│XYZ Co│24XX│₹25K│₹4.5K│   │    │
+  │ │ ☑│INV-003│25-Jan│PQR Ind│─  │₹15K│₹2.7K│   │    │
+  │ └─────────────────────────────────────────────┘    │
+  │                                                     │
+  │ Selected: 3 invoices                                │
+  │ ├─ B2B: 2 invoices (₹35,000)                       │
+  │ └─ B2C: 1 invoice (₹15,000)                        │
+  │                                                     │
+  │ Actions:                                            │
+  │ ├─ [Download JSON] (for manual upload)             │
+  │ └─ [File via Sandbox] (direct filing) ← PRIMARY    │
+  └─────────────────────────────────────────────────────┘
+       ↓
+  Step 2: Click "File via Sandbox"
+  ├─ System validates: All invoices finalized?
+  ├─ System checks: Sandbox credentials configured?
+  └─ Redirects to Sandbox Auth page
+       ↓
+  Step 3: Sandbox Authentication
+  Route: /dashboard/reports/gstr-1/sandbox-auth
+  ┌─────────────────────────────────────────────────────┐
+  │ Authenticate with Sandbox API                       │
+  │                                                     │
+  │ Step 1: Connect to Sandbox                          │
+  │ ├─ API Key: *************** (from settings)        │
+  │ ├─ Status: ✓ Connected                             │
+  │ └─ GSTIN: 27XXXXX1234X1Z5                          │
+  │                                                     │
+  │ Step 2: GST Portal Authorization                    │
+  │ ┌───────────────────────────────────────────┐      │
+  │ │ Sandbox will redirect you to GST Portal   │      │
+  │ │ to authorize this filing.                  │      │
+  │ │                                            │      │
+  │ │ You will be asked to:                      │      │
+  │ │ 1. Login to GST Portal                     │      │
+  │ │ 2. Approve Sandbox API access              │      │
+  │ │ 3. Return here to complete filing          │      │
+  │ └───────────────────────────────────────────┘      │
+  │                                                     │
+  │ [Authorize with GST Portal]                         │
+  └─────────────────────────────────────────────────────┘
+       ↓
+  Step 4: GST Portal OAuth (Redirect Flow)
+  ├─ User clicks "Authorize"
+  ├─ Redirects to: https://api.sandbox.co.in/gsp/authenticate
+  │   ├─ Sandbox redirects to: https://gst.gov.in/oauth/authorize
+  │   ├─ User logs in with GST portal credentials
+  │   └─ User approves Sandbox access
+  ├─ GST portal redirects back to Sandbox
+  └─ Sandbox redirects back to app with auth token
+       ↓
+  Step 5: Return to App with Auth Token
+  Route: /dashboard/reports/gstr-1/sandbox-callback?token=abc123
+  ├─ Receives OAuth token from Sandbox
+  ├─ Stores token temporarily (session/database)
+  └─ Shows filing confirmation page
+       ↓
+  Step 6: File GSTR-1
+  Route: /dashboard/reports/gstr-1/file-confirm
+  ┌─────────────────────────────────────────────────────┐
+  │ Confirm GSTR-1 Filing                               │
+  │                                                     │
+  │ ✓ Authentication successful                         │
+  │ ✓ GSTIN: 27XXXXX1234X1Z5                           │
+  │ ✓ Period: January 2025                             │
+  │                                                     │
+  │ Filing Summary:                                     │
+  │ ├─ B2B Invoices: 2 (₹35,000 + ₹6,300 GST)         │
+  │ ├─ B2C Large: 0                                     │
+  │ ├─ B2C Others: 1 (₹15,000 + ₹2,700 GST)           │
+  │ └─ Total GST Liability: ₹9,000                     │
+  │                                                     │
+  │ [Preview Return] [Submit to GST Portal]             │
+  └─────────────────────────────────────────────────────┘
+       ↓
+  Step 7: Submit to GST Portal via Sandbox API
+  ├─ API Call: POST /gsp/returns/gstr1
+  ├─ Payload: GSTR1 data (B2B, B2C sections)
+  ├─ Sandbox validates and submits to GST portal
+  └─ Receives filing response
+       ↓
+  Step 8: Filing Success
+  ┌─────────────────────────────────────────────────────┐
+  │ ✓ GSTR-1 Filed Successfully                        │
+  │                                                     │
+  │ Filing Details:                                     │
+  │ ├─ Period: January 2025                            │
+  │ ├─ Filed on: 26-Jan-2025 10:30 AM                  │
+  │ ├─ Reference Number: GSTN123456789                 │
+  │ ├─ Status: Submitted to GST Portal                 │
+  │ └─ Cost: ₹150 (Sandbox API fee)                    │
+  │                                                     │
+  │ Next Steps:                                         │
+  │ ├─ Download filed return PDF                       │
+  │ ├─ Invoices marked as "Filed"                      │
+  │ └─ Record payment of GST liability (₹9,000)        │
+  │                                                     │
+  │ [Download Filed Return] [Back to GSTR-1]            │
+  └─────────────────────────────────────────────────────┘
+
+  ---
+  Updated Implementation Plan
+
+  Additional Files for Sandbox Integration:
+
+  1. Sandbox Auth Page:
+  - app/dashboard/reports/gstr-1/sandbox-auth/page.tsx
+    - Shows Sandbox connection status
+    - Initiates OAuth flow
+    - "Authorize with GST Portal" button
+
+  2. Sandbox OAuth Callback:
+  - app/dashboard/reports/gstr-1/sandbox-callback/page.tsx
+    - Receives OAuth token from Sandbox
+    - Validates and stores token
+    - Redirects to confirmation page
+
+  3. Filing Confirmation Page:
+  - app/dashboard/reports/gstr-1/file-confirm/page.tsx
+    - Shows filing summary
+    - Preview return data
+    - Submit button → calls Sandbox API
+
+  4. Sandbox API Integration:
+  - lib/accounting/sandbox-api.ts
+    - initiateSandboxAuth() - Start OAuth flow
+    - handleSandboxCallback() - Process OAuth response
+    - fileGSTR1() - Submit return to GST portal
+    - getFilingStatus() - Check submission status
+
+  5. API Routes:
+  - app/api/accounting/sandbox/auth/route.ts
+    - Initiates Sandbox OAuth
+    - Redirects to Sandbox auth URL
+  - app/api/accounting/sandbox/callback/route.ts
+    - Receives OAuth callback
+    - Exchanges code for token
+    - Stores in database
+  - app/api/accounting/sandbox/file-gstr1/route.ts
+    - Calls Sandbox API to file GSTR-1
+    - Handles response and errors
+
+  6. Database:
+  -- Store Sandbox auth tokens
+  CREATE TABLE sandbox_auth_tokens (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id uuid REFERENCES companies(id),
+    access_token text,
+    refresh_token text,
+    expires_at timestamptz,
+    created_at timestamptz DEFAULT now()
+  );
+
+  -- Track filing history
+  CREATE TABLE gst_filing_logs (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id uuid REFERENCES companies(id),
+    filing_type text, -- 'gstr1', 'gstr3b'
+    period text, -- '2025-01'
+    invoice_ids uuid[],
+    status text, -- 'pending', 'submitted', 'failed'
+    reference_number text,
+    filed_at timestamptz,
+    sandbox_cost numeric(10,2),
+    error_message text
+  );
+
+  ---
+  Settings Page for Sandbox Configuration
+
+  Location: /dashboard/settings/gst
+
+  ┌─────────────────────────────────────────────────────┐
+  │ GST & E-Invoice Settings                           │
+  │                                                     │
+  │ Company GSTIN: [27XXXXX1234X1Z5]                   │
+  │ State: [Maharashtra (27)]                           │
+  │ Default GST Rate: [18%]                             │
+  │                                                     │
+  │ Sandbox API Configuration:                          │
+  │ ├─ API Key: [********************]                 │
+  │ ├─ Client Secret: [********************]           │
+  │ ├─ API URL: https://api.sandbox.co.in              │
+  │ └─ Status: ✓ Connected                             │
+  │                                                     │
+  │ E-Invoice Settings:                                 │
+  │ ├─ Enable E-Invoice: ☑                             │
+  │ └─ Threshold: [₹5,00,000]                          │
+  │                                                     │
+  │ GST Filing via Sandbox:                             │
+  │ ├─ Enable Direct Filing: ☑                         │
+  │ ├─ Auto-file on deadline: ☐                        │
+  │ └─ Last Auth: 15-Jan-2025 (Expires: 15-Feb-2025)   │
+  │     [Re-authorize]                                  │
+  │                                                     │
+  │ [Test Connection] [Save Settings]                   │
+  └─────────────────────────────────────────────────────┘
+
+  ---
+  Sandbox API Endpoints Used
+
+  1. Authentication:
+
+  GET /gsp/authenticate
+  └─ Redirects to GST portal for OAuth
+     Returns: auth_token
+
+  2. File GSTR-1:
+
+  POST /gsp/returns/gstr1
+  Headers:
+    - Authorization: Bearer {access_token}
+    - gstin: {company_gstin}
+  Body:
+    {
+      "gstin": "27XXXXX1234X1Z5",
+      "ret_period": "012025",
+      "b2b": [...],
+      "b2cl": [...],
+      "b2cs": [...]
+    }
+  Returns:
+    {
+      "status": "success",
+      "reference_number": "GSTN123456789",
+      "filed_at": "2025-01-26T10:30:00Z"
+    }
+
+  3. Get Filing Status:
+
+  GET /gsp/returns/gstr1/status?period=012025
+  Returns:
+    {
+      "status": "Filed",
+      "reference_number": "GSTN123456789"
+    }
+
+  ---
+  Cost Tracking
+
+  Sandbox API Pricing (example):
+  - E-Invoice generation: ₹0.50 per invoice
+  - GSTR-1 filing: ₹150 per filing
+  - GSTR-3B filing: ₹100 per filing
+  - Authentication: Free
+
+  Track in database:
+  -- Each filing logs cost
+  INSERT INTO gst_filing_logs (
+    filing_type, period, sandbox_cost, ...
+  ) VALUES (
+    'gstr1', '2025-01', 150, ...
+  );
+
+  -- Monthly cost report
+  SELECT
+    DATE_TRUNC('month', filed_at) as month,
+    SUM(sandbox_cost) as total_cost
+  FROM gst_filing_logs
+  GROUP BY month;
+
+  ---
+  Updated File Count
+
+  Additional files for Sandbox integration:
+  - 3 new pages (auth, callback, confirm)
+  - 1 library file (sandbox-api.ts)
+  - 3 API routes (auth, callback, file-gstr1)
+  - 1 settings page update
+  - Database migrations
+
+  Total new files: 28 files (25 from before + 3 for Sandbox)
+
+  ---
+  Should I proceed with this Sandbox-integrated approach?
+
+> Sandbox API is system level, check this documentation for Sandbox auth and sandbox GST filing: 
+https://developer.sandbox.co.in/reference/gst-taxpayer-authentication https://developer.sandbox.co.in/reference/save-gstr-1-api 
+  ⎿  Session limit reached ∙ resets 4:30pm
+     /upgrade to increase your usage limit.
+
+> Sandbox API is system level, check this documentation for Sandbox auth and sandbox GST filing: 
+https://developer.sandbox.co.in/reference/gst-taxpayer-authentication https://developer.sandbox.co.in/reference/save-gstr-1-api 
+
+● Perfect! Let me check the actual Sandbox API documentation to understand the correct authentication flow.
+
+● Fetch(https://developer.sandbox.co.in/reference/gst-taxpayer-authentication)
+  ⎿  Received 1.9MB (200 OK)
+
+● Fetch(https://developer.sandbox.co.in/reference/save-gstr-1-api)
+  ⎿  Received 2.1MB (200 OK)
+
+● Perfect! Now I understand the actual Sandbox API flow. Let me revise the plan with the correct authentication:
+  ⎿  User rejected Claude's plan:
+     ╭────────────────────────────────────────────────────────────────────────────────────╮
+     │ Phase 7.3: Invoice/Bill Workflow + Sandbox GST Filing (FINAL)                      │
+     │                                                                                    │
+     │ Authentication Understanding                                                       │
+     │                                                                                    │
+     │ ✅ System-level API Key (configured in Settings, not per-user OAuth)                │
+     │ ✅ GST Portal OTP Authentication (6-hour session, refreshable)                      │
+     │ ✅ Save → File flow (Save GSTR-1 first, then File to submit)                        │
+     │ ✅ Skip E-Invoices (automatically ported to GST portal)                             │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Complete GST Filing Workflow (Corrected)                                           │
+     │                                                                                    │
+     │ Step 1: Configure Sandbox (One-time Setup)                                         │
+     │                                                                                    │
+     │ Location: /dashboard/settings/gst                                                  │
+     │                                                                                    │
+     │ ┌─────────────────────────────────────────────────────┐                            │
+     │ │ GST & Sandbox API Settings                         │                             │
+     │ │                                                     │                            │
+     │ │ Company GSTIN: [27XXXXX1234X1Z5]                   │                             │
+     │ │ State: [Maharashtra (27)]                           │                            │
+     │ │                                                     │                            │
+     │ │ Sandbox API Credentials:                            │                            │
+     │ │ ├─ API Key: [x-api-key-************************]   │                             │
+     │ │ ├─ API Secret: [x-api-secret-******************]   │                             │
+     │ │ └─ API Version: [x-api-version: 2.0]               │                             │
+     │ │                                                     │                            │
+     │ │ GST Portal Configuration:                           │                            │
+     │ │ ├─ API Access Enabled: ☑ (on gst.gov.in)          │                              │
+     │ │ ├─ API Access Duration: 30 days                    │                             │
+     │ │ └─ Last Authenticated: Never                        │                            │
+     │ │                                                     │                            │
+     │ │ [Test Connection] [Save Settings]                   │                            │
+     │ └─────────────────────────────────────────────────────┘                            │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Step 2: Select Invoices for GSTR-1                                                 │
+     │                                                                                    │
+     │ Route: /dashboard/reports/gstr-1                                                   │
+     │                                                                                    │
+     │ ┌─────────────────────────────────────────────────────┐                            │
+     │ │ GSTR-1 Filing for January 2025                      │                            │
+     │ │                                                     │                            │
+     │ │ Filters:                                            │                            │
+     │ │ ├─ Period: [January 2025]                          │                             │
+     │ │ ├─ Filing Status: [Not Filed ▼]                    │                             │
+     │ │ └─ E-Invoice: [Exclude E-Invoices ☑]               │                             │
+     │ │     (E-Invoices are auto-ported to GST Portal)     │                             │
+     │ │                                                     │                            │
+     │ │ Invoice Selection:                                  │                            │
+     │ │ ┌─────────────────────────────────────────────┐    │                             │
+     │ │ │ ☑│INV-001│15-Jan│ABC│27XX│₹10K│₹1.8K│      │    │                              │
+     │ │ │ ☑│INV-002│20-Jan│XYZ│24XX│₹25K│₹4.5K│      │    │                              │
+     │ │ │ ☐│INV-003│25-Jan│PQR│─  │₹15K│₹2.7K│ [E-Inv]│    │                             │
+     │ │ └─────────────────────────────────────────────┘    │                             │
+     │ │                                                     │                            │
+     │ │ Summary:                                            │                            │
+     │ │ ├─ Total Selected: 2 invoices                      │                             │
+     │ │ ├─ B2B Invoices: 2 (₹35,000 + ₹6,300 GST)         │                              │
+     │ │ ├─ E-Invoices (auto-ported): 1 (excluded)          │                             │
+     │ │ └─ Total to File: ₹35,000                          │                             │
+     │ │                                                     │                            │
+     │ │ [Download JSON] [File via Sandbox]                  │                            │
+     │ └─────────────────────────────────────────────────────┘                            │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Step 3: Authenticate with GST Portal (OTP)                                         │
+     │                                                                                    │
+     │ Route: /dashboard/reports/gstr-1/authenticate                                      │
+     │                                                                                    │
+     │ User clicks "File via Sandbox" → Redirects to this page:                           │
+     │                                                                                    │
+     │ ┌─────────────────────────────────────────────────────┐                            │
+     │ │ Authenticate with GST Portal                        │                            │
+     │ │                                                     │                            │
+     │ │ Session Status: Not Authenticated                   │                            │
+     │ │                                                     │                            │
+     │ │ Before filing GSTR-1, you need to authenticate     │                             │
+     │ │ with GST Portal using OTP.                          │                            │
+     │ │                                                     │                            │
+     │ │ Step 1: Generate OTP                                │                            │
+     │ │ ┌───────────────────────────────────────────┐      │                             │
+     │ │ │ GSTIN: 27XXXXX1234X1Z5                    │      │                             │
+     │ │ │ Mobile: ******7890 (registered on portal) │      │                             │
+     │ │ │                                            │      │                            │
+     │ │ │ OTP will be sent to your registered mobile│      │                             │
+     │ │ │                                            │      │                            │
+     │ │ │ [Generate OTP]                             │      │                            │
+     │ │ └───────────────────────────────────────────┘      │                             │
+     │ │                                                     │                            │
+     │ │ Step 2: Verify OTP (appears after OTP sent)         │                            │
+     │ │ ┌───────────────────────────────────────────┐      │                             │
+     │ │ │ Enter 6-digit OTP: [______]               │      │                             │
+     │ │ │                                            │      │                            │
+     │ │ │ OTP sent to: ******7890                   │      │                             │
+     │ │ │ Expires in: 00:09:45                       │      │                            │
+     │ │ │                                            │      │                            │
+     │ │ │ [Resend OTP] [Verify]                      │      │                            │
+     │ │ └───────────────────────────────────────────┘      │                             │
+     │ └─────────────────────────────────────────────────────┘                            │
+     │                                                                                    │
+     │ API Calls:                                                                         │
+     │ // 1. Generate OTP                                                                 │
+     │ POST https://api.sandbox.co.in/gst/compliance/tax-payer/otp/generate               │
+     │ Headers:                                                                           │
+     │   x-api-key: {your_api_key}                                                        │
+     │   x-api-secret: {your_api_secret}                                                  │
+     │   x-api-version: 2.0                                                               │
+     │ Body: {                                                                            │
+     │   "gstin": "27XXXXX1234X1Z5"                                                       │
+     │ }                                                                                  │
+     │ Response: {                                                                        │
+     │   "status": "success",                                                             │
+     │   "message": "OTP sent to registered mobile"                                       │
+     │ }                                                                                  │
+     │                                                                                    │
+     │ // 2. Verify OTP                                                                   │
+     │ POST https://api.sandbox.co.in/gst/compliance/tax-payer/otp/verify                 │
+     │ Body: {                                                                            │
+     │   "gstin": "27XXXXX1234X1Z5",                                                      │
+     │   "otp": "123456"                                                                  │
+     │ }                                                                                  │
+     │ Response: {                                                                        │
+     │   "status": "success",                                                             │
+     │   "access_token": "eyJhbGciOi...",                                                 │
+     │   "expires_in": 21600  // 6 hours                                                  │
+     │ }                                                                                  │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Step 4: Save GSTR-1 (Draft Filing)                                                 │
+     │                                                                                    │
+     │ After successful OTP verification:                                                 │
+     │                                                                                    │
+     │ Route: /dashboard/reports/gstr-1/save-confirm                                      │
+     │                                                                                    │
+     │ ┌─────────────────────────────────────────────────────┐                            │
+     │ │ ✓ Authenticated Successfully                        │                            │
+     │ │                                                     │                            │
+     │ │ Session valid for: 5 hours 59 minutes               │                            │
+     │ │                                                     │                            │
+     │ │ Review GSTR-1 Data:                                 │                            │
+     │ │                                                     │                            │
+     │ │ B2B Section (2 invoices):                           │                            │
+     │ │ ├─ ABC Ltd (27AABCU9603R1ZM)                       │                             │
+     │ │ │  └─ INV-001: ₹10,000 + ₹1,800 GST               │                              │
+     │ │ └─ XYZ Co (24AADCX5555M1Z4)                        │                             │
+     │ │    └─ INV-002: ₹25,000 + ₹4,500 GST               │                              │
+     │ │                                                     │                            │
+     │ │ B2CL Section: 0 invoices                            │                            │
+     │ │ B2CS Section: 0 invoices                            │                            │
+     │ │                                                     │                            │
+     │ │ Total Taxable Value: ₹35,000                        │                            │
+     │ │ Total GST: ₹6,300                                   │                            │
+     │ │                                                     │                            │
+     │ │ [Preview JSON] [Save to GST Portal]                 │                            │
+     │ └─────────────────────────────────────────────────────┘                            │
+     │                                                                                    │
+     │ API Call:                                                                          │
+     │ POST https://api.sandbox.co.in/gst/compliance/tax-payer/gstrs/gstr-1/2025/01       │
+     │ Headers:                                                                           │
+     │   x-api-key: {your_api_key}                                                        │
+     │   x-api-secret: {your_api_secret}                                                  │
+     │   x-api-version: 2.0                                                               │
+     │   Authorization: Bearer {access_token_from_otp}                                    │
+     │ Body: {                                                                            │
+     │   "gstin": "27XXXXX1234X1Z5",                                                      │
+     │   "fp": "012025",  // Filing period: Jan 2025                                      │
+     │   "b2b": [                                                                         │
+     │     {                                                                              │
+     │       "ctin": "27AABCU9603R1ZM",  // Customer GSTIN                                │
+     │       "inv": [                                                                     │
+     │         {                                                                          │
+     │           "inum": "INV-001",                                                       │
+     │           "idt": "15-01-2025",                                                     │
+     │           "val": 11800,                                                            │
+     │           "pos": "27",  // Place of supply                                         │
+     │           "rchrg": "N",                                                            │
+     │           "inv_typ": "R",                                                          │
+     │           "itms": [                                                                │
+     │             {                                                                      │
+     │               "num": 1,                                                            │
+     │               "itm_det": {                                                         │
+     │                 "txval": 10000,                                                    │
+     │                 "rt": 18,                                                          │
+     │                 "csamt": 900,                                                      │
+     │                 "iamt": 0,                                                         │
+     │                 "camt": 900,                                                       │
+     │                 "samt": 900                                                        │
+     │               }                                                                    │
+     │             }                                                                      │
+     │           ]                                                                        │
+     │         }                                                                          │
+     │       ]                                                                            │
+     │     }                                                                              │
+     │   ],                                                                               │
+     │   "b2cl": [],                                                                      │
+     │   "b2cs": []                                                                       │
+     │ }                                                                                  │
+     │ Response: {                                                                        │
+     │   "status": "success",                                                             │
+     │   "reference_number": "DRAFT123456"                                                │
+     │ }                                                                                  │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Step 5: File GSTR-1 (Final Submission)                                             │
+     │                                                                                    │
+     │ Route: /dashboard/reports/gstr-1/file-confirm                                      │
+     │                                                                                    │
+     │ ┌─────────────────────────────────────────────────────┐                            │
+     │ │ ✓ GSTR-1 Saved Successfully                        │                             │
+     │ │                                                     │                            │
+     │ │ Reference: DRAFT123456                              │                            │
+     │ │ Saved on: 26-Jan-2025 10:30 AM                     │                             │
+     │ │                                                     │                            │
+     │ │ Ready to File?                                      │                            │
+     │ │                                                     │                            │
+     │ │ Filing will:                                        │                            │
+     │ │ ✓ Submit GSTR-1 to GST Portal                      │                             │
+     │ │ ✓ Lock the data (cannot be edited)                 │                             │
+     │ │ ✓ Generate liability of ₹6,300                     │                             │
+     │ │ ✓ Mark invoices as "Filed"                         │                             │
+     │ │                                                     │                            │
+     │ │ Cost: ₹150 (Sandbox API fee)                        │                            │
+     │ │                                                     │                            │
+     │ │ [Go Back] [File GSTR-1]                             │                            │
+     │ └─────────────────────────────────────────────────────┘                            │
+     │                                                                                    │
+     │ API Call:                                                                          │
+     │ POST https://api.sandbox.co.in/gst/compliance/tax-payer/gstrs/gstr-1/2025/01/file  │
+     │ Headers:                                                                           │
+     │   Authorization: Bearer {access_token}                                             │
+     │ Body: {                                                                            │
+     │   "gstin": "27XXXXX1234X1Z5",                                                      │
+     │   "fp": "012025"                                                                   │
+     │ }                                                                                  │
+     │ Response: {                                                                        │
+     │   "status": "Filed",                                                               │
+     │   "arn": "AA271220251234567",  // Acknowledgment Reference Number                  │
+     │   "filed_at": "2025-01-26T10:35:00Z"                                               │
+     │ }                                                                                  │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Step 6: Filing Complete                                                            │
+     │                                                                                    │
+     │ ┌─────────────────────────────────────────────────────┐                            │
+     │ │ ✓ GSTR-1 Filed Successfully                        │                             │
+     │ │                                                     │                            │
+     │ │ Filing Details:                                     │                            │
+     │ │ ├─ Period: January 2025                            │                             │
+     │ │ ├─ ARN: AA271220251234567                          │                             │
+     │ │ ├─ Filed on: 26-Jan-2025 10:35 AM                  │                             │
+     │ │ ├─ GST Liability: ₹6,300                           │                             │
+     │ │ └─ Sandbox Cost: ₹150                              │                             │
+     │ │                                                     │                            │
+     │ │ Invoices Marked as Filed:                           │                            │
+     │ │ ├─ INV-001                                          │                            │
+     │ │ └─ INV-002                                          │                            │
+     │ │                                                     │                            │
+     │ │ Next Steps:                                         │                            │
+     │ │ ├─ Download filed GSTR-1 PDF                       │                             │
+     │ │ └─ Pay GST liability (₹6,300)                      │                             │
+     │ │                                                     │                            │
+     │ │ [Download Summary] [Back to GSTR-1]                 │                            │
+     │ └─────────────────────────────────────────────────────┘                            │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Database Schema                                                                    │
+     │                                                                                    │
+     │ 1. Store GST Portal Auth Tokens:                                                   │
+     │                                                                                    │
+     │ CREATE TABLE gst_portal_sessions (                                                 │
+     │   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),                                   │
+     │   company_id uuid REFERENCES companies(id),                                        │
+     │   gstin text,                                                                      │
+     │   access_token text,                                                               │
+     │   expires_at timestamptz,                                                          │
+     │   created_at timestamptz DEFAULT now()                                             │
+     │ );                                                                                 │
+     │                                                                                    │
+     │ 2. Track GSTR-1 Filings:                                                           │
+     │                                                                                    │
+     │ CREATE TABLE gstr1_filings (                                                       │
+     │   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),                                   │
+     │   company_id uuid REFERENCES companies(id),                                        │
+     │   filing_period text, -- '2025-01'                                                 │
+     │   status text, -- 'draft_saved', 'filed', 'failed'                                 │
+     │   invoice_ids uuid[],                                                              │
+     │   draft_reference text,                                                            │
+     │   arn text, -- Acknowledgment Reference Number                                     │
+     │   filed_at timestamptz,                                                            │
+     │   sandbox_cost numeric(10,2),                                                      │
+     │   b2b_count int,                                                                   │
+     │   b2b_value numeric(15,2),                                                         │
+     │   b2cl_count int,                                                                  │
+     │   b2cs_value numeric(15,2),                                                        │
+     │   total_tax_liability numeric(15,2),                                               │
+     │   created_at timestamptz DEFAULT now()                                             │
+     │ );                                                                                 │
+     │                                                                                    │
+     │ 3. Update invoices table:                                                          │
+     │                                                                                    │
+     │ ALTER TABLE invoices ADD COLUMN gstr1_filed boolean DEFAULT false;                 │
+     │ ALTER TABLE invoices ADD COLUMN gstr1_filing_id uuid REFERENCES gstr1_filings(id); │
+     │ ALTER TABLE invoices ADD COLUMN excluded_from_gstr1 boolean DEFAULT false;         │
+     │   -- For E-Invoices (auto-ported)                                                  │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Implementation Files                                                               │
+     │                                                                                    │
+     │ New Files (30 total):                                                              │
+     │                                                                                    │
+     │ 1. GST Authentication Pages (3):                                                   │
+     │ - app/dashboard/reports/gstr-1/authenticate/page.tsx                               │
+     │   - Generate OTP form                                                              │
+     │   - Verify OTP form                                                                │
+     │   - Session status display                                                         │
+     │ - app/dashboard/reports/gstr-1/save-confirm/page.tsx                               │
+     │   - Review GSTR-1 data                                                             │
+     │   - Save to GST portal (draft)                                                     │
+     │ - app/dashboard/reports/gstr-1/file-confirm/page.tsx                               │
+     │   - Final filing confirmation                                                      │
+     │   - Submit to GST portal                                                           │
+     │                                                                                    │
+     │ 2. Sandbox API Library (2):                                                        │
+     │ - lib/accounting/sandbox-gst.ts                                                    │
+     │   - generateGSTPortalOTP(gstin)                                                    │
+     │   - verifyGSTPortalOTP(gstin, otp)                                                 │
+     │   - refreshAccessToken()                                                           │
+     │   - saveGSTR1(period, data, accessToken)                                           │
+     │   - fileGSTR1(period, gstin, accessToken)                                          │
+     │   - getGSTR1Summary(period, gstin)                                                 │
+     │ - lib/accounting/gstr1-formatter.ts                                                │
+     │   - formatInvoicesToGSTR1(invoices)                                                │
+     │   - categorizeInvoice() - B2B, B2CL, B2CS                                          │
+     │   - buildB2BSection()                                                              │
+     │   - buildB2CLSection()                                                             │
+     │   - buildB2CSSection()                                                             │
+     │                                                                                    │
+     │ 3. API Routes (4):                                                                 │
+     │ - app/api/accounting/gst/generate-otp/route.ts                                     │
+     │ - app/api/accounting/gst/verify-otp/route.ts                                       │
+     │ - app/api/accounting/gst/save-gstr1/route.ts                                       │
+     │ - app/api/accounting/gst/file-gstr1/route.ts                                       │
+     │                                                                                    │
+     │ 4. Settings Page (1):                                                              │
+     │ - app/dashboard/settings/gst/page.tsx                                              │
+     │   - Sandbox API credentials                                                        │
+     │   - Test connection                                                                │
+     │   - Session management                                                             │
+     │                                                                                    │
+     │ 5. Previous Files from Plan (25):                                                  │
+     │ - Invoice creation, management, payments (20 files)                                │
+     │ - Purchase bills (4 files)                                                         │
+     │ - Enhanced GSTR-1 page (1 file)                                                    │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Environment Variables                                                              │
+     │                                                                                    │
+     │ # Sandbox API Credentials                                                          │
+     │ SANDBOX_API_KEY=your_api_key                                                       │
+     │ SANDBOX_API_SECRET=your_api_secret                                                 │
+     │ SANDBOX_API_URL=https://api.sandbox.co.in                                          │
+     │ SANDBOX_API_VERSION=2.0                                                            │
+     │                                                                                    │
+     │ # GST Configuration                                                                │
+     │ COMPANY_GSTIN=27XXXXX1234X1Z5                                                      │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Key Features                                                                       │
+     │                                                                                    │
+     │ ✅ Admin-only invoice creation (uses existing permissions)                          │
+     │ ✅ Partial invoicing (50 out of 100 units)                                          │
+     │ ✅ Partial payments with balance tracking                                           │
+     │ ✅ Manual E-Invoice generation (separate button)                                    │
+     │ ✅ Sandbox OTP authentication (6-hour session)                                      │
+     │ ✅ Save → File workflow for GSTR-1                                                  │
+     │ ✅ Auto-exclude E-Invoices (already ported)                                         │
+     │ ✅ Session refresh (extend before 6-hour expiry)                                    │
+     │ ✅ Cost tracking (₹150 per filing)                                                  │
+     │ ✅ ARN storage (acknowledgment reference)                                           │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Success Criteria                                                                   │
+     │                                                                                    │
+     │ ✅ Invoice creation workflow complete                                               │
+     │ ✅ Partial invoicing works                                                          │
+     │ ✅ Partial payments recorded correctly                                              │
+     │ ✅ E-Invoice button generates IRN                                                   │
+     │ ✅ GST Portal OTP authentication works                                              │
+     │ ✅ Save GSTR-1 to portal (draft)                                                    │
+     │ ✅ File GSTR-1 (final submission)                                                   │
+     │ ✅ E-Invoices excluded from filing                                                  │
+     │ ✅ ARN received and stored                                                          │
+     │ ✅ Invoices marked as filed                                                         │
+     │ ✅ Sandbox costs tracked                                                            │
+     │                                                                                    │
+     │ ---                                                                                │
+     │ Ready to implement?                                                                │
+     ╰────────────────────────────────────────────────────────────────────────────────────╯
+
+> No need to mention Sandbox fee, GST flow is okay but what about other things in phase 7.3. It's looking too large, can we split this into multiple 
+manageable parts, I want to see UI/UX also deployed in Vercel so do small parts incrementally by checking npm run build after each milestone 
+
+● Excellent point! Let me break Phase 7.3 into 6 smaller, incremental parts that can each be built, tested, and deployed independently.
+                                                                                        
+●User approved Claude's plan:
+  ⎿  Phase 7.3 - Split into 6 Incremental Parts
+     
+     Overview
+     
+     Each part is independently buildable and deployable to Vercel.
+     After each part, we'll run npm run build to verify everything compiles.
+     
+     ---
+     ✅ Part 1: Basic Invoice Creation (Draft + Finalize)
+     
+     Goal: Create invoices from goods dispatch with draft/finalize workflow
+     
+     What Gets Built:
+     
+     1. "Create Invoice" button on dispatch detail page
+     2. Draft Invoice Form (partial item selection, discounts)
+     3. Finalize Invoice (creates journal entries)
+     4. Database tables (invoices, invoice_items)
+     
+     Files (8 files):
+     
+     1. app/dashboard/inventory/goods-dispatch/[id]/page.tsx (MODIFY)
+        - Add "Create Invoice" button
+
+     2. app/dashboard/inventory/goods-dispatch/[id]/create-invoice/page.tsx (NEW)
+        - Invoice creation form
+
+     3. components/accounting/InvoiceForm.tsx (NEW)
+        - Reusable form component
+
+     4. components/accounting/InvoiceItemsTable.tsx (NEW)
+        - Editable items table with partial selection
+
+     5. app/actions/accounting/invoices.ts (NEW)
+        - createDraftInvoice()
+        - finalizeDraftInvoice()
+
+     6. lib/accounting/invoice.ts (NEW)
+        - createInvoiceJournalEntry()
+        - createCOGSEntry()
+        - calculateInvoiceTotals()
+
+     7. lib/types/accounting.ts (NEW)
+        - InvoiceFormData, InvoiceItem types
+
+     8. Database migration (NEW)
+        - Create invoices table
+        - Create invoice_items table
+     
+     UI Flow:
+     
+     Dispatch Detail → [Create Invoice] → 
+     Draft Form (select 50/100 items, add discount) → 
+     [Save Draft] → Invoice saved as draft →
+     [Finalize] → Journal entries created
+     
+     Success Criteria:
+     
+     - ✅ npm run build passes
+     - ✅ Can create draft invoice from dispatch
+     - ✅ Can select partial items (50 out of 100)
+     - ✅ Can add discounts, additional charges
+     - ✅ Finalize creates journal entries (Dr = Cr)
+     - ✅ Deploy to Vercel and test
+     
+     Estimated Time: 1-2 days
+     
+     ---
+     ✅ Part 2: Invoice List & Detail Pages
+     
+     Goal: View and manage all invoices
+     
+     What Gets Built:
+     
+     1. Invoice List Page (/dashboard/accounts/invoices)
+     2. Invoice Detail Page (/dashboard/accounts/invoices/[id])
+     3. Status badges (Draft, Finalized, Paid)
+     4. Filters (by status, customer, date)
+     
+     Files (6 files):
+     
+     1. app/dashboard/accounts/invoices/page.tsx (NEW)
+        - List all invoices with tabs (All, Draft, Finalized, Paid)
+
+     2. app/dashboard/accounts/invoices/[id]/page.tsx (NEW)
+        - Invoice detail view
+
+     3. components/accounting/InvoiceListTable.tsx (NEW)
+        - Table with filters and search
+
+     4. components/accounting/InvoiceDetailView.tsx (NEW)
+        - Full invoice display
+
+     5. lib/queries/invoices.ts (NEW)
+        - getInvoices(), getInvoiceById()
+
+     6. components/layouts/DashboardNav.tsx (MODIFY)
+        - Add "Invoices" to Accounts submenu
+     
+     UI Flow:
+     
+     Accounts → Invoices → 
+     [Filter: Draft] → Shows all draft invoices →
+     Click INV-001 → Detail page with all info
+     
+     Success Criteria:
+     
+     - ✅ npm run build passes
+     - ✅ Invoice list page shows all invoices
+     - ✅ Can filter by status, customer, date
+     - ✅ Invoice detail shows complete information
+     - ✅ Navigation link works
+     - ✅ Deploy to Vercel
+     
+     Estimated Time: 1 day
+     
+     ---
+     ✅ Part 3: Partial Payment Recording
+     
+     Goal: Record partial payments against invoices
+     
+     What Gets Built:
+     
+     1. Payment Recording Form
+     2. Payment History Display
+     3. Balance Tracking (₹67,760 total → ₹30,000 paid → ₹37,760 remaining)
+     4. Payment Status Updates (Unpaid → Partial → Paid)
+     
+     Files (7 files):
+     
+     1. app/dashboard/accounts/payments-in/new/page.tsx (NEW)
+        - Payment recording form
+
+     2. components/accounting/PaymentForm.tsx (NEW)
+        - Amount, method, date inputs
+
+     3. components/accounting/PaymentHistoryTable.tsx (NEW)
+        - Shows all payments for an invoice
+
+     4. app/actions/accounting/payments.ts (NEW)
+        - recordPaymentReceived()
+        - allocatePaymentToInvoice()
+
+     5. lib/accounting/payments.ts (NEW)
+        - createPaymentJournalEntry()
+        - updateInvoiceBalances()
+
+     6. Database migration (NEW)
+        - Create payments_received table
+        - Add payment tracking columns to invoices
+
+     7. app/dashboard/accounts/invoices/[id]/page.tsx (MODIFY)
+        - Add "Record Payment" button
+        - Show payment history
+     
+     UI Flow:
+     
+     Invoice Detail → [Record Payment] →
+     Payment Form (₹30,000 of ₹67,760) →
+     [Submit] → Payment recorded →
+     Invoice shows: Partial (₹37,760 remaining)
+     
+     Success Criteria:
+     
+     - ✅ npm run build passes
+     - ✅ Can record partial payment
+     - ✅ Balance updates correctly
+     - ✅ Payment status changes (Unpaid → Partial → Paid)
+     - ✅ Payment history shows on invoice detail
+     - ✅ Journal entry created (Dr Cash/Bank, Cr Customer)
+     - ✅ Deploy to Vercel
+     
+     Estimated Time: 1-2 days
+     
+     ---
+     ✅ Part 4: E-Invoice Generation (Manual)
+     
+     Goal: Generate E-Invoice IRN via Sandbox API
+     
+     What Gets Built:
+     
+     1. "Generate E-Invoice" button (for invoices > ₹5L with GSTIN)
+     2. E-Invoice API integration
+     3. IRN & QR Code display
+     4. PDF with E-Invoice QR
+     
+     Files (7 files):
+     
+     1. lib/accounting/e-invoice.ts (NEW)
+        - generateEInvoiceIRN()
+        - formatEInvoicePayload()
+
+     2. app/api/accounting/e-invoice/generate/route.ts (NEW)
+        - POST endpoint for E-Invoice generation
+
+     3. components/accounting/EInvoiceSection.tsx (NEW)
+        - Shows IRN, QR code, status
+
+     4. app/dashboard/settings/gst/page.tsx (NEW)
+        - Sandbox API credentials config
+
+     5. lib/pdf/invoice-template.ts (NEW)
+        - Invoice PDF with QR code
+
+     6. app/api/accounting/invoices/[id]/pdf/route.ts (NEW)
+        - PDF download endpoint
+
+     7. Database migration (NEW)
+        - Create e_invoice_logs table
+        - Add e-invoice columns to invoices
+     
+     UI Flow:
+     
+     Invoice Detail (₹6L, customer has GSTIN) →
+     [Generate E-Invoice] →
+     Calls Sandbox API →
+     Shows: IRN, QR Code, Ack Number →
+     [Download PDF] → PDF with embedded QR
+     
+     Success Criteria:
+     
+     - ✅ npm run build passes
+     - ✅ Button only shows for eligible invoices
+     - ✅ Sandbox API call works
+     - ✅ IRN and QR code stored
+     - ✅ PDF shows E-Invoice details
+     - ✅ Error handling works
+     - ✅ Deploy to Vercel
+     
+     Estimated Time: 2 days
+     
+     ---
+     ✅ Part 5: GSTR-1 Filing via Sandbox
+     
+     Goal: File GSTR-1 through Sandbox API with OTP authentication
+     
+     What Gets Built:
+     
+     1. Enhanced GSTR-1 page (invoice selection)
+     2. OTP Authentication flow
+     3. Save GSTR-1 (draft to portal)
+     4. File GSTR-1 (final submission)
+     5. Auto-exclude E-Invoices
+     
+     Files (9 files):
+     
+     1. app/dashboard/reports/gstr-1/page.tsx (MODIFY)
+        - Invoice selection table
+        - Filters, summary cards
+        - [File via Sandbox] button
+
+     2. app/dashboard/reports/gstr-1/authenticate/page.tsx (NEW)
+        - Generate OTP form
+        - Verify OTP form
+
+     3. app/dashboard/reports/gstr-1/save-confirm/page.tsx (NEW)
+        - Review GSTR-1 data
+        - Save to GST portal
+
+     4. app/dashboard/reports/gstr-1/file-confirm/page.tsx (NEW)
+        - Final filing confirmation
+
+     5. lib/accounting/sandbox-gst.ts (NEW)
+        - generateGSTPortalOTP()
+        - verifyGSTPortalOTP()
+        - saveGSTR1()
+        - fileGSTR1()
+
+     6. lib/accounting/gstr1-formatter.ts (NEW)
+        - formatInvoicesToGSTR1()
+        - buildB2BSection(), buildB2CLSection()
+
+     7. app/api/accounting/gst/generate-otp/route.ts (NEW)
+     8. app/api/accounting/gst/verify-otp/route.ts (NEW)
+     9. app/api/accounting/gst/save-gstr1/route.ts (NEW)
+
+     10. Database migration (NEW)
+         - Create gst_portal_sessions table
+         - Create gstr1_filings table
+     
+     UI Flow:
+     
+     Reports → GSTR-1 →
+     Select invoices (excludes E-Invoices) →
+     [File via Sandbox] →
+     Generate OTP → Enter OTP →
+     Review data → Save to Portal →
+     Confirm → File GSTR-1 →
+     ARN received → Invoices marked as filed
+     
+     Success Criteria:
+     
+     - ✅ npm run build passes
+     - ✅ Invoice selection works
+     - ✅ E-Invoices auto-excluded
+     - ✅ OTP generation works
+     - ✅ OTP verification works
+     - ✅ Save GSTR-1 (draft) succeeds
+     - ✅ File GSTR-1 (final) succeeds
+     - ✅ ARN stored
+     - ✅ Deploy to Vercel
+     
+     Estimated Time: 2-3 days
+     
+     ---
+     ✅ Part 6: Purchase Bills (Mirror of Invoices)
+     
+     Goal: Same workflow for purchase bills
+     
+     What Gets Built:
+     
+     1. "Create Bill" button on goods receipt
+     2. Bill creation form
+     3. Bill list & detail pages
+     4. Payment recording (payments made)
+     
+     Files (8 files):
+     
+     1. app/dashboard/inventory/goods-receipts/[id]/create-bill/page.tsx (NEW)
+     2. app/dashboard/accounts/bills/page.tsx (NEW)
+     3. app/dashboard/accounts/bills/[id]/page.tsx (NEW)
+     4. components/accounting/BillForm.tsx (NEW)
+     5. app/actions/accounting/purchase-bills.ts (NEW)
+     6. lib/accounting/purchase-bill.ts (NEW)
+     7. app/dashboard/accounts/payments-out/new/page.tsx (NEW)
+     8. Database migration (NEW)
+        - Create purchase_bills table
+        - Create payments_made table
+     
+     UI Flow:
+     
+     Similar to invoices, but for supplier bills
+     
+     Success Criteria:
+     
+     - ✅ npm run build passes
+     - ✅ Can create bill from receipt
+     - ✅ Bill list and detail pages work
+     - ✅ Can record payments to suppliers
+     - ✅ Deploy to Vercel
+     
+     Estimated Time: 2 days
+     
+     ---
+     Summary: 6 Parts
+     
+     | Part  | Feature                           | Files | Days      | Can Deploy? |
+     |-------|-----------------------------------|-------|-----------|-------------|
+     | 1     | Invoice Creation (Draft/Finalize) | 8     | 1-2       | ✅ Yes       |
+     | 2     | Invoice List & Detail             | 6     | 1         | ✅ Yes       |
+     | 3     | Partial Payments                  | 7     | 1-2       | ✅ Yes       |
+     | 4     | E-Invoice Generation              | 7     | 2         | ✅ Yes       |
+     | 5     | GSTR-1 Filing (Sandbox)           | 10    | 2-3       | ✅ Yes       |
+     | 6     | Purchase Bills                    | 8     | 2         | ✅ Yes       |
+     | Total | Phase 7.3 Complete                | 46    | 9-12 days | ✅           |
+     
+     ---
+     Process for Each Part:
+     
+     1. Build → Implement files for that part
+     2. Test Locally → Verify functionality
+     3. Check Build → Run npm run build
+     4. Fix Errors → Resolve any TypeScript/build issues
+     5. Deploy to Vercel → Push to production
+     6. User Testing → Test in live environment
+     7. Iterate → Fix bugs before moving to next part
+     
+     ---
+     Which part should we start with?
+     - I recommend Part 1 (Invoice Creation) as it's the foundation for everything else.
+     - Or we can adjust the order based on priority.
+     
+     Ready to begin with Part 1?
+  ⎿
+
+● Perfect! Let's start with Part 1: Basic Invoice Creation. I'll update the todo list first, then begin implementation.
+  ⎿  Interrupted · What should Claude do instead?
+
+
+

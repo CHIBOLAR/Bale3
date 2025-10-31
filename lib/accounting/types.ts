@@ -93,6 +93,16 @@ export type InvoiceStatus = 'draft' | 'finalized' | 'cancelled' | 'credited';
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid';
 
 /**
+ * Invoice type for GST reporting (GSTR-1)
+ */
+export type InvoiceType = 'B2B' | 'B2C' | 'Export' | 'SEZ';
+
+/**
+ * Transport mode options
+ */
+export type TransportMode = 'Road' | 'Rail' | 'Air' | 'Ship';
+
+/**
  * Represents a single line item in an invoice
  */
 export interface InvoiceItem {
@@ -101,6 +111,9 @@ export interface InvoiceItem {
   product_id: string;
   product_name?: string;
   description?: string | null;
+  hsn_code?: string | null;
+  sac_code?: string | null;
+  unit_of_measurement?: string;
   quantity: number;
   unit_rate: number;
   discount_percent?: number;
@@ -128,6 +141,20 @@ export interface InvoiceFormData {
   discount_amount?: number;
   adjustment_amount?: number;
   notes?: string | null;
+  // GST Compliance
+  place_of_supply?: string;
+  invoice_type?: InvoiceType;
+  reverse_charge?: boolean;
+  // Transport Details (from goods dispatch)
+  vehicle_number?: string | null;
+  lr_rr_number?: string | null;
+  lr_rr_date?: string | null;
+  transport_mode?: TransportMode | null;
+  transporter_name?: string | null;
+  distance_km?: number | null;
+  // E-Way Bill
+  e_way_bill_number?: string | null;
+  e_way_bill_date?: string | null;
 }
 
 /**
@@ -143,6 +170,9 @@ export interface Invoice {
   due_date?: string | null;
   subtotal: number;
   gst_amount: number;
+  cgst_amount?: number;
+  sgst_amount?: number;
+  igst_amount?: number;
   total_amount: number;
   discount_amount?: number;
   adjustment_amount?: number;
@@ -154,6 +184,26 @@ export interface Invoice {
   total_paid: number;
   balance_due: number;
   items?: InvoiceItem[];
+  // GST Compliance fields
+  place_of_supply?: string | null;
+  invoice_type?: string;
+  reverse_charge?: boolean;
+  // E-Invoice fields
+  e_invoice_irn?: string | null;
+  e_invoice_ack_no?: number | null;
+  e_invoice_ack_date?: string | null;
+  e_invoice_qr?: string | null;
+  // E-Way Bill fields
+  e_way_bill_number?: string | null;
+  e_way_bill_date?: string | null;
+  // Transport Details
+  vehicle_number?: string | null;
+  lr_rr_number?: string | null;
+  lr_rr_date?: string | null;
+  transport_mode?: string | null;
+  transporter_name?: string | null;
+  distance_km?: number | null;
+  // Timestamps
   created_at: string;
   updated_at: string;
 }

@@ -14,6 +14,7 @@ import { GoodsDispatchStatus } from '@/lib/types/inventory';
 import { getGoodsDispatch } from '@/app/actions/inventory/goods-dispatch';
 import { createClient } from '@/lib/supabase/server';
 import GoodsDispatchClient from './GoodsDispatchClient';
+import { GenerateInvoiceButton } from './GenerateInvoiceButton';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -303,13 +304,7 @@ export default async function GoodsDispatchDetailPage({ params }: PageProps) {
                     <p className="text-sm text-gray-600">
                       No invoice created for this dispatch yet.
                     </p>
-                    <Link
-                      href={`/dashboard/inventory/goods-dispatch/${dispatchId}/create-invoice`}
-                      className="flex items-center justify-center gap-2 w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                    >
-                      <FileTextIcon className="h-4 w-4" />
-                      Create Invoice
-                    </Link>
+                    <GenerateInvoiceButton dispatchId={dispatchId} />
                   </div>
                 )}
               </div>
