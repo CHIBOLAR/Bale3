@@ -34,7 +34,7 @@ export async function generateInvoicePreview(dispatchId: string): Promise<{
 
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id, companies!inner(name, address, gstin, phone, email, state)')
+      .select('company_id, companies!inner(name, address_line1, address_line2, city, state, country, pin_code, gst_number, phone, email)')
       .eq('auth_user_id', user.id)
       .single();
 
@@ -43,7 +43,7 @@ export async function generateInvoicePreview(dispatchId: string): Promise<{
     }
 
     const companyId = userData.company_id;
-    const company = userData.companies as any;
+    const companyData = userData.companies as any;
 
     // Validate company_id exists
     if (!companyId) {
@@ -52,10 +52,24 @@ export async function generateInvoicePreview(dispatchId: string): Promise<{
     }
 
     // Validate company data exists
-    if (!company) {
+    if (!companyData) {
       console.error('Missing company data for company_id:', companyId);
       return { success: false, error: 'Company information not found. Please contact administrator.' };
     }
+
+    // Build company address from separate fields
+    const addressParts = [
+      companyData.address_line1,
+      companyData.address_line2,
+      companyData.city,
+      companyData.state,
+      companyData.country,
+      companyData.pin_code,
+    ].filter(Boolean);
+
+    const companyAddress = addressParts.join(', ');
+    const companyState = companyData.state || '';
+    const companyGSTIN = companyData.gst_number || null;
 
     // Get goods dispatch with full details
     const { data: dispatch, error: dispatchError } = await supabase
@@ -129,7 +143,6 @@ export async function generateInvoicePreview(dispatchId: string): Promise<{
 
     const customerName = customer.company_name || `${customer.first_name} ${customer.last_name}`;
     const customerState = customer.state || '';
-    const companyState = company.state || '';
 
     // Auto-determine invoice type based on GSTIN
     const invoiceType = customer.gstin ? 'B2B' : 'B2C';
@@ -194,12 +207,12 @@ export async function generateInvoicePreview(dispatchId: string): Promise<{
 
       // Company info
       company: {
-        name: company.name,
-        address: company.address,
-        gstin: company.gstin,
-        phone: company.phone,
-        email: company.email,
-        state: company.state,
+        name: companyData.name,
+        address: companyAddress,
+        gstin: companyGSTIN || undefined,
+        phone: companyData.phone || undefined,
+        email: companyData.email || undefined,
+        state: companyState,
       },
 
       // Customer info
