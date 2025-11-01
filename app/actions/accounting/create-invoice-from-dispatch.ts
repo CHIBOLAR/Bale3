@@ -33,7 +33,7 @@ export async function createInvoiceFromDispatch(
     // Get user's company_id and company state
     const { data: userData } = await supabase
       .from('users')
-      .select('id, company_id, companies!inner(state, name, address, gstin, phone, email)')
+      .select('id, company_id, companies!inner(state, name, address_line1, address_line2, gst_number, phone, email)')
       .eq('auth_user_id', user.id)
       .single();
 
