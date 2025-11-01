@@ -110,7 +110,7 @@ export async function createInvoiceFromDispatch(
 
     const { data: customer } = await supabase
       .from('partners')
-      .select('id, first_name, last_name, company_name, gstin, state, address, city, pincode')
+      .select('id, first_name, last_name, company_name, gstin, state, address_line1, address_line2, city, pin_code')
       .eq('id', customerId)
       .single();
 
