@@ -45,9 +45,10 @@ export default async function InvoiceEditPage({ params }: PageProps) {
         company_name,
         gstin,
         state,
-        address,
+        address_line1,
+        address_line2,
         city,
-        pincode,
+        pin_code,
         phone,
         email
       ),

@@ -65,20 +65,22 @@ export function InvoiceEditForm({
 
       // Build customer address
       const customerAddress = [
-        customer.address,
+        customer.address_line1,
+        customer.address_line2,
         customer.city,
         customer.state,
-        customer.pincode,
+        customer.pin_code,
       ]
         .filter(Boolean)
         .join(', ');
 
       // Build company address
       const companyAddress = [
-        company.address,
+        company.address_line1,
+        company.address_line2,
         company.city,
         company.state,
-        company.pincode,
+        company.pin_code,
       ]
         .filter(Boolean)
         .join(', ');
@@ -91,7 +93,7 @@ export function InvoiceEditForm({
         company: {
           name: company.name || '',
           address: companyAddress,
-          gstin: company.gstin || '',
+          gstin: company.gst_number || '',
           phone: company.phone || '',
           email: company.email || '',
           state: company.state || '',
