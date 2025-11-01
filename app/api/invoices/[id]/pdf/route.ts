@@ -22,7 +22,7 @@ export async function GET(
     // Get user's company
     const { data: userData } = await supabase
       .from('users')
-      .select('company_id, companies!inner(name, address, gstin, phone, email, state)')
+      .select('company_id, companies!inner(name, address_line1, address_line2, city, state, country, pin_code, gst_number, phone, email)')
       .eq('auth_user_id', user.id)
       .single();
 
@@ -42,7 +42,7 @@ export async function GET(
           company_name,
           first_name,
           last_name,
-          address,
+          billing_address,
           gstin,
           state
         )
@@ -60,6 +60,17 @@ export async function GET(
     const customer = invoice.partners as any;
     const customerName = customer?.company_name ||
       `${customer?.first_name || ''} ${customer?.last_name || ''}`.trim();
+
+    // Build company address from separate fields
+    const addressParts = [
+      company.address_line1,
+      company.address_line2,
+      company.city,
+      company.state,
+      company.country,
+      company.pin_code,
+    ].filter(Boolean);
+    const companyAddress = addressParts.join(', ');
 
     // Transform invoice items
     const pdfItems = invoice.invoice_items.map((item: any) => ({
@@ -97,14 +108,15 @@ export async function GET(
       due_date: invoice.due_date,
       company: {
         name: company.name,
-        address: company.address,
-        gstin: company.gstin,
+        address: companyAddress,
+        gstin: company.gst_number,
         phone: company.phone,
         email: company.email,
+        state: company.state,
       },
       customer: {
         name: customerName,
-        address: customer?.address,
+        address: customer?.billing_address,
         gstin: customer?.gstin,
         state: customer?.state,
       },
