@@ -4,6 +4,68 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getJournalEntries, type JournalEntry } from '@/app/actions/accounting/journal-entries';
 
+// Generate Tally XML format
+function generateTallyXML(entries: JournalEntry[]): string {
+  const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+  <HEADER>
+    <TALLYREQUEST>Import Data</TALLYREQUEST>
+  </HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDESC>
+        <REPORTNAME>All Masters</REPORTNAME>
+      </REQUESTDESC>
+      <REQUESTDATA>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">`;
+
+  const xmlFooter = `
+        </TALLYMESSAGE>
+      </REQUESTDATA>
+    </IMPORTDATA>
+  </BODY>
+</ENVELOPE>`;
+
+  let vouchers = '';
+
+  entries.forEach((entry) => {
+    const voucherType = entry.transaction_type === 'invoice' ? 'Sales'
+      : entry.transaction_type === 'payment' ? 'Receipt'
+      : 'Journal';
+
+    vouchers += `
+          <VOUCHER VCHTYPE="${voucherType}" ACTION="Create">
+            <DATE>${new Date(entry.entry_date).toISOString().split('T')[0].replace(/-/g, '')}</DATE>
+            <VOUCHERTYPENAME>${voucherType}</VOUCHERTYPENAME>
+            <VOUCHERNUMBER>${entry.entry_number}</VOUCHERNUMBER>
+            <NARRATION>${entry.narration || ''}</NARRATION>`;
+
+    entry.lines.forEach((line) => {
+      if (line.debit_amount > 0) {
+        vouchers += `
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>${line.ledger_name}</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <AMOUNT>-${line.debit_amount.toFixed(2)}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>`;
+      }
+      if (line.credit_amount > 0) {
+        vouchers += `
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>${line.ledger_name}</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <AMOUNT>${line.credit_amount.toFixed(2)}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>`;
+      }
+    });
+
+    vouchers += `
+          </VOUCHER>`;
+  });
+
+  return xmlHeader + vouchers + xmlFooter;
+}
+
 export default function JournalEntriesPage() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,12 +116,31 @@ export default function JournalEntriesPage() {
             View all accounting transactions and journal entries
           </p>
         </div>
-        <Link
-          href="/dashboard/accounts/transactions/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          + New Transaction
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              // Generate Tally XML export
+              const xml = generateTallyXML(entries);
+              const blob = new Blob([xml], { type: 'application/xml' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `tally-export-${new Date().toISOString().split('T')[0]}.xml`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            disabled={entries.length === 0}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Export to Tally XML
+          </button>
+          <Link
+            href="/dashboard/accounts/transactions/new"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            + New Transaction
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

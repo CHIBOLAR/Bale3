@@ -107,6 +107,14 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
                   Edit Invoice
                 </Link>
               )}
+              {!invoice.is_credit_note && invoice.status === 'finalized' && (
+                <Link
+                  href={`/dashboard/invoices/${invoiceId}/credit-note`}
+                  className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                >
+                  Create Credit Note
+                </Link>
+              )}
               {invoice.payment_status !== 'paid' && !invoice.is_credit_note && (
                 <Link
                   href={`/dashboard/invoices/${invoiceId}/record-payment`}
