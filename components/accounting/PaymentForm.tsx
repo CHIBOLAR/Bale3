@@ -20,13 +20,16 @@ export function PaymentForm({ invoiceId, balanceDue, bankAccounts }: PaymentForm
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  type PaymentMethod = 'cash' | 'cheque' | 'bank_transfer' | 'upi' | 'card' | 'neft_rtgs' | 'imps' | 'others';
+
   const [formData, setFormData] = useState({
     amount: balanceDue.toFixed(2),
-    payment_method: 'bank' as 'cash' | 'bank' | 'cheque' | 'upi',
+    payment_method: 'bank_transfer' as PaymentMethod,
     payment_date: new Date().toISOString().split('T')[0],
     bank_account_id: '',
     cheque_number: '',
     upi_ref: '',
+    transaction_reference: '',
     notes: '',
   });
 
@@ -65,6 +68,7 @@ export function PaymentForm({ invoiceId, balanceDue, bankAccounts }: PaymentForm
         bank_account_id: formData.bank_account_id || undefined,
         cheque_number: formData.cheque_number || undefined,
         upi_ref: formData.upi_ref || undefined,
+        transaction_reference: formData.transaction_reference || undefined,
         notes: formData.notes || undefined,
       });
 
@@ -125,20 +129,24 @@ export function PaymentForm({ invoiceId, balanceDue, bankAccounts }: PaymentForm
           onChange={(e) =>
             setFormData({
               ...formData,
-              payment_method: e.target.value as any,
+              payment_method: e.target.value as PaymentMethod,
             })
           }
           className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="bank">Bank Transfer</option>
+          <option value="bank_transfer">Bank Transfer</option>
+          <option value="upi">UPI</option>
           <option value="cash">Cash</option>
           <option value="cheque">Cheque</option>
-          <option value="upi">UPI</option>
+          <option value="neft_rtgs">NEFT/RTGS</option>
+          <option value="imps">IMPS</option>
+          <option value="card">Card</option>
+          <option value="others">Others</option>
         </select>
       </div>
 
-      {/* Bank Account (if bank/cheque) */}
-      {(formData.payment_method === 'bank' || formData.payment_method === 'cheque') && (
+      {/* Bank Account (if not cash) */}
+      {formData.payment_method !== 'cash' && (
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">
             Bank Account
@@ -192,6 +200,24 @@ export function PaymentForm({ invoiceId, balanceDue, bankAccounts }: PaymentForm
             }
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="Enter UPI transaction ID"
+          />
+        </div>
+      )}
+
+      {/* Transaction Reference for Bank/NEFT/IMPS */}
+      {(['bank_transfer', 'neft_rtgs', 'imps'].includes(formData.payment_method)) && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Transaction Reference / UTR
+          </label>
+          <input
+            type="text"
+            value={formData.transaction_reference}
+            onChange={(e) =>
+              setFormData({ ...formData, transaction_reference: e.target.value })
+            }
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="Enter transaction reference number"
           />
         </div>
       )}

@@ -2,30 +2,30 @@
 
 /**
  * Server actions for payment recording
- * Phase 7 Week 3 Part 3 - Payment Recording (Manual Entry)
+ * Updated to work with auto-journal creation triggers
  */
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { createJournalEntry } from '@/lib/accounting/core';
-import { getOrCreateLedger } from '@/lib/accounting/ledger';
+
+type PaymentMethod = 'cash' | 'cheque' | 'bank_transfer' | 'upi' | 'card' | 'neft_rtgs' | 'imps' | 'others';
 
 interface RecordPaymentData {
   invoice_id: string;
   amount: number;
-  payment_method: 'cash' | 'bank' | 'cheque' | 'upi';
+  payment_method: PaymentMethod;
   payment_date: string;
   bank_account_id?: string;
   cheque_number?: string;
   upi_ref?: string;
+  transaction_reference?: string;
   notes?: string;
 }
 
 /**
  * Record a payment received for an invoice
- * - Updates invoice payment_status and balance_due
  * - Creates payment record in payments_received table
- * - Creates journal entry (Dr: Cash/Bank, Cr: Customer)
+ * - Trigger automatically creates journal entry and updates invoice balance
  * - Section 269ST compliance check (blocks cash >₹2L)
  */
 export async function recordPayment(
@@ -99,11 +99,6 @@ export async function recordPayment(
       };
     }
 
-    // Calculate new totals
-    const newTotalPaid = parseFloat(invoice.total_paid || 0) + data.amount;
-    const newBalanceDue = parseFloat(invoice.total_amount) - newTotalPaid;
-    const newPaymentStatus = newBalanceDue === 0 ? 'paid' : newBalanceDue < parseFloat(invoice.total_amount) ? 'partial' : 'unpaid';
-
     // Generate payment number
     const { data: lastPayment } = await supabase
       .from('payments_received')
@@ -124,6 +119,9 @@ export async function recordPayment(
     }
 
     // Create payment record
+    // Trigger will automatically:
+    // 1. Create journal entry (Dr: Cash/Bank, Cr: Customer)
+    // 2. Update invoice balance and payment status
     const { data: payment, error: paymentError } = await supabase
       .from('payments_received')
       .insert({
@@ -137,6 +135,7 @@ export async function recordPayment(
         bank_account_id: data.bank_account_id || null,
         cheque_number: data.cheque_number || null,
         upi_ref: data.upi_ref || null,
+        transaction_reference: data.transaction_reference || null,
         notes: data.notes || null,
       })
       .select('id')
@@ -144,57 +143,7 @@ export async function recordPayment(
 
     if (paymentError || !payment) {
       console.error('Payment creation error:', paymentError);
-      return { success: false, error: 'Failed to create payment record' };
-    }
-
-    // Update invoice
-    const { error: invoiceUpdateError } = await supabase
-      .from('invoices')
-      .update({
-        total_paid: newTotalPaid,
-        balance_due: newBalanceDue,
-        payment_status: newPaymentStatus,
-      })
-      .eq('id', data.invoice_id);
-
-    if (invoiceUpdateError) {
-      console.error('Invoice update error:', invoiceUpdateError);
-      // Rollback payment
-      await supabase.from('payments_received').delete().eq('id', payment.id);
-      return { success: false, error: 'Failed to update invoice' };
-    }
-
-    // Create journal entry
-    try {
-      await createPaymentJournalEntry(
-        payment.id,
-        invoice.customer_id,
-        data.amount,
-        data.payment_method,
-        userData.company_id,
-        userData.id,
-        paymentNumber,
-        data.payment_date,
-        data.bank_account_id,
-        invoice.invoice_number
-      );
-    } catch (journalError) {
-      console.error('Journal entry creation error:', journalError);
-      // Rollback payment and invoice update
-      await supabase.from('payments_received').delete().eq('id', payment.id);
-      await supabase
-        .from('invoices')
-        .update({
-          total_paid: invoice.total_paid,
-          balance_due: invoice.balance_due,
-          payment_status: invoice.payment_status,
-        })
-        .eq('id', data.invoice_id);
-      return {
-        success: false,
-        error: 'Failed to create journal entry: ' +
-          (journalError instanceof Error ? journalError.message : 'Unknown error'),
-      };
+      return { success: false, error: 'Failed to create payment record: ' + (paymentError?.message || 'Unknown error') };
     }
 
     revalidatePath('/dashboard/invoices');
@@ -210,127 +159,5 @@ export async function recordPayment(
   }
 }
 
-/**
- * Create journal entry for payment received
- *
- * Dr: Cash/Bank Account - Payment Amount
- * Cr: Customer (Sundry Debtors) - Payment Amount
- */
-async function createPaymentJournalEntry(
-  paymentId: string,
-  customerId: string,
-  amount: number,
-  paymentMethod: string,
-  companyId: string,
-  userId: string,
-  paymentNumber: string,
-  paymentDate: string,
-  bankAccountId?: string,
-  invoiceNumber?: string
-): Promise<string> {
-  const supabase = await createClient();
-
-  // Get customer name for ledger
-  const { data: customer } = await supabase
-    .from('partners')
-    .select('first_name, last_name, company_name')
-    .eq('id', customerId)
-    .single();
-
-  if (!customer) {
-    throw new Error('Customer not found');
-  }
-
-  const customerName = customer.company_name || `${customer.first_name} ${customer.last_name}`;
-
-  // Get or create customer ledger
-  const customerLedger = await getOrCreateLedger(
-    customerId,
-    'customer',
-    customerName,
-    companyId
-  );
-
-  // Determine debit ledger based on payment method
-  let debitLedgerId: string;
-  let debitLedgerName: string;
-
-  if (paymentMethod === 'cash') {
-    // Get Cash-in-Hand ledger
-    const { data: cashLedger } = await supabase
-      .from('ledger_accounts')
-      .select('id, name')
-      .eq('company_id', companyId)
-      .eq('is_system_ledger', true)
-      .eq('name', 'Cash-in-Hand')
-      .single();
-
-    if (!cashLedger) {
-      throw new Error('Cash-in-Hand ledger not found');
-    }
-
-    debitLedgerId = cashLedger.id;
-    debitLedgerName = cashLedger.name;
-  } else {
-    // Get bank account ledger (or default bank account)
-    if (bankAccountId) {
-      const { data: bankAccount } = await supabase
-        .from('cash_bank_accounts')
-        .select('ledger_account_id, ledger_accounts(id, name)')
-        .eq('id', bankAccountId)
-        .single();
-
-      if (!bankAccount || !bankAccount.ledger_accounts) {
-        throw new Error('Bank account not found');
-      }
-
-      debitLedgerId = (bankAccount.ledger_accounts as any).id;
-      debitLedgerName = (bankAccount.ledger_accounts as any).name;
-    } else {
-      // Use default bank account
-      const { data: defaultBank } = await supabase
-        .from('ledger_accounts')
-        .select('id, name')
-        .eq('company_id', companyId)
-        .eq('is_system_ledger', true)
-        .eq('name', 'Bank Account (Default)')
-        .single();
-
-      if (!defaultBank) {
-        throw new Error('Default bank account not found');
-      }
-
-      debitLedgerId = defaultBank.id;
-      debitLedgerName = defaultBank.name;
-    }
-  }
-
-  // Build journal entry lines
-  const lines = [
-    {
-      ledger_account_id: debitLedgerId,
-      debit_amount: amount,
-      credit_amount: 0,
-      bill_reference: paymentNumber,
-    },
-    {
-      ledger_account_id: customerLedger.id,
-      debit_amount: 0,
-      credit_amount: amount,
-      bill_reference: invoiceNumber || paymentNumber,
-    },
-  ];
-
-  // Create journal entry
-  const journalEntryId = await createJournalEntry({
-    transaction_type: 'payment_received',
-    transaction_id: paymentId,
-    entry_date: paymentDate,
-    narration: `Payment received ${paymentNumber}${invoiceNumber ? ` for Invoice ${invoiceNumber}` : ''} via ${paymentMethod}`,
-    lines,
-    company_id: companyId,
-    created_by: userId,
-  });
-
-  return journalEntryId;
-}
+// Journal entries are now automatically created by database triggers
+// See: create_receipt_journal_entry() function and trigger in database migrations

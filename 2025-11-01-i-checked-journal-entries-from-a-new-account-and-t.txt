@@ -1,0 +1,3331 @@
+
+ ▐▛███▜▌   Claude Code v2.0.31
+▝▜█████▛▘  Sonnet 4.5 · Claude Pro
+  ▘▘ ▝▝    C:\Users\Chirag\Bale Inventorye
+
+> I checked journal entries from a new account and there was zero ledger accounts, are we having a ledger accounts import as well or 
+will it be covered under customer import, when I checked Frappe books, it gave option to every user to import their own chart of 
+accounts, is this standard practice in this industry? 
+
+● I'll help you investigate the ledger accounts situation and understand industry practices. Let me examine the current
+  implementation.
+
+● Explore(Investigate ledger accounts implementation)
+  ⎿  Read 372 lines
+     Read 40 lines
+     +17 more tool uses (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+> Stop and use whatever you've found 
+
+● Based on your question about ledger accounts and industry practices:
+
+  Is Chart of Accounts Import Standard Practice?
+
+  Yes, it's absolutely standard practice in accounting software to allow users to:
+
+  1. Choose or import a Chart of Accounts - Most accounting systems provide:
+    - Default templates (e.g., retail, manufacturing, services, non-profit)
+    - Country-specific templates (matching local accounting standards)
+    - Import from file (CSV/Excel for custom charts)
+  2. Why this matters:
+    - Every business has different needs
+    - Different countries have different accounting standards (GAAP, IFRS, local tax codes)
+    - Users migrating from other systems need to import their existing structure
+
+  Typical Implementation Approach
+
+  Most systems handle this as a separate import from customers/partners:
+
+  - Ledger Accounts (Chart of Accounts) - Separate import/setup
+  - Customers/Vendors - Separate import (may reference ledger accounts)
+  - Initial Balances - Optional opening balances import
+
+  Current Issue
+
+  If new accounts have zero ledger accounts, you likely need:
+
+  1. Default chart of accounts on company creation
+  2. Import functionality for chart of accounts (CSV/Excel)
+  3. Account templates for different business types
+
+  Would you like me to:
+  - Check the current database schema for ledger accounts?
+  - Design an import system for chart of accounts?
+  - Look at how journal entries reference ledger accounts?
+
+> Since our target audience is very defined and we want to go depth instead of breadth what will be your recommendations on 
+inventory-accounting front 
+
+● I'll help you strategize the inventory-accounting integration. First, let me understand your target audience and current
+  implementation better.
+
+● User declined to answer questions
+
+> USe PRD.md 
+
+● Read(PRD.md)
+  ⎿  Read 970 lines
+
+● Plan(Research current accounting implementation)
+  ⎿  Found 0 files
+     Error: Exit code 137
+     +4 more tool uses (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+> No searching codebase 
+
+● Based on your PRD and "depth over breadth" strategy for fabric traders, here are my recommendations:
+
+  Strategic Recommendations for Inventory-Accounting Integration
+
+  1. Opinionated Chart of Accounts Template (Recommended)
+
+  Why this fits your target audience:
+  - Your users currently struggle with Tally (too complex) and Excel (too basic)
+  - Staff has "limited education" - simpler is better
+  - Budget-conscious (₹10-20K) - can't afford accounting consultants
+  - Fabric trading has predictable accounting patterns
+
+  Implementation:
+  Pre-configured accounts specifically for fabric trading:
+  ├── Assets
+  │   ├── Current Assets
+  │   │   ├── Raw Materials Inventory (for dyeing/embroidery businesses)
+  │   │   ├── Work-in-Progress (fabric at job workers)
+  │   │   ├── Finished Goods Inventory (ready stock)
+  │   │   └── Accounts Receivable
+  │   └── Fixed Assets
+  ├── Liabilities
+  │   ├── Accounts Payable (suppliers/vendors)
+  │   └── Advance from Customers
+  ├── Revenue
+  │   └── Fabric Sales
+  ├── Cost of Goods Sold
+  │   ├── Purchase - Raw Fabric
+  │   ├── Job Work Charges (dyeing/embroidery)
+  │   └── Wastage/Damage
+  └── Expenses
+      ├── Transport Charges
+      └── Warehouse Rent
+
+  Allow minimal customization:
+  - Add/rename accounts within categories
+  - Option to import if migrating from Tally (for advanced users)
+  - Hide unused accounts (not delete)
+
+  ---
+  2. Automatic Journal Entries (Critical for depth strategy)
+
+  Map inventory transactions to accounting automatically:
+
+  | Inventory Action                | Accounting Impact                                            |
+  |---------------------------------|--------------------------------------------------------------|
+  | Goods Receipt (from supplier)   | Dr. Raw Materials InventoryCr. Accounts Payable              |
+  | Goods Receipt (from job worker) | Dr. Finished Goods InventoryCr. Work-in-Progress             |
+  | Goods Dispatch (job work send)  | Dr. Work-in-ProgressCr. Raw Materials Inventory              |
+  | Goods Dispatch (customer sale)  | Dr. COGSDr. Accounts ReceivableCr. Finished GoodsCr. Revenue |
+  | Wastage/Damage                  | Dr. COGS - WastageCr. Inventory                              |
+
+  Why this matters:
+  - Your users currently do Excel + Tally separately (double work)
+  - "Manual tracking" is their biggest pain point
+  - Staff with limited education won't understand debit/credit
+
+  ---
+  3. Simple Inventory Valuation (FIFO only)
+
+  Recommendation: Start with FIFO only
+  - Simplest to understand for fabric traders
+  - Matches physical flow (old stock sold first)
+  - GST/tax compliant in India
+  - Don't offer LIFO/Weighted Average initially (adds complexity)
+
+  Implementation:
+  - Track cost per stock unit (from goods receipt)
+  - On dispatch, calculate COGS using oldest units first
+  - Show "Stock Value" dashboard (quantity × cost)
+
+  ---
+  4. What to SKIP Initially (Depth, not breadth)
+
+  ❌ Don't build:
+  - Multi-currency (your users are local Indian traders)
+  - Complex depreciation (not relevant for fabric inventory)
+  - Payroll integration (not core pain point)
+  - Full GST return filing (use existing Tally for compliance)
+  - Bank reconciliation (use existing tools)
+
+  ✅ Focus on:
+  - Stock to COGS automation (their #1 problem)
+  - Job work cost tracking (embroidery charges)
+  - Customer advance tracking (common in fabric trade)
+  - Basic P&L (Revenue - COGS - Expenses)
+
+  ---
+  5. Integration Approach for Your Users
+
+  Phase 1: Shadow Accounting (Recommended start)
+  - Auto-generate journal entries in background
+  - Show simple reports: Stock Value, Pending Payments, Sales Summary
+  - Don't force users to understand accounting yet
+  - Let them continue Tally for GST filing
+
+  Phase 2: Gradual Migration
+  - Once they trust your system, add:
+    - Manual journal entries (for corrections)
+    - Chart of accounts customization
+    - Tally export (to maintain compliance during transition)
+
+  Phase 3: Full Accounting (Optional)
+  - Invoice generation with GST
+  - GST reports (GSTR-1 format)
+  - Replace Tally completely
+
+  ---
+  Answer to Your Specific Question
+
+  "Is chart of accounts import standard practice?"
+
+  Yes, BUT:
+  - For enterprise users (SAP, Tally): Import is essential
+  - For your niche (small fabric traders): Opinionated template is better
+
+  Why opinionated approach wins for you:
+  1. Your users don't have existing clean data to import
+  2. They're escaping complexity of Tally
+  3. "Just right for fabric" is your positioning
+  4. Staff with limited education needs simplicity
+
+  Compromise approach:
+  - Default: Pre-configured fabric trading chart of accounts
+  - Advanced: "Import from Tally" option (for migration)
+  - Expert: Manual account creation
+
+  ---
+  Recommended Priority
+
+  Must Have (MVP):
+  1. ✅ Pre-configured chart of accounts (fabric-specific)
+  2. ✅ Auto journal entries for inventory movements
+  3. ✅ FIFO cost tracking
+  4. ✅ Basic reports (Stock Value, COGS, Pending Payments)
+
+  Should Have:
+  5. Manual journal entry capability
+  6. Chart of accounts customization (add/rename)
+  7. Tally export for GST compliance
+
+  Could Have:
+  8. Chart of accounts import (for Tally migrations)
+  9. Invoice generation
+  10. Advanced reports
+
+  This keeps you deep in fabric trading workflows, not broad across generic accounting features.
+
+> You're wrong in saying people don't have past data, people have only Tally hence Tally import becomes critical 
+
+● You're absolutely right - I apologize for that incorrect assumption. Let me revise:
+
+  Corrected Recommendations
+
+  Tally Import is CRITICAL (Must Have for MVP)
+
+  Reality check:
+  - Your users ARE already using Tally (mentioned in PRD)
+  - They have years of historical data in Tally
+  - Customer outstanding balances, vendor payables, opening stock values
+  - Can't ask them to start fresh - that's a non-starter for adoption
+
+  ---
+  Revised Priority Framework
+
+  Must Have (MVP) - Migration Focused:
+
+  1. ✅ Tally Chart of Accounts Import
+    - Import XML/Excel export from Tally
+    - Map Tally account groups to your structure
+    - Preserve account codes/hierarchy they're familiar with
+  2. ✅ Opening Balances Import
+    - Customer outstanding (Accounts Receivable)
+    - Vendor payables (Accounts Payable)
+    - Stock valuation (as of migration date)
+    - Bank balances, cash on hand
+  3. ✅ Party Master Import
+    - Customer/Vendor/Supplier data from Tally
+    - With opening balance amounts
+    - Phone numbers, addresses, GST numbers
+  4. ✅ Opening Stock with Valuation
+    - Current inventory items with cost values
+    - This is critical - can't lose stock value data
+  5. ✅ Auto Journal Entries (for new transactions post-migration)
+    - Only for transactions AFTER they start using your system
+
+  ---
+  Two-System Hybrid Approach (Recommended)
+
+  Phase 1: Parallel Running (First 2-3 months)
+  - Import all Tally data as read-only opening balances
+  - New inventory transactions in your system (auto-generates accounting)
+  - Continue Tally for:
+    - GST filing (GSTR-1, GSTR-3B)
+    - Bank reconciliation
+    - Old transaction queries
+  - Monthly: Export journal entries from your system → Import to Tally
+
+  Phase 2: Gradual Migration (3-6 months)
+  - Invoice generation in your system
+  - GST reports in your system
+  - Reduce Tally dependency
+
+  Phase 3: Full Replacement (6+ months)
+  - Complete accounting in your system
+  - Tally only for historical reference
+
+  ---
+  Import Format Support
+
+  Priority order:
+
+  1. Tally XML Export (Highest priority)
+    - Masters: Chart of Accounts, Ledgers, Stock Items, Parties
+    - Vouchers: Opening balances (as one-time journal entry)
+    - Most comprehensive, least manual work
+  2. Excel Templates (Fallback)
+    - For users who can't figure out Tally XML export
+    - Provide downloadable Excel template
+    - They manually copy-paste from Tally reports
+  3. Manual Entry (Last resort)
+    - For very small businesses with minimal data
+    - Chart of accounts creation wizard
+
+  ---
+  What Makes This "Depth" Strategy
+
+  Instead of generic import (like Zoho Books, QuickBooks):
+
+  Generic accounting software:
+  - "Import your chart of accounts CSV"
+  - You figure out the mapping
+  - No industry-specific guidance
+
+  Your fabric-specific approach:
+  - Pre-built Tally mapping for fabric traders
+  - Recognize common Tally accounts used by fabric businesses
+  - Auto-suggest: "Tally's 'Sundry Debtors' → Your 'Accounts Receivable'"
+  - Fabric-specific validation: "You imported 4000 stock units but no opening stock value - is this correct?"
+  - Guide them through: "Tally calls this 'Stock in Hand', we call it 'Inventory'"
+
+  Example Smart Import:
+  Detected Tally Accounts:
+  ✓ "Party A - Customer" → Import as Partner (Type: Customer)
+  ✓ "Dyer XYZ - Vendor" → Import as Partner (Type: Vendor)
+  ✓ "Purchase - Fabric" → Import as COGS account
+  ? "Sales - Export" → You serve local traders, keep this? (Yes/No)
+
+  ---
+  Revised "Must Have" List
+
+  MVP Accounting Features:
+  1. ✅ Tally XML import (Chart of Accounts, Parties, Opening Balances)
+  2. ✅ Excel import as fallback
+  3. ✅ Opening stock valuation import
+  4. ✅ Auto journal entries for NEW transactions
+  5. ✅ FIFO cost tracking
+  6. ✅ Basic reports (Stock Value, Party Outstanding)
+  7. ✅ Export to Tally format (for GST filing during transition)
+
+  Not in MVP:
+  - Full GST return generation (use Tally for now)
+  - Bank reconciliation (use Tally for now)
+  - Advanced accounting features
+
+  ---
+  Key Insight
+
+  Your competitive advantage isn't replacing Tally entirely (too hard).
+
+  It's:
+  1. Seamless Tally data migration (so they don't lose history)
+  2. Automatic inventory-to-accounting (so they stop doing double entry)
+  3. Fabric-specific workflows (job work costing, roll tracking)
+  4. Gradual migration path (not forced big-bang switch)
+
+  This is depth: You go deep on the Tally→YourSystem migration for fabric traders, not broad across all accounting features.
+
+  Does this align better with your vision?
+
+> But with this how will you manage daily operations of Tally, you will basically be creating purchase invoices and sale invoices in 
+tally only 
+
+● You're absolutely right - I missed the critical flaw. Let me think through this properly:
+
+  The Core Problem I Missed
+
+  If users are still creating purchase invoices and sale invoices in Tally:
+  - They're STILL doing double entry (invoice in Tally + stock movement in your system)
+  - Your system becomes just a fancy stock register
+  - No actual workflow improvement - you haven't solved their pain point
+
+  ---
+  The Real Choice: All-In or Stay Out
+
+  Option A: Full Accounting Replacement (Go Deep)
+
+  What this means:
+  - ✅ Import Tally opening balances (one-time migration)
+  - ✅ Generate GST-compliant invoices in your system
+  - ✅ Complete Chart of Accounts
+  - ✅ Automatic journal entries
+  - ✅ GST reports (GSTR-1, GSTR-3B format)
+  - ✅ Replace Tally entirely
+
+  Pros:
+  - Single source of truth
+  - True workflow automation (inventory → invoice → accounting)
+  - Aligns with "depth" strategy (go deep on fabric trading workflows)
+
+  Cons:
+  - Must build GST compliance (complex, India-specific)
+  - Higher risk (if GST reports are wrong, users face penalties)
+  - Bigger MVP scope
+
+  ---
+  Option B: Inventory-Only System (Stay Focused)
+
+  What this means:
+  - ❌ No accounting integration initially
+  - ✅ Pure inventory management (stock units, job work, dispatch/receipt)
+  - ✅ Users continue Tally for invoicing + accounting
+  - ✅ Manual reconciliation between systems
+
+  Pros:
+  - Focused MVP (solve inventory pain points first)
+  - Lower risk (no GST compliance liability)
+  - Faster time to market
+
+  Cons:
+  - Still doing double entry (Tally + your system)
+  - Less compelling value proposition
+  - Doesn't solve "manual tracking" pain completely
+
+  ---
+  Option C: Smart Middle Ground (Recommended)
+
+  Build invoice generation WITHOUT full accounting:
+
+  What this means:
+  1. ✅ Generate GST invoices in your system (Purchase & Sales)
+  2. ✅ Auto-link invoices to inventory movements
+  3. ✅ Export invoices to Tally XML format
+  4. ✅ User imports into Tally (one-click, not manual reentry)
+  5. ❌ Don't build full Chart of Accounts / Journal Entries initially
+  6. ❌ Tally remains the "accounting system of record"
+
+  Workflow:
+  Your System:
+  - Goods Receipt → Auto-generates Purchase Invoice
+  - Goods Dispatch → Auto-generates Sale Invoice
+  - Print/email invoice to customer/vendor
+
+  Daily/Weekly:
+  - Export invoices as Tally XML
+  - Import into Tally (batch import)
+  - Tally handles: accounting entries, GST filing, reports
+
+  This eliminates double entry while deferring full accounting
+
+  Pros:
+  - ✅ Solves double-entry pain (invoice created once)
+  - ✅ GST-compliant invoice format
+  - ✅ Tally handles complex accounting/GST filing
+  - ✅ Smaller MVP (invoicing is simpler than full accounting)
+  - ✅ Gradual migration path
+
+  Cons:
+  - Still need Tally license (but reduces Tally usage by 80%)
+  - One extra step (export/import to Tally)
+  - Not a complete Tally replacement
+
+  ---
+  Which Option Aligns with "Depth" Strategy?
+
+  I recommend Option C (Smart Middle Ground) because:
+
+  Depth means:
+  - Go deep on fabric trading workflows, not accounting complexity
+  - Solve: "Time-consuming coordination, manual tracking, stock visibility"
+  - Not: "Build another Tally"
+
+  Competitive positioning:
+  vs Tally:
+  - Tally = Accounting-first (inventory is afterthought)
+  - You = Inventory-first (invoicing is automatic byproduct)
+
+  vs Generic Inventory Apps:
+  - Generic = No invoice generation
+  - You = GST invoices + Tally export (India-specific)
+
+  Feature Priority:
+  1. ✅ Barcode scanning for dispatch/receipt
+  2. ✅ Job work tracking with real-time updates
+  3. ✅ Auto-generate invoices from inventory movements
+  4. ✅ Export to Tally (for GST compliance)
+  5. ⏳ Chart of Accounts (Phase 2)
+  6. ⏳ Manual journal entries (Phase 2)
+  7. ⏳ Full GST reports (Phase 3 - replace Tally)
+
+  ---
+  Answer to Your Question
+
+  "How will you manage daily operations in Tally? You'll be creating invoices in Tally only"
+
+  Corrected approach:
+
+  NOT this (my wrong suggestion):
+  - ❌ Create invoice in Tally manually
+  - ❌ Record same transaction in your system
+  - ❌ Double work continues
+
+  Instead this (Option C):
+  - ✅ Goods Receipt → Auto-creates Purchase Invoice in your system
+  - ✅ Goods Dispatch → Auto-creates Sale Invoice in your system
+  - ✅ Print invoice, send to customer
+  - ✅ End of day: Export all invoices → Import to Tally XML (1-click)
+  - ✅ Tally auto-creates accounting entries + GST records
+  - ✅ No manual reentry needed
+
+  ---
+  Does This Make Sense?
+
+  The key insight: Invoicing can exist WITHOUT full accounting.
+
+  You can generate GST-compliant invoices and let Tally handle:
+  - Chart of accounts
+  - Journal entries
+  - GST return filing
+  - Bank reconciliation
+  - Financial statements
+
+  This is depth on the fabric trading workflow (inventory → invoicing automation), without breadth into full accounting complexity.
+
+  Is this the direction you were thinking, or do you want full accounting replacement (Option A)?
+
+> Yes makes sense, give me proper plan as per this 
+  ⎿  Interrupted · What should Claude do instead?
+
+> But but but, isn't invoice linked to sales order and purchase order rather than dispatch and inward and why will there be so many 
+invoices since there will be so many inwards and outwards 
+
+● You're absolutely correct - I made a fundamental mistake! Let me rethink this properly:
+
+  The Correct Relationships
+
+  You're right:
+  - Invoice ≠ Dispatch/Receipt (wrong 1:1 assumption)
+  - Invoice = Financial document linked to Sales Order or Purchase Order
+  - One invoice can cover multiple dispatches/receipts
+  - Multiple invoices can be created for one order (partial billing)
+
+  Real scenarios:
+  Scenario 1: Partial Delivery
+  - Sales Order: 500 meters
+  - Dispatch 1: 200m (no invoice yet)
+  - Dispatch 2: 300m → NOW create invoice for full 500m
+  - Result: 1 invoice, 2 dispatches
+
+  Scenario 2: Consolidated Billing
+  - Purchase: 100 rolls received over 10 receipts
+  - Supplier sends 1 invoice at month-end
+  - Result: 1 invoice, 10 receipts
+
+  Scenario 3: Advance Invoice
+  - Customer pays 50% advance
+  - Invoice created before any dispatch
+  - Later: goods dispatched against that invoice
+
+  ---
+  Corrected System Design
+
+  Missing Piece: Purchase Orders
+
+  Looking at your PRD:
+  - ✅ Sales Orders exist (Section 4)
+  - ❌ Purchase Orders missing
+  - Goods Receipt has "Invoice Number" field (optional reference)
+
+  Need to add:
+  1. Purchase Order entity (parallel to Sales Order)
+  2. Purchase Invoice entity (linked to PO)
+  3. Sales Invoice entity (linked to Sales Order)
+
+  ---
+  Proper Entity Relationships
+
+  SALES FLOW:
+  Sales Order (1) ──┬──> Sales Invoice (0 to many) ──> GST Document
+                    └──> Goods Dispatch (0 to many) ──> Physical Movement
+
+  PURCHASE FLOW:
+  Purchase Order (1) ──┬──> Purchase Invoice (0 to many) ──> Supplier Bill
+                       └──> Goods Receipt (0 to many) ──> Physical Receipt
+
+  LINKING:
+  - Goods Dispatch optionally references Sales Invoice
+  - Goods Receipt optionally references Purchase Invoice
+  - But invoice is created independently based on business logic
+
+  ---
+  Updated Plan: Inventory-Invoicing Integration
+
+  Phase 1: Core Invoicing Entities (MVP)
+
+  1.1 Add Purchase Order Management
+
+  purchase_orders table:
+  - Similar structure to sales_orders
+  - Partner (supplier/vendor)
+  - Line items (product, quantity, rate)
+  - Status (pending, partially_received, completed)
+  - Linked goods_receipts tracking
+
+  1.2 Sales Invoice Entity
+
+  sales_invoices table:
+  - Invoice Number (auto: SI-{SEQUENCE})
+  - Invoice Date
+  - Sales Order ID (can link to one or multiple orders)
+  - Customer (from partners)
+  - Line Items:
+    - Product
+    - Quantity (can be partial from sales order)
+    - Rate
+    - Tax (GST %)
+    - Amount
+  - GST Details (CGST, SGST, IGST)
+  - Total Amount
+  - Payment Terms
+  - Due Date
+  - Status (draft, sent, paid, overdue)
+
+  1.3 Purchase Invoice Entity
+
+  purchase_invoices table:
+  - Invoice Number (from supplier)
+  - Invoice Date
+  - Purchase Order ID (optional link)
+  - Supplier (from partners)
+  - Line Items (same structure as sales)
+  - GST Details
+  - Total Amount
+  - Payment Status
+  - Linked Goods Receipts (for verification)
+
+  ---
+  Phase 2: Invoice Creation Workflows
+
+  2.1 Sales Invoice Creation (Multiple Options)
+
+  Option A: From Sales Order (Most Common)
+  User Flow:
+  1. Open completed/partial sales order
+  2. Click "Create Invoice"
+  3. System pre-fills:
+     - Customer details
+     - Products from order
+     - Default: full quantity (user can modify for partial)
+  4. User adds/modifies:
+     - Invoice date
+     - GST rates
+     - Discount
+     - Payment terms
+  5. Save as Draft or Finalize
+  6. Print GST invoice
+
+  Option B: From Multiple Sales Orders (Consolidated)
+  User Flow:
+  1. Select multiple orders for same customer
+  2. Click "Create Consolidated Invoice"
+  3. System combines line items
+  4. Single invoice for multiple orders
+
+  Option C: Standalone Invoice (No Order)
+  For walk-in sales, quick transactions
+
+  2.2 Purchase Invoice Recording
+
+  Option A: From Purchase Order
+  Similar to sales invoice creation
+  Match supplier invoice to your PO
+
+  Option B: Direct Entry (No PO)
+  Record supplier invoice directly
+  Link to goods receipts for verification
+
+  ---
+  Phase 3: Linking to Dispatch/Receipt
+
+  3.1 Goods Dispatch with Invoice Reference
+
+  Current: goods_dispatch has "invoice_number" field
+  Enhanced:
+  - sales_invoice_id (FK to sales_invoices table)
+  - Can dispatch against invoice (not mandatory)
+  - Invoice shows: "Dispatched: 300m of 500m invoiced"
+
+  3.2 Goods Receipt with Invoice Reference
+
+  Current: goods_receipt has "invoice_number" field
+  Enhanced:
+  - purchase_invoice_id (FK to purchase_invoices)
+  - Match received goods to invoice
+  - Flag discrepancies (received ≠ invoiced)
+
+  ---
+  Phase 4: Tally Export Integration
+
+  4.1 What to Export
+
+  NOT individual dispatches/receipts (too many!)
+
+  INSTEAD:
+  - Sales Invoices → Tally Sales Voucher XML
+  - Purchase Invoices → Tally Purchase Voucher XML
+  - Payment entries (if you track them)
+
+  This gives Tally what it needs for:
+  - Accounting entries (Dr/Cr)
+  - GST filing (invoice-based, not dispatch-based)
+  - Customer/Vendor outstanding
+
+  4.2 Export Format
+
+  <TALLYMESSAGE>
+    <VOUCHER>
+      <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+      <DATE>20250115</DATE>
+      <PARTYLEDGERNAME>Customer Name</PARTYLEDGERNAME>
+      <VOUCHERNUMBER>SI-001</VOUCHERNUMBER>
+
+      <ALLLEDGERENTRIES.LIST>
+        <LEDGERNAME>Customer Name</LEDGERNAME>
+        <AMOUNT>11800</AMOUNT> <!-- Including GST -->
+      </ALLLEDGERENTRIES.LIST>
+
+      <ALLLEDGERENTRIES.LIST>
+        <LEDGERNAME>Sales Account</LEDGERNAME>
+        <AMOUNT>-10000</AMOUNT>
+      </ALLLEDGERENTRIES.LIST>
+
+      <ALLLEDGERENTRIES.LIST>
+        <LEDGERNAME>CGST Output</LEDGERNAME>
+        <AMOUNT>-900</AMOUNT>
+      </ALLLEDGERENTRIES.LIST>
+
+      <ALLLEDGERENTRIES.LIST>
+        <LEDGERNAME>SGST Output</LEDGERNAME>
+        <AMOUNT>-900</AMOUNT>
+      </ALLLEDGERENTRIES.LIST>
+    </VOUCHER>
+  </TALLYMESSAGE>
+
+  ---
+  Phase 5: GST Invoice Format (India-Specific)
+
+  5.1 GST Compliance Requirements
+
+  Mandatory Fields:
+  - GSTIN of supplier (your company)
+  - GSTIN of recipient (customer) - if registered
+  - Invoice number (sequential, no gaps)
+  - Invoice date
+  - HSN/SAC codes
+  - Taxable value
+  - Tax rate (CGST, SGST, IGST)
+  - Place of supply
+  - Signature/authorization
+
+  Format:
+  - PDF generation with all GST fields
+  - Print-ready A4 format
+  - Email capability
+  - WhatsApp sharing (common in India)
+
+  ---
+  Revised Feature Breakdown
+
+  Must Have (MVP)
+
+  1. Purchase Order Management
+  - Create/edit purchase orders
+  - Link to goods receipts
+  - Track fulfillment status
+
+  2. Invoice Entities
+  - Sales Invoice (from sales order)
+  - Purchase Invoice (record supplier bills)
+  - GST-compliant format
+
+  3. Invoice Creation Workflows
+  - From sales order (full or partial)
+  - From purchase order
+  - Standalone (walk-in sales)
+
+  4. GST Invoice Generation
+  - PDF with all mandatory GST fields
+  - Print/Email/WhatsApp
+  - Sequential numbering
+
+  5. Tally XML Export
+  - Export sales invoices
+  - Export purchase invoices
+  - One-click import to Tally
+
+  6. Basic Linking
+  - Dispatch can reference sales invoice
+  - Receipt can reference purchase invoice
+  - Optional, not mandatory
+
+  ---
+  Nice to Have (Phase 2)
+
+  7. Payment Tracking
+  - Record payments against invoices
+  - Outstanding calculation
+  - Payment reminders
+
+  8. Invoice Status Management
+  - Draft, Sent, Paid, Overdue
+  - Automated status updates
+
+  9. Credit Notes / Debit Notes
+  - For returns, discounts
+  - GST-compliant format
+
+  10. Consolidated Invoicing
+  - Multiple orders → one invoice
+  - Monthly billing for regular customers
+
+  ---
+  Future (Phase 3)
+
+  11. Full Accounting
+  - Chart of accounts
+  - Journal entries
+  - Complete Tally replacement
+
+  ---
+  Database Schema Changes Needed
+
+  -- New tables needed:
+
+  1. purchase_orders (parallel to sales_orders)
+  2. sales_invoices (linked to sales_orders)
+  3. purchase_invoices (linked to purchase_orders)
+  4. invoice_line_items (for both sales & purchase)
+  5. payment_entries (track payments against invoices)
+
+  -- Modify existing:
+  6. goods_dispatch: add sales_invoice_id FK
+  7. goods_receipt: add purchase_invoice_id FK
+
+  ---
+  Does This Address Your Concerns?
+
+  The key fixes:
+  1. ✅ Invoices linked to Orders (not dispatch/receipt)
+  2. ✅ Added Purchase Orders (missing entity)
+  3. ✅ Flexible invoice creation (partial, consolidated, standalone)
+  4. ✅ Fewer invoices exported to Tally (not every dispatch/receipt)
+  5. ✅ Proper GST compliance
+  6. ✅ Tally remains accounting system of record
+
+  Is this the correct direction now?
+
+> Accountant should also be able to raise partial invoices too, why are we tackling GST if tally exports work, can we make tally 
+exports real time or periodic 
+
+● Excellent points! Let me address each:
+
+  1. Accountant Role & Partial Invoicing
+
+  You're right - I missed the Accountant persona completely!
+
+  Typical fabric trading business structure:
+  Owner/Admin → Strategic decisions, approvals
+  Accountant → Handles invoicing, payments, reconciliation
+  Warehouse Staff → Physical inventory operations
+  Sales Team → Orders, customer communication
+
+  Accountant needs:
+  - Create invoices (from sales orders or standalone)
+  - Partial invoicing flexibility:
+    - Invoice 200m today, 300m next week for same order
+    - Progressive billing for large orders
+    - Advance invoices (before delivery)
+  - Record purchase invoices
+  - Track payments
+  - Handle credit/debit notes
+  - Access to both accounting + inventory data (read-only inventory)
+
+  Updated Role Matrix:
+  Feature                    | Owner | Accountant | Staff
+  ---------------------------|-------|------------|-------
+  Create Sales Invoice       |   ✅  |     ✅     |  ❌
+  Create Purchase Invoice    |   ✅  |     ✅     |  ❌
+  Partial Invoice Creation   |   ✅  |     ✅     |  ❌
+  View Sales Orders          |   ✅  |     ✅     |  ✅
+  View Inventory             |   ✅  |     ✅     |  ✅
+  Manage Inventory           |   ✅  |     ❌     |  ✅
+  Payment Recording          |   ✅  |     ✅     |  ❌
+
+  ---
+  2. Why Build GST Invoice If Tally Exports Work?
+
+  You're right to question this! Let me clarify:
+
+  Option A: Minimal GST Invoice (Recommended)
+
+  Your System generates:
+  ✅ Basic invoice PDF (looks professional)
+  ✅ Mandatory GST fields (GSTIN, tax breakdown)
+  ✅ Print/Email/WhatsApp to customer
+  ❌ No complex GST validation
+  ❌ No GSTR-1 report generation
+  ❌ No HSN/SAC code validation
+
+  Tally handles:
+  ✅ Full GST compliance
+  ✅ GSTR-1, GSTR-3B generation
+  ✅ Tax calculations verification
+  ✅ Government filing
+
+  Why you still need invoice generation:
+  - Customer expects invoice immediately (not "wait till I export to Tally")
+  - Email/WhatsApp directly from your app (seamless workflow)
+  - Professional look (your branding, not jumping to Tally)
+
+  What Tally export does:
+  - Creates accounting entries (Dr/Cr)
+  - Maintains GST books of record (for audit/filing)
+  - Not for customer-facing documents
+
+  Option B: No Invoice Generation (Export Only)
+
+  Your System:
+  - Only sales/purchase orders
+  - Only dispatch/receipt tracking
+  - Export transactions to Tally
+
+  User workflow:
+  1. Create sales order in your system
+  2. Export to Tally
+  3. Open Tally
+  4. Generate invoice in Tally
+  5. Print/email from Tally
+
+  Problem: Too much context switching, defeats the purpose
+
+  Recommendation:
+
+  Build simple GST invoice (just PDF generation), let Tally handle compliance complexity.
+
+  ---
+  3. Real-time vs Periodic Tally Export
+
+  Great question! Let's compare:
+
+  Option A: Real-time Export
+
+  How it works:
+  User creates invoice in your system
+      ↓
+  Immediate export to watched folder
+      ↓
+  Tally auto-imports (if configured)
+  OR
+  User manually imports in Tally immediately
+
+  Pros:
+  - ✅ Always in sync
+  - ✅ Accountant can work in Tally anytime
+  - ✅ Real-time GST compliance
+
+  Cons:
+  - ❌ Requires Tally to be running (or scheduled task)
+  - ❌ More complex error handling (what if import fails?)
+  - ❌ No batch review before import
+
+  Technical approach:
+  // After invoice creation:
+  await generateTallyXML(invoice);
+  await saveTallyXML('/tally-import-folder/SI-001.xml');
+  // Tally watches this folder and auto-imports
+  // OR user manually imports
+
+  ---
+  Option B: Periodic Batch Export (Recommended)
+
+  How it works:
+  Throughout the day:
+  - Users create invoices in your system
+  - Invoices marked as "Not Exported"
+
+  End of day/week (configurable):
+  - Accountant clicks "Export to Tally"
+  - System generates one XML with all pending invoices
+  - Accountant reviews export summary
+  - Imports to Tally
+  - System marks invoices as "Exported"
+
+  Pros:
+  - ✅ Batch review (catch errors before Tally import)
+  - ✅ Less interruption to Tally workflow
+  - ✅ Simpler error handling
+  - ✅ Accountant controls timing
+
+  Cons:
+  - ❌ Not real-time (delay between systems)
+  - ❌ Requires manual export step
+
+  UI Flow:
+  Accounting Dashboard:
+  ┌─────────────────────────────────────┐
+  │ Pending Tally Export                │
+  ├─────────────────────────────────────┤
+  │ 15 Sales Invoices (₹2,45,000)      │
+  │ 8 Purchase Invoices (₹1,20,000)    │
+  │                                     │
+  │ Last Export: 14 Jan 2025, 6:30 PM  │
+  │                                     │
+  │ [Preview] [Export to Tally]        │
+  └─────────────────────────────────────┘
+
+  Click "Preview":
+  - Shows list of invoices to export
+  - Allows deselection (if needed)
+
+  Click "Export to Tally":
+  - Downloads tally-export-15-jan-2025.xml
+  - User imports in Tally
+  - System marks as exported
+
+  ---
+  Option C: Hybrid (Best of Both)
+
+  Configuration option:
+  Settings:
+  □ Auto-export to Tally (real-time)
+    └─ Export folder: C:\Tally\AutoImport\
+
+  OR
+
+  □ Manual batch export
+    └─ Default frequency: End of day
+
+  For small businesses: Auto-export (less steps)For larger businesses: Batch export (more control)
+
+  ---
+  Revised Recommendation
+
+  Phase 1: Periodic Export (MVP)
+
+  - Accountant manually exports at end of day/week
+  - Review before export
+  - Simple, reliable
+  - Estimated effort: 2-3 days development
+
+  Phase 2: Auto-export (Enhancement)
+
+  - Add real-time option in settings
+  - For users who want seamless sync
+  - Estimated effort: 1-2 days additional
+
+  ---
+  Updated Feature Plan
+
+  Core Invoicing Features
+
+  1. Invoice Management
+  - Sales Invoice creation (from order or standalone)
+  - Purchase Invoice recording
+  - Partial invoicing support (accountant controls quantity/amount)
+  - Invoice status tracking (Draft, Sent, Paid, Exported)
+
+  2. Role Access
+  - Add Accountant role to system
+  - Permissions: Full accounting access, read-only inventory
+  - Accountant dashboard with pending invoices, payments
+
+  3. GST Invoice Generation (Simple)
+  - PDF with mandatory GST fields
+  - Professional template (your branding)
+  - Email/WhatsApp integration
+  - NOT complex GST validation (Tally handles that)
+
+  4. Tally Export
+  - Periodic batch export (MVP)
+  - XML format (Sales & Purchase vouchers)
+  - Export status tracking
+  - Preview before export
+  - Mark invoices as exported
+
+  5. Payment Recording (Basic)
+  - Record payments against invoices
+  - Outstanding calculation
+  - Payment status updates
+
+  ---
+  Key Decisions Needed from You:
+
+  1. Accountant role: Should this be a new role or can existing staff have accounting permissions?
+  2. Export frequency: Start with manual batch export, add auto-export later?
+  3. GST invoice complexity: Simple PDF (just display fields) or include GST validations?
+  4. Partial invoicing UI: Should accountant be able to:
+    - Select line items from order to invoice?
+    - Or manually enter quantities (with validation against order)?
+
+  Does this address your concerns better?
+
+> Give me the final plan with feature list and business rules and RBAC 
+  ⎿  User rejected Claude's plan:
+     ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+     │ Accounting Integration Plan: Invoice Management + Tally Export                                                                   │
+     │                                                                                                                                  │
+     │ Overview                                                                                                                         │
+     │                                                                                                                                  │
+     │ Build invoice management system that bridges inventory operations with Tally accounting, eliminating double-entry while keeping  │
+     │ Tally as the GST compliance system.                                                                                              │
+     │                                                                                                                                  │
+     │ Strategy                                                                                                                         │
+     │                                                                                                                                  │
+     │ - Invoice Generation: GST-compliant invoices linked to orders                                                                    │
+     │ - Tally Export: XML export for seamless Tally integration                                                                        │
+     │ - No Full Accounting: Defer Chart of Accounts, Journal Entries to future phase                                                   │
+     │ - Accountant Role: New role for billing operations                                                                               │
+     │                                                                                                                                  │
+     │ ---                                                                                                                              │
+     │ Phase 1: Core Features (MVP)                                                                                                     │
+     │                                                                                                                                  │
+     │ 1. Purchase Order Management                                                                                                     │
+     │                                                                                                                                  │
+     │ New Entity: Similar to existing Sales Orders but for purchases                                                                   │
+     │                                                                                                                                  │
+     │ 2. Invoice Entities                                                                                                              │
+     │                                                                                                                                  │
+     │ - Sales Invoice (linked to Sales Orders)                                                                                         │
+     │ - Purchase Invoice (linked to Purchase Orders)                                                                                   │
+     │                                                                                                                                  │
+     │ 3. Invoice Creation Workflows                                                                                                    │
+     │                                                                                                                                  │
+     │ - From Sales Order (full or partial)                                                                                             │
+     │ - From Purchase Order (full or partial)                                                                                          │
+     │ - Standalone invoices (walk-in sales)                                                                                            │
+     │ - Consolidated invoicing (multiple orders)                                                                                       │
+     │                                                                                                                                  │
+     │ 4. GST Invoice Generation                                                                                                        │
+     │                                                                                                                                  │
+     │ - PDF generation with mandatory GST fields                                                                                       │
+     │ - Print/Email/WhatsApp capability                                                                                                │
+     │ - Professional template                                                                                                          │
+     │                                                                                                                                  │
+     │ 5. Tally XML Export                                                                                                              │
+     │                                                                                                                                  │
+     │ - Periodic batch export (manual trigger)                                                                                         │
+     │ - Sales & Purchase vouchers                                                                                                      │
+     │ - Export status tracking                                                                                                         │
+     │                                                                                                                                  │
+     │ 6. Accountant Role & RBAC                                                                                                        │
+     │                                                                                                                                  │
+     │ - New role with billing permissions                                                                                              │
+     │ - Partial invoice creation capability                                                                                            │
+     │                                                                                                                                  │
+     │ 7. Basic Payment Tracking                                                                                                        │
+     │                                                                                                                                  │
+     │ - Record payments against invoices                                                                                               │
+     │ - Outstanding calculation                                                                                                        │
+     │                                                                                                                                  │
+     │ ---                                                                                                                              │
+     │ Implementation: Database Schema, Business Rules, RBAC                                                                            │
+     │                                                                                                                                  │
+     │ Will create detailed specifications for all entities and workflows.                                                              │
+     ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+> i need md file 
+  ⎿  Interrupted · What should Claude do instead?
+
+> search about tally REST APIs 
+
+● Web Search("Tally REST API documentation integration")
+  ⎿  Did 1 search in 20s                                                                                                            
+
+● Web Search("Tally Prime API connect external applications 2025")
+  ⎿  Did 1 search in 38s                                                                                                            
+
+● Web Search("Tally TallyConnect API real-time integration")
+  ⎿  Did 1 search in 26s                                                                                                            
+
+● Fetch(https://help.tallysolutions.com/article/DeveloperReference/)
+  ⎿  Received 96.3KB (200 OK)
+
+● Based on my research, here's the critical finding:
+
+  Tally Does NOT Have a Native REST API
+
+  What Tally Actually Offers:
+
+  1. XML over HTTP (Primary method)
+    - Send XML requests to Tally
+    - Receive XML responses
+    - Tally runs as HTTP server (port 9000 by default)
+    - Can create vouchers, read data, export masters
+  2. Third-Party Plugins (TallyPrime GET/POST API)
+    - Converts XML ↔ JSON
+    - Provides REST-like interface
+    - Requires paid plugin installation
+    - GET: Extract data in JSON
+    - POST: Push data to Tally
+  3. ODBC Interface
+    - Direct database access
+    - Query Tally data via SQL
+  4. File-based XML Export/Import
+    - Export XML files
+    - Tally imports from watched folder
+    - Simplest, most reliable
+
+  ---
+  Revised Integration Options
+
+  Option 1: XML File Export (Recommended for MVP)
+
+  Your System → Generate XML file → User imports to Tally
+  - No Tally plugin required
+  - Works offline
+  - Batch processing
+  - Most reliable
+
+  Option 2: HTTP + XML API (Real-time)
+
+  Your System → HTTP POST XML → Tally HTTP Server (port 9000)
+  - Requires Tally running as server
+  - Real-time sync
+  - More complex error handling
+  - Network dependency
+
+  Option 3: Third-Party Plugin (Paid)
+
+  Your System → REST API → TallyPrime GET/POST Plugin → Tally
+  - Requires plugin purchase (~₹10-15K)
+  - JSON instead of XML
+  - Easier for developers
+  - Additional cost for users
+
+  ---
+  Now, should I create the comprehensive MD file with:
+  1. XML File Export approach (free, simple, recommended for MVP)?
+  2. HTTP + XML API approach (real-time, more complex)?
+  3. Both options with pros/cons so you can decide?
+
+  Which direction do you prefer for the detailed plan?
+
+> Isn't this plugin available in normal Tallyprime subscription of 15k 
+
+● Web Search("TallyPrime subscription price 15000 what is included features 2025")
+  ⎿  Did 1 search in 29s                                                                                                            
+
+● Web Search("TallyPrime API plugin included free or paid additional cost")
+  ⎿  Did 1 search in 21s                                                                                                            
+
+● Web Search("TallyPrime GET POST API free with subscription or separate purchase")
+  ⎿  Did 1 search in 22s                                                                                                            
+
+● Excellent catch! You're absolutely right. Let me clarify:
+
+  What's FREE with Standard TallyPrime (₹22,500 Silver):
+
+  ✅ XML over HTTP API (Built-in, no extra cost)
+  - Send XML requests to Tally
+  - Receive XML responses
+  - Tally acts as HTTP server
+  - Create vouchers, read data programmatically
+  - This is included in base subscription
+
+  What's PAID (Separate third-party plugins):
+
+  ❌ GET/POST API Plugins (₹10-15K additional per year)
+  - Third-party tools (api2books.com, tallyprimeapi.com)
+  - Converts XML ↔ JSON
+  - Easier for developers (REST-like interface)
+  - NOT needed if you're willing to work with XML
+
+  ---
+  Revised Integration Recommendation
+
+  Since your users already have TallyPrime (₹15-22K range you mentioned), they already have API access!
+
+  Option 1: HTTP + XML API (FREE, Real-time)
+
+  Your System → HTTP POST (XML) → Tally (port 9000) → XML Response
+  - ✅ No additional cost
+  - ✅ Real-time sync
+  - ✅ Works with existing TallyPrime subscription
+  - ⚠️ Need to build XML request/response handlers
+  - ⚠️ Requires Tally running on local network
+
+  Option 2: XML File Export (FREE, Batch)
+
+  Your System → Generate XML file → User imports to Tally
+  - ✅ No additional cost
+  - ✅ Simpler (no network setup)
+  - ✅ Works offline
+  - ⚠️ Manual import step
+
+  ---
+  My Updated Recommendation:
+
+  Start with Option 2 (XML File Export) for MVP, add Option 1 (HTTP API) in Phase 2
+
+  Why:
+  1. XML file export is simpler to implement and test
+  2. No network/server setup required initially
+  3. Can add real-time HTTP sync later when needed
+  4. Both are FREE (no plugin cost)
+
+  Should I create the comprehensive plan document with both approaches (XML file for MVP, HTTP API for future)?
+
+> I'm liking approach 2, there should be no problem with network, system is straightforward so why will be complex debugging, Tally 
+will always be running in their system but there are multiple warehouses so how will it manage? 
+
+● Great question! The multi-warehouse scenario is critical. Let me think through this:
+
+  Multi-Warehouse Tally Integration Architecture
+
+  Your Current Setup (from PRD):
+
+  Company A (Single Tenant)
+  ├── Warehouse 1 (Mumbai) - Owner + Staff
+  ├── Warehouse 2 (Delhi) - Staff
+  └── Warehouse 3 (Surat) - Staff
+
+  Each warehouse creates:
+  - Invoices
+  - Purchase orders
+  - Dispatch/receipt records
+
+  Tally Setup Options:
+
+  Option A: Centralized Tally (Recommended)
+
+  Head Office
+  └── Tally Server (One instance for company)
+      └── Company: "ABC Fabrics Ltd"
+          ├── Godown 1: Mumbai
+          ├── Godown 2: Delhi
+          └── Godown 3: Surat
+
+  All warehouses → Connect to same Tally → Different Godowns
+
+  How it works:
+  1. Admin configures Tally connection settings (one-time):
+    - Tally Server IP: 192.168.1.100 (head office)
+    - Port: 9000
+    - Company Name: ABC Fabrics Ltd
+  2. When any warehouse creates invoice:
+  <VOUCHER>
+    <DATE>20250115</DATE>
+    <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+    <GODOWNNAME>Mumbai</GODOWNNAME> <!-- Warehouse ID mapped -->
+    ...
+  </VOUCHER>
+  3. System automatically:
+    - Tags invoice with warehouse → godown mapping
+    - Sends to central Tally via HTTP
+    - Tally records under correct godown
+
+  Benefits:
+  - ✅ Single source of truth (one Tally)
+  - ✅ Consolidated reporting across warehouses
+  - ✅ Godown-wise stock reports in Tally
+  - ✅ Owner sees all warehouse data in Tally
+
+  ---
+  Option B: Warehouse-level Tally (NOT Recommended)
+
+  Warehouse 1 → Tally Instance 1
+  Warehouse 2 → Tally Instance 2
+  Warehouse 3 → Tally Instance 3
+
+  Problem: Data silos, consolidation nightmare
+  Don't do this - defeats the purpose of centralized inventory.
+
+  ---
+  Configuration in Your System
+
+  Company Settings (Admin only):
+
+  Tally Integration Settings:
+  ┌─────────────────────────────────────┐
+  │ Enable Tally Integration   [✓]     │
+  │                                     │
+  │ Tally Server IP: 192.168.1.100     │
+  │ Port: 9000                          │
+  │ Company Name: ABC Fabrics Ltd       │
+  │                                     │
+  │ Warehouse → Godown Mapping:         │
+  │ ├─ Mumbai → Mumbai Warehouse        │
+  │ ├─ Delhi → Delhi Branch             │
+  │ └─ Surat → Surat Godown             │
+  │                                     │
+  │ Sync Mode:                          │
+  │ ○ Real-time (HTTP API)              │
+  │ ● Batch Export (Manual)             │
+  │                                     │
+  │ [Test Connection] [Save]            │
+  └─────────────────────────────────────┘
+
+  ---
+  How Multi-Warehouse Sync Works
+
+  Scenario: Mumbai warehouse creates sales invoice
+
+  Step 1: Mumbai staff creates invoice SI-001
+     ↓
+  Step 2: System generates XML with godown tag:
+     <GODOWNNAME>Mumbai Warehouse</GODOWNNAME>
+     ↓
+  Step 3: HTTP POST to Tally at 192.168.1.100:9000
+     ↓
+  Step 4: Tally creates voucher under:
+     - Company: ABC Fabrics Ltd
+     - Godown: Mumbai Warehouse
+     ↓
+  Step 5: System marks invoice as synced
+
+  Scenario: Delhi warehouse creates purchase invoice
+
+  Same Tally server, different godown:
+     <GODOWNNAME>Delhi Branch</GODOWNNAME>
+
+  Both Mumbai and Delhi data → Same Tally company
+
+  ---
+  Network Considerations
+
+  If Tally is at Head Office:
+
+  Internet
+      ↓
+  Head Office (Static IP or VPN)
+  └── Tally Server (192.168.1.100:9000)
+      ↑
+      ├── Mumbai warehouse app (HTTP POST)
+      ├── Delhi warehouse app (HTTP POST)
+      └── Surat warehouse app (HTTP POST)
+
+  Options:
+  1. VPN: All warehouses connect via VPN to head office network
+  2. Static IP + Port Forward: Expose Tally port to internet (less secure)
+  3. Cloud Tally: Some providers offer cloud-hosted Tally
+
+  Security:
+  - Use VPN (recommended)
+  - Or IP whitelist + secure port forwarding
+  - Tally supports user authentication (optional)
+
+  ---
+  Godown (Warehouse) in Tally
+
+  Tally's built-in feature:
+  - Tally has "Godown" master for location tracking
+  - Every stock item can be allocated to godown
+  - Vouchers can specify godown for multi-location inventory
+
+  Your system should:
+  1. Create godown masters in Tally (one-time setup)
+  2. Map your warehouse IDs to Tally godown names
+  3. Include godown in every voucher XML
+
+  Example Godown Creation XML:
+  <ENVELOPE>
+    <BODY>
+      <IMPORTDATA>
+        <REQUESTDESC>
+          <REPORTNAME>All Masters</REPORTNAME>
+        </REQUESTDESC>
+        <REQUESTDATA>
+          <TALLYMESSAGE>
+            <GODOWN NAME="Mumbai Warehouse" ACTION="Create">
+              <NAME>Mumbai Warehouse</NAME>
+              <PARENT>Primary</PARENT>
+            </GODOWN>
+          </TALLYMESSAGE>
+        </REQUESTDATA>
+      </IMPORTDATA>
+    </BODY>
+  </ENVELOPE>
+
+  ---
+  Updated Recommendation
+
+  Use HTTP + XML API (Real-time) with:
+  1. ✅ Centralized Tally at head office
+  2. ✅ Warehouse → Godown mapping
+  3. ✅ VPN for secure connectivity
+  4. ✅ Real-time sync from all warehouses
+  5. ✅ Fallback to batch export if network issues
+
+  Configuration steps:
+  1. Admin sets up Tally connection (one per company)
+  2. Map warehouses to godowns
+  3. Test connection from each warehouse
+  4. Enable real-time sync
+
+  Does this address the multi-warehouse concern? Should I proceed with creating the comprehensive MD plan with this architecture?
+
+> No VPN, tell me with whitelisting and port forwarding, how to check if owner has TallyPrime silver or not 
+
+● Port Forwarding + IP Whitelisting Setup (No VPN)
+
+  Head Office Network Setup:
+
+  Internet (Public IP: 203.0.113.50)
+      ↓
+  Router/Firewall
+      ↓ Port Forward: 9000 → 192.168.1.100:9000
+      ↓ IP Whitelist: [Warehouse IPs only]
+      ↓
+  Tally Server (192.168.1.100:9000)
+
+  Step-by-Step Configuration:
+
+  1. Head Office (Where Tally runs):
+
+  A. Reserve Static Local IP for Tally PC:
+     - Router settings → DHCP → Reserve IP
+     - Tally PC MAC Address → Always get 192.168.1.100
+
+  B. Enable Tally as HTTP Server:
+     - Open TallyPrime
+     - Gateway of Tally → F1 (Help) → Settings → Connectivity
+     - Enable "Act as TallyPrime Server"
+     - Port: 9000 (default)
+     - [Save]
+
+  C. Configure Router Port Forwarding:
+     - Login to router (192.168.1.1)
+     - Port Forwarding / Virtual Server section
+     - Add Rule:
+       External Port: 9000
+       Internal IP: 192.168.1.100
+       Internal Port: 9000
+       Protocol: TCP
+
+  D. IP Whitelisting (Firewall Rules):
+     - Only allow these IPs to access port 9000:
+       Mumbai warehouse: 203.0.113.51
+       Delhi warehouse: 203.0.113.52
+       Surat warehouse: 203.0.113.53
+     - Block all other IPs
+
+  E. Get Public IP:
+     - Visit whatismyip.com from head office
+     - Note: 203.0.113.50 (your public IP)
+     - If dynamic IP, use DDNS service (DynDNS, No-IP)
+
+  2. Warehouses Configuration (In your app):
+
+  Tally Settings:
+  ┌─────────────────────────────────────┐
+  │ Tally Server URL:                  │
+  │ http://203.0.113.50:9000           │
+  │                                     │
+  │ Company Name: ABC Fabrics Ltd       │
+  │                                     │
+  │ [Test Connection]                   │
+  └─────────────────────────────────────┘
+
+  When warehouse creates invoice:
+  → HTTP POST to http://203.0.113.50:9000
+  → Firewall checks source IP (whitelisted?)
+  → Router forwards to 192.168.1.100:9000
+  → Tally processes request
+
+  Security Considerations:
+
+  ✅ Good enough for small businesses:
+  - IP whitelisting blocks unauthorized access
+  - Only your warehouses can connect
+  - Simpler than VPN setup
+
+  ⚠️ Limitations:
+  - Warehouse needs static IP (or DDNS)
+  - XML data travels unencrypted over internet
+  - If warehouse IP changes, update whitelist
+
+  🔒 Enhanced security (optional):
+  - Use HTTPS reverse proxy (nginx + SSL)
+  - Add basic authentication to Tally XML requests
+  - Restrict to business hours only in firewall
+
+  ---
+  How to Check TallyPrime Edition (Silver vs Gold)
+
+  Option 1: Ask User During Setup (Recommended)
+
+  Setup Wizard → Tally Integration:
+
+  ┌─────────────────────────────────────┐
+  │ Do you have TallyPrime?             │
+  │                                     │
+  │ ○ Yes, I have TallyPrime           │
+  │ ○ No, I don't use Tally            │
+  │                                     │
+  │ Which edition?                      │
+  │ ○ Silver (Single User)              │
+  │ ○ Gold (Multi User)                 │
+  │ ○ Server (Enterprise)               │
+  │                                     │
+  │ Why we ask: We need to know if      │
+  │ multiple users can connect to       │
+  │ Tally simultaneously.               │
+  │                                     │
+  │ [Continue]                          │
+  └─────────────────────────────────────┘
+
+  Why it matters:
+  - Silver (Single User): Only 1 connection at a time
+    - If 2 warehouses try to sync simultaneously → Error
+    - Need queue system (wait for turn)
+  - Gold (Multi User): Multiple concurrent connections
+    - All warehouses can sync simultaneously
+    - No queue needed
+
+  ---
+  Option 2: Auto-detect via Tally XML Query
+
+  Query Tally for license info:
+
+  <!-- Request -->
+  <ENVELOPE>
+    <HEADER>
+      <VERSION>1</VERSION>
+      <TALLYREQUEST>Export</TALLYREQUEST>
+      <TYPE>Data</TYPE>
+      <ID>LicenseInfo</ID>
+    </HEADER>
+    <BODY>
+      <DESC>
+        <STATICVARIABLES>
+          <SVEXPORTFORMAT>$$SysName:HTML</SVEXPORTFORMAT>
+        </STATICVARIABLES>
+        <TDL>
+          <TDLMESSAGE>
+            <REPORT NAME="LicenseInfo">
+              <FORMS>LicenseForm</FORMS>
+            </REPORT>
+            <FORM NAME="LicenseForm">
+              <PARTS>LicensePart</PARTS>
+            </FORM>
+            <PART NAME="LicensePart">
+              <LINES>LicenseLine</LINES>
+            </PART>
+            <LINE NAME="LicenseLine">
+              <FIELDS>LicenseField</FIELDS>
+            </LINE>
+            <FIELD NAME="LicenseField">
+              <SET>$$LicenseInfo</SET>
+            </FIELD>
+          </TDLMESSAGE>
+        </TDL>
+      </DESC>
+    </BODY>
+  </ENVELOPE>
+
+  Response will contain:
+  - License serial number
+  - Edition type (Silver/Gold/Server)
+  - Expiry date
+  - Number of users allowed
+
+  Parse response to determine edition.
+
+  ---
+  Option 3: Test Concurrent Connections
+
+  // During setup, test if multi-user is supported
+  async function detectTallyEdition() {
+    try {
+      // Open connection 1
+      const conn1 = await connectTally();
+
+      // Try opening connection 2 simultaneously
+      const conn2 = await connectTally();
+
+      // If both succeed → Gold or Server (multi-user)
+      // If second fails → Silver (single-user)
+
+      return conn2.success ? 'GOLD' : 'SILVER';
+    } catch (error) {
+      return 'SILVER'; // Assume single-user on error
+    }
+  }
+
+  ---
+  Handling Single-User (Silver) Limitation
+
+  Queue System for Silver:
+
+  // Sync Queue Manager
+  class TallySyncQueue {
+    constructor() {
+      this.queue = [];
+      this.processing = false;
+    }
+
+    async addToQueue(invoice) {
+      this.queue.push(invoice);
+
+      if (!this.processing) {
+        await this.processQueue();
+      }
+    }
+
+    async processQueue() {
+      this.processing = true;
+
+      while (this.queue.length > 0) {
+        const invoice = this.queue.shift();
+
+        try {
+          await sendToTally(invoice);
+          markAsSynced(invoice.id);
+        } catch (error) {
+          // Retry or mark as failed
+          handleSyncError(invoice, error);
+        }
+
+        // Wait 2 seconds between requests (for Silver)
+        await delay(2000);
+      }
+
+      this.processing = false;
+    }
+  }
+
+  UI for queued sync:
+  Accounting Dashboard:
+  ┌─────────────────────────────────────┐
+  │ Tally Sync Status                   │
+  ├─────────────────────────────────────┤
+  │ ⏳ 5 invoices in queue              │
+  │ ✓ Last synced: 2 minutes ago       │
+  │                                     │
+  │ Note: Your TallyPrime Silver allows │
+  │ one connection at a time. Invoices  │
+  │ sync in queue automatically.        │
+  │                                     │
+  │ [View Queue]                        │
+  └─────────────────────────────────────┘
+
+  ---
+  Recommended Implementation
+
+  1. During Setup:
+  - Ask user which Tally edition they have
+  - Store in company settings: tally_edition: 'SILVER' | 'GOLD'
+
+  2. Sync Behavior:
+  - Silver: Use queue system, sequential sync
+  - Gold: Parallel sync from all warehouses
+
+  3. Network Config:
+  - Guide user through port forwarding setup
+  - Provide IP whitelisting instructions
+  - Test connection button validates setup
+
+  4. Fallback:
+  - If HTTP fails, offer XML file export
+  - User manually imports to Tally
+
+  ---
+  Updated Architecture Diagram
+
+  Mumbai Warehouse (IP: 203.0.113.51)
+    ↓ Creates invoice SI-001
+    ↓ HTTP POST XML
+    ↓
+  Delhi Warehouse (IP: 203.0.113.52)
+    ↓ Creates invoice SI-002
+    ↓ HTTP POST XML (queued if Silver)
+    ↓
+  Internet
+    ↓
+  Head Office Firewall (IP: 203.0.113.50)
+    ├─ Whitelist: Only 203.0.113.51, .52, .53
+    ├─ Port Forward: 9000 → 192.168.1.100:9000
+    ↓
+  Tally Server (192.168.1.100:9000)
+    ├─ Company: ABC Fabrics Ltd
+    ├─ Edition: Silver (1 user) or Gold (multi-user)
+    └─ Godowns: Mumbai, Delhi, Surat
+
+  ---
+  Ready for comprehensive MD plan with this architecture?
+
+> No design for queue only, share me final plan 
+
+● Accounting Integration Plan: Invoice Management + Tally Sync
+
+  Executive Summary
+
+  Objective: Build invoice management system that bridges inventory operations with TallyPrime accounting, eliminating double-entry
+  while keeping Tally as the GST compliance system.
+
+  Strategy:
+  - Invoice generation linked to Sales/Purchase Orders
+  - Real-time HTTP + XML sync with TallyPrime
+  - Multi-warehouse support via Tally Godowns
+  - Queue-based sync for TallyPrime Silver edition
+  - No full accounting module (defer Chart of Accounts to Phase 2)
+
+  Target Users: Fabric traders already using TallyPrime (₹22,500 Silver / ₹67,500 Gold)
+
+  ---
+  Phase 1: Core Features (MVP)
+
+  1. Purchase Order Management
+
+  2. Sales & Purchase Invoice Entities
+
+  3. Accountant Role & RBAC
+
+  4. Invoice Creation Workflows
+
+  5. GST Invoice PDF Generation
+
+  6. TallyPrime HTTP XML Sync
+
+  7. Multi-Warehouse Godown Mapping
+
+  8. Basic Payment Tracking
+
+  ---
+  Feature Specifications
+
+  1. Purchase Order Management
+
+  Feature Description: Order management for purchases from suppliers/vendors (parallel to existing Sales Orders)
+
+  Database Schema:
+
+  -- Purchase Orders table
+  CREATE TABLE purchase_orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- Order identification
+    order_number TEXT NOT NULL UNIQUE, -- Format: PO-{SEQUENCE}
+    order_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    expected_delivery_date DATE,
+
+    -- Relationships
+    company_id UUID NOT NULL REFERENCES companies(id),
+    warehouse_id UUID NOT NULL REFERENCES warehouses(id),
+    supplier_id UUID NOT NULL REFERENCES partners(id), -- Type = Supplier/Vendor
+    agent_id UUID REFERENCES partners(id), -- Type = Agent, optional
+
+    -- Order details
+    notes TEXT,
+    attachments JSONB DEFAULT '[]', -- Array of file URLs
+
+    -- Status tracking
+    status TEXT NOT NULL DEFAULT 'pending'
+      CHECK (status IN ('pending', 'partially_received', 'completed', 'cancelled')),
+    status_changed_at TIMESTAMPTZ,
+    status_changed_by UUID REFERENCES auth.users(id),
+    status_notes TEXT, -- Completion notes or cancellation reason
+
+    -- Financial
+    total_amount DECIMAL(15,2),
+    advance_amount DECIMAL(15,2),
+    discount_percentage DECIMAL(5,2) DEFAULT 0 CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
+
+    -- Tally sync
+    synced_to_tally BOOLEAN DEFAULT FALSE,
+    tally_sync_at TIMESTAMPTZ,
+    tally_sync_error TEXT,
+
+    -- Audit
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_by UUID REFERENCES auth.users(id),
+    updated_by UUID REFERENCES auth.users(id),
+    deleted_at TIMESTAMPTZ
+  );
+
+  -- Purchase Order Line Items
+  CREATE TABLE purchase_order_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    purchase_order_id UUID NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES products(id),
+
+    -- Quantities
+    required_quantity DECIMAL(15,3) NOT NULL,
+    received_quantity DECIMAL(15,3) DEFAULT 0,
+    pending_quantity DECIMAL(15,3) GENERATED ALWAYS AS (required_quantity - received_quantity) STORED,
+
+    -- Pricing
+    unit_rate DECIMAL(15,2),
+    line_total DECIMAL(15,2) GENERATED ALWAYS AS (required_quantity * unit_rate) STORED,
+
+    -- Audit
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
+
+  -- Indexes
+  CREATE INDEX idx_po_company ON purchase_orders(company_id);
+  CREATE INDEX idx_po_warehouse ON purchase_orders(warehouse_id);
+  CREATE INDEX idx_po_supplier ON purchase_orders(supplier_id);
+  CREATE INDEX idx_po_status ON purchase_orders(status);
+  CREATE INDEX idx_po_order_number ON purchase_orders(order_number);
+  CREATE INDEX idx_po_items_po ON purchase_order_items(purchase_order_id);
+
+  Business Rules:
+
+  1. Order Number: Auto-generated sequence PO-{SEQUENCE} (company-scoped)
+  2. Warehouse Assignment: Order tied to specific warehouse (staff see only their warehouse orders)
+  3. Status Workflow:
+    - pending → Initial state
+    - partially_received → Some items received (auto-update when goods receipt created)
+    - completed → All items received (requires completion notes)
+    - cancelled → Order cancelled (requires cancellation reason)
+  4. Fulfillment Tracking:
+    - Received quantity updates from linked goods_receipts
+    - Pending quantity auto-calculated: required_quantity - received_quantity
+  5. Supplier Validation: Must be Partner with type = Supplier or Vendor
+  6. Agent: Optional, must be Partner with type = Agent
+
+  Access Control: See RBAC section below
+
+  ---
+  2. Invoice Entities
+
+  2.1 Sales Invoice
+
+  Feature Description: GST-compliant sales invoices linked to Sales Orders
+
+  Database Schema:
+
+  -- Sales Invoices
+  CREATE TABLE sales_invoices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- Invoice identification
+    invoice_number TEXT NOT NULL UNIQUE, -- Format: SI-{SEQUENCE}
+    invoice_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    due_date DATE,
+
+    -- Relationships
+    company_id UUID NOT NULL REFERENCES companies(id),
+    warehouse_id UUID REFERENCES warehouses(id), -- Can be NULL for catalog orders
+    customer_id UUID NOT NULL REFERENCES partners(id), -- Type = Customer
+    agent_id UUID REFERENCES partners(id), -- Type = Agent, optional
+
+    -- Invoice details
+    notes TEXT,
+    attachments JSONB DEFAULT '[]',
+
+    -- Linking
+    sales_order_ids UUID[] DEFAULT '{}', -- Can link to multiple orders
+
+    -- Financial
+    subtotal DECIMAL(15,2) NOT NULL,
+    discount_percentage DECIMAL(5,2) DEFAULT 0,
+    discount_amount DECIMAL(15,2) DEFAULT 0,
+    taxable_amount DECIMAL(15,2) NOT NULL,
+
+    -- GST breakdown
+    cgst_rate DECIMAL(5,2) DEFAULT 0,
+    cgst_amount DECIMAL(15,2) DEFAULT 0,
+    sgst_rate DECIMAL(5,2) DEFAULT 0,
+    sgst_amount DECIMAL(15,2) DEFAULT 0,
+    igst_rate DECIMAL(5,2) DEFAULT 0,
+    igst_amount DECIMAL(15,2) DEFAULT 0,
+
+    total_amount DECIMAL(15,2) NOT NULL,
+
+    -- Payment tracking
+    paid_amount DECIMAL(15,2) DEFAULT 0,
+    balance_amount DECIMAL(15,2) GENERATED ALWAYS AS (total_amount - paid_amount) STORED,
+
+    -- Status
+    status TEXT NOT NULL DEFAULT 'draft'
+      CHECK (status IN ('draft', 'sent', 'partially_paid', 'paid', 'overdue', 'cancelled')),
+
+    -- Tally sync
+    synced_to_tally BOOLEAN DEFAULT FALSE,
+    tally_sync_at TIMESTAMPTZ,
+    tally_sync_error TEXT,
+    tally_voucher_number TEXT, -- Tally's internal voucher number
+
+    -- Audit
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_by UUID REFERENCES auth.users(id),
+    updated_by UUID REFERENCES auth.users(id),
+    deleted_at TIMESTAMPTZ
+  );
+
+  -- Sales Invoice Line Items
+  CREATE TABLE sales_invoice_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    sales_invoice_id UUID NOT NULL REFERENCES sales_invoices(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES products(id),
+    sales_order_item_id UUID REFERENCES sales_order_items(id), -- Link to original order line
+
+    -- Item details
+    description TEXT,
+    hsn_code TEXT, -- From product, editable
+
+    -- Quantities
+    quantity DECIMAL(15,3) NOT NULL,
+    unit_rate DECIMAL(15,2) NOT NULL,
+
+    -- Amounts
+    line_total DECIMAL(15,2) GENERATED ALWAYS AS (quantity * unit_rate) STORED,
+    discount_amount DECIMAL(15,2) DEFAULT 0,
+    taxable_amount DECIMAL(15,2),
+
+    -- GST per line item
+    cgst_rate DECIMAL(5,2) DEFAULT 0,
+    cgst_amount DECIMAL(15,2) DEFAULT 0,
+    sgst_rate DECIMAL(5,2) DEFAULT 0,
+    sgst_amount DECIMAL(15,2) DEFAULT 0,
+    igst_rate DECIMAL(5,2) DEFAULT 0,
+    igst_amount DECIMAL(15,2) DEFAULT 0,
+
+    total_amount DECIMAL(15,2),
+
+    -- Audit
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
+
+  -- Indexes
+  CREATE INDEX idx_si_company ON sales_invoices(company_id);
+  CREATE INDEX idx_si_warehouse ON sales_invoices(warehouse_id);
+  CREATE INDEX idx_si_customer ON sales_invoices(customer_id);
+  CREATE INDEX idx_si_status ON sales_invoices(status);
+  CREATE INDEX idx_si_invoice_number ON sales_invoices(invoice_number);
+  CREATE INDEX idx_si_synced ON sales_invoices(synced_to_tally);
+  CREATE INDEX idx_si_items_invoice ON sales_invoice_items(sales_invoice_id);
+
+  2.2 Purchase Invoice
+
+  Feature Description: Record supplier bills linked to Purchase Orders
+
+  Database Schema:
+
+  -- Purchase Invoices
+  CREATE TABLE purchase_invoices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- Invoice identification
+    invoice_number TEXT NOT NULL, -- Supplier's invoice number
+    invoice_date DATE NOT NULL,
+    due_date DATE,
+
+    -- Relationships
+    company_id UUID NOT NULL REFERENCES companies(id),
+    warehouse_id UUID REFERENCES warehouses(id),
+    supplier_id UUID NOT NULL REFERENCES partners(id), -- Type = Supplier/Vendor
+    agent_id UUID REFERENCES partners(id), -- Type = Agent, optional
+
+    -- Invoice details
+    notes TEXT,
+    attachments JSONB DEFAULT '[]',
+
+    -- Linking
+    purchase_order_ids UUID[] DEFAULT '{}', -- Can link to multiple POs
+
+    -- Financial (same structure as sales invoice)
+    subtotal DECIMAL(15,2) NOT NULL,
+    discount_percentage DECIMAL(5,2) DEFAULT 0,
+    discount_amount DECIMAL(15,2) DEFAULT 0,
+    taxable_amount DECIMAL(15,2) NOT NULL,
+
+    -- GST breakdown
+    cgst_rate DECIMAL(5,2) DEFAULT 0,
+    cgst_amount DECIMAL(15,2) DEFAULT 0,
+    sgst_rate DECIMAL(5,2) DEFAULT 0,
+    sgst_amount DECIMAL(15,2) DEFAULT 0,
+    igst_rate DECIMAL(5,2) DEFAULT 0,
+    igst_amount DECIMAL(15,2) DEFAULT 0,
+
+    total_amount DECIMAL(15,2) NOT NULL,
+
+    -- Payment tracking
+    paid_amount DECIMAL(15,2) DEFAULT 0,
+    balance_amount DECIMAL(15,2) GENERATED ALWAYS AS (total_amount - paid_amount) STORED,
+
+    -- Status
+    status TEXT NOT NULL DEFAULT 'pending'
+      CHECK (status IN ('pending', 'partially_paid', 'paid', 'overdue')),
+
+    -- Tally sync
+    synced_to_tally BOOLEAN DEFAULT FALSE,
+    tally_sync_at TIMESTAMPTZ,
+    tally_sync_error TEXT,
+    tally_voucher_number TEXT,
+
+    -- Audit
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_by UUID REFERENCES auth.users(id),
+    updated_by UUID REFERENCES auth.users(id),
+    deleted_at TIMESTAMPTZ
+  );
+
+  -- Purchase Invoice Line Items
+  CREATE TABLE purchase_invoice_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    purchase_invoice_id UUID NOT NULL REFERENCES purchase_invoices(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES products(id),
+    purchase_order_item_id UUID REFERENCES purchase_order_items(id),
+
+    -- Item details
+    description TEXT,
+    hsn_code TEXT,
+
+    -- Quantities & pricing (same as sales)
+    quantity DECIMAL(15,3) NOT NULL,
+    unit_rate DECIMAL(15,2) NOT NULL,
+    line_total DECIMAL(15,2) GENERATED ALWAYS AS (quantity * unit_rate) STORED,
+    discount_amount DECIMAL(15,2) DEFAULT 0,
+    taxable_amount DECIMAL(15,2),
+
+    -- GST per line item
+    cgst_rate DECIMAL(5,2) DEFAULT 0,
+    cgst_amount DECIMAL(15,2) DEFAULT 0,
+    sgst_rate DECIMAL(5,2) DEFAULT 0,
+    sgst_amount DECIMAL(15,2) DEFAULT 0,
+    igst_rate DECIMAL(5,2) DEFAULT 0,
+    igst_amount DECIMAL(15,2) DEFAULT 0,
+
+    total_amount DECIMAL(15,2),
+
+    -- Audit
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
+
+  -- Indexes
+  CREATE INDEX idx_pi_company ON purchase_invoices(company_id);
+  CREATE INDEX idx_pi_warehouse ON purchase_invoices(warehouse_id);
+  CREATE INDEX idx_pi_supplier ON purchase_invoices(supplier_id);
+  CREATE INDEX idx_pi_status ON purchase_invoices(status);
+  CREATE INDEX idx_pi_synced ON purchase_invoices(synced_to_tally);
+  CREATE INDEX idx_pi_items_invoice ON purchase_invoice_items(purchase_invoice_id);
+
+  Business Rules:
+
+  Sales Invoice:
+  1. Invoice Number: Auto-generated SI-{SEQUENCE} (company-scoped, no gaps)
+  2. Partial Invoicing: Can invoice partial quantity from sales order
+  3. Multiple Orders: Can consolidate multiple orders into one invoice
+  4. Status Workflow:
+    - draft → Editable, not sent
+    - sent → Sent to customer, not editable
+    - partially_paid → Auto-update when payment recorded
+    - paid → Fully paid
+    - overdue → Due date passed, balance > 0
+    - cancelled → Invoice cancelled
+  5. GST Calculation:
+    - Intra-state: CGST + SGST
+    - Inter-state: IGST
+    - Auto-calculate based on company state vs customer state
+  6. Warehouse Link:
+    - Required for inventory app invoices
+    - Optional for catalog invoices (assigned later)
+
+  Purchase Invoice:
+  1. Invoice Number: Supplier's invoice number (not auto-generated)
+  2. Verification: Match against purchase order and goods receipt quantities
+  3. Status: Auto-update based on payments
+
+  ---
+  3. Payment Tracking
+
+  Database Schema:
+
+  -- Payment Entries
+  CREATE TABLE payment_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- Payment identification
+    payment_number TEXT NOT NULL UNIQUE, -- Format: PMT-{SEQUENCE}
+    payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
+
+    -- Relationships
+    company_id UUID NOT NULL REFERENCES companies(id),
+
+    -- Payment type
+    payment_type TEXT NOT NULL CHECK (payment_type IN ('received', 'paid')),
+
+    -- Party
+    partner_id UUID NOT NULL REFERENCES partners(id),
+
+    -- Linked invoices (can pay multiple invoices at once)
+    sales_invoice_ids UUID[] DEFAULT '{}',
+    purchase_invoice_ids UUID[] DEFAULT '{}',
+
+    -- Amount
+    amount DECIMAL(15,2) NOT NULL,
+
+    -- Payment method
+    payment_mode TEXT CHECK (payment_mode IN ('cash', 'bank_transfer', 'cheque', 'upi', 'other')),
+    reference_number TEXT, -- Cheque/transaction number
+
+    -- Notes
+    notes TEXT,
+
+    -- Tally sync
+    synced_to_tally BOOLEAN DEFAULT FALSE,
+    tally_sync_at TIMESTAMPTZ,
+    tally_voucher_number TEXT,
+
+    -- Audit
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_by UUID REFERENCES auth.users(id),
+    updated_by UUID REFERENCES auth.users(id),
+    deleted_at TIMESTAMPTZ
+  );
+
+  -- Payment Allocations (split payment across multiple invoices)
+  CREATE TABLE payment_allocations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    payment_entry_id UUID NOT NULL REFERENCES payment_entries(id) ON DELETE CASCADE,
+    sales_invoice_id UUID REFERENCES sales_invoices(id),
+    purchase_invoice_id UUID REFERENCES purchase_invoices(id),
+
+    allocated_amount DECIMAL(15,2) NOT NULL,
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+
+    -- Ensure either sales or purchase invoice (not both)
+    CONSTRAINT check_invoice_type CHECK (
+      (sales_invoice_id IS NOT NULL AND purchase_invoice_id IS NULL) OR
+      (sales_invoice_id IS NULL AND purchase_invoice_id IS NOT NULL)
+    )
+  );
+
+  -- Indexes
+  CREATE INDEX idx_payment_company ON payment_entries(company_id);
+  CREATE INDEX idx_payment_partner ON payment_entries(partner_id);
+  CREATE INDEX idx_payment_type ON payment_entries(payment_type);
+  CREATE INDEX idx_payment_synced ON payment_entries(synced_to_tally);
+
+  Business Rules:
+
+  1. Payment Number: Auto-generated PMT-{SEQUENCE}
+  2. Payment Type:
+    - received → From customers (against sales invoices)
+    - paid → To suppliers (against purchase invoices)
+  3. Multi-Invoice Payment: Single payment can be allocated across multiple invoices
+  4. Auto-update Invoice Status:
+    - When payment allocated → update paid_amount on invoice
+    - If paid_amount >= total_amount → status = paid
+    - If paid_amount > 0 and < total_amount → status = partially_paid
+  5. Sync to Tally: Payment synced as Receipt/Payment voucher
+
+  ---
+  4. Tally Integration Configuration
+
+  Database Schema:
+
+  -- Tally Settings (per company)
+  CREATE TABLE tally_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    company_id UUID NOT NULL UNIQUE REFERENCES companies(id),
+
+    -- Connection settings
+    enabled BOOLEAN DEFAULT FALSE,
+    tally_url TEXT, -- e.g., http://203.0.113.50:9000
+    tally_company_name TEXT, -- Exact name in Tally
+
+    -- Edition detection
+    tally_edition TEXT CHECK (tally_edition IN ('SILVER', 'GOLD', 'SERVER')),
+
+    -- Sync mode
+    sync_mode TEXT DEFAULT 'manual' CHECK (sync_mode IN ('manual', 'auto')),
+
+    -- Warehouse → Godown mapping
+    godown_mapping JSONB DEFAULT '{}', -- {warehouse_id: "Tally Godown Name"}
+
+    -- Last sync
+    last_sync_at TIMESTAMPTZ,
+    last_sync_status TEXT,
+
+    -- Audit
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_by UUID REFERENCES auth.users(id)
+  );
+
+  -- Tally Sync Queue (for Silver edition)
+  CREATE TABLE tally_sync_queue (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    company_id UUID NOT NULL REFERENCES companies(id),
+
+    -- What to sync
+    entity_type TEXT NOT NULL CHECK (entity_type IN ('sales_invoice', 'purchase_invoice', 'payment')),
+    entity_id UUID NOT NULL,
+
+    -- Queue management
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+    retry_count INTEGER DEFAULT 0,
+    max_retries INTEGER DEFAULT 3,
+
+    -- Error tracking
+    error_message TEXT,
+
+    -- Timing
+    queued_at TIMESTAMPTZ DEFAULT NOW(),
+    processed_at TIMESTAMPTZ,
+
+    -- XML payload (for debugging)
+    xml_request TEXT,
+    xml_response TEXT
+  );
+
+  -- Indexes
+  CREATE INDEX idx_tally_queue_company ON tally_sync_queue(company_id);
+  CREATE INDEX idx_tally_queue_status ON tally_sync_queue(status);
+  CREATE INDEX idx_tally_queue_entity ON tally_sync_queue(entity_type, entity_id);
+
+  ---
+  Role-Based Access Control (RBAC)
+
+  New Role: Accountant
+
+  User Roles:
+  -- Update user_roles enum
+  ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'accountant';
+
+  -- Roles: 'admin', 'staff', 'accountant'
+
+  Permissions Matrix
+
+  | Feature              | Admin              | Accountant         | Staff                             |
+  |----------------------|--------------------|--------------------|-----------------------------------|
+  | Purchase Orders      |                    |                    |                                   |
+  | Create               | ✅                  | ❌                  | ❌                                 |
+  | Read                 | ✅ (All warehouses) | ✅ (All warehouses) | ✅ (Assigned warehouse)            |
+  | Update               | ✅                  | ❌                  | ❌                                 |
+  | Delete               | ✅                  | ❌                  | ❌                                 |
+  | Sales Invoices       |                    |                    |                                   |
+  | Create               | ✅                  | ✅                  | ❌                                 |
+  | Read                 | ✅ (All warehouses) | ✅ (All warehouses) | ✅ (Assigned warehouse, list view) |
+  | Update (Draft)       | ✅                  | ✅                  | ❌                                 |
+  | Update (Sent/Paid)   | ✅                  | ❌                  | ❌                                 |
+  | Delete               | ✅                  | ❌                  | ❌                                 |
+  | Cancel               | ✅                  | ✅                  | ❌                                 |
+  | Purchase Invoices    |                    |                    |                                   |
+  | Create               | ✅                  | ✅                  | ❌                                 |
+  | Read                 | ✅ (All warehouses) | ✅ (All warehouses) | ❌                                 |
+  | Update               | ✅                  | ✅                  | ❌                                 |
+  | Delete               | ✅                  | ❌                  | ❌                                 |
+  | Payment Entries      |                    |                    |                                   |
+  | Create               | ✅                  | ✅                  | ❌                                 |
+  | Read                 | ✅                  | ✅                  | ❌                                 |
+  | Update               | ✅                  | ✅                  | ❌                                 |
+  | Delete               | ✅                  | ❌                  | ❌                                 |
+  | Tally Settings       |                    |                    |                                   |
+  | Configure            | ✅                  | ❌                  | ❌                                 |
+  | Test Connection      | ✅                  | ✅                  | ❌                                 |
+  | Manual Sync          | ✅                  | ✅                  | ❌                                 |
+  | View Sync Status     | ✅                  | ✅                  | ❌                                 |
+  | Inventory Operations |                    |                    |                                   |
+  | Goods Receipt        | ✅ (All)            | ❌                  | ✅ (Assigned warehouse)            |
+  | Goods Dispatch       | ✅ (All)            | ❌                  | ✅ (Assigned warehouse)            |
+  | Stock Units          | ✅ (All)            | ✅ (Read-only)      | ✅ (Assigned warehouse)            |
+  | Reports              |                    |                    |                                   |
+  | Accounting Reports   | ✅                  | ✅                  | ❌                                 |
+  | Inventory Reports    | ✅                  | ✅ (Read-only)      | ✅ (Assigned warehouse)            |
+
+  Accountant Profile
+
+  Database Schema:
+
+  -- Extend users table or create accountant_profiles
+  ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'staff'
+    CHECK (role IN ('admin', 'staff', 'accountant'));
+
+  -- No warehouse assignment for accountants (company-wide access)
+
+  Characteristics:
+  - Company-wide access (not warehouse-restricted)
+  - Focus on billing & payments
+  - Read-only access to inventory data
+  - Cannot manage physical stock operations
+
+  ---
+  Business Rules
+
+  Invoice Creation Rules
+
+  1. From Sales Order (Full Invoice):
+  User Flow:
+  1. Navigate to Sales Order (status: approval_pending or in_progress)
+  2. Click "Create Invoice"
+  3. System pre-fills:
+     - Customer from order
+     - All line items with full quantities
+     - Rates from order
+     - Auto-calculate GST
+  4. Accountant reviews/modifies:
+     - Invoice date
+     - Due date
+     - Discount
+     - GST rates (if different from default)
+  5. Save as Draft or Finalize
+  6. Print/Email/WhatsApp invoice
+
+  2. From Sales Order (Partial Invoice):
+  User Flow:
+  1. Same as above, but:
+  2. Accountant edits quantities (less than ordered)
+  3. System validates: invoice_qty <= (order_qty - already_invoiced_qty)
+  4. Can create multiple partial invoices until fully invoiced
+
+  3. Standalone Invoice (No Order):
+  User Flow (for walk-in sales):
+  1. Click "New Sales Invoice"
+  2. Select customer (or create quick customer)
+  3. Add products manually
+  4. Set quantities, rates, GST
+  5. Save and print
+
+  4. Consolidated Invoice (Multiple Orders):
+  User Flow:
+  1. Filter orders by customer
+  2. Select multiple orders (checkboxes)
+  3. Click "Create Consolidated Invoice"
+  4. System merges line items (group by product)
+  5. Single invoice references multiple order numbers
+
+  GST Calculation Rules
+
+  Auto-detect Intra-state vs Inter-state:
+
+  // Business logic
+  function calculateGST(company, customer, lineItems) {
+    const companyState = company.state;
+    const customerState = customer.state;
+
+    const isIntraState = (companyState === customerState);
+
+    lineItems.forEach(item => {
+      const taxableAmount = item.quantity * item.unit_rate - item.discount_amount;
+
+      if (isIntraState) {
+        // CGST + SGST
+        item.cgst_rate = getGSTRate(item.product.hsn_code) / 2; // e.g., 9%
+        item.sgst_rate = item.cgst_rate; // 9%
+        item.cgst_amount = taxableAmount * item.cgst_rate / 100;
+        item.sgst_amount = taxableAmount * item.sgst_rate / 100;
+        item.igst_rate = 0;
+        item.igst_amount = 0;
+      } else {
+        // IGST
+        item.igst_rate = getGSTRate(item.product.hsn_code); // e.g., 18%
+        item.igst_amount = taxableAmount * item.igst_rate / 100;
+        item.cgst_rate = 0;
+        item.sgst_rate = 0;
+        item.cgst_amount = 0;
+        item.sgst_amount = 0;
+      }
+
+      item.total_amount = taxableAmount + item.cgst_amount + item.sgst_amount + item.igst_amount;
+    });
+
+    return lineItems;
+  }
+
+  Invoice Status Auto-update Rules
+
+  Sales Invoice:
+  -- Trigger function to update status
+  CREATE OR REPLACE FUNCTION update_sales_invoice_status()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    -- Check if fully paid
+    IF NEW.paid_amount >= NEW.total_amount THEN
+      NEW.status = 'paid';
+    ELSIF NEW.paid_amount > 0 THEN
+      NEW.status = 'partially_paid';
+    ELSIF NEW.due_date < CURRENT_DATE AND NEW.balance_amount > 0 THEN
+      NEW.status = 'overdue';
+    END IF;
+
+    RETURN NEW;
+  END;
+  $$ LANGUAGE plpgsql;
+
+  CREATE TRIGGER trg_update_sales_invoice_status
+    BEFORE UPDATE ON sales_invoices
+    FOR EACH ROW
+    WHEN (OLD.paid_amount IS DISTINCT FROM NEW.paid_amount)
+    EXECUTE FUNCTION update_sales_invoice_status();
+
+  Multi-Warehouse Tally Sync Rules
+
+  1. Warehouse → Godown Mapping:
+
+  // Admin configures mapping (one-time setup)
+  const godownMapping = {
+    "warehouse_uuid_1": "Mumbai Warehouse",
+    "warehouse_uuid_2": "Delhi Branch",
+    "warehouse_uuid_3": "Surat Godown"
+  };
+
+  // Stored in tally_settings.godown_mapping
+
+  2. Include Godown in XML:
+
+  <!-- Sales Invoice XML -->
+  <VOUCHER>
+    <DATE>20250115</DATE>
+    <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+    <PARTYLEDGERNAME>Customer Name</PARTYLEDGERNAME>
+
+    <!-- Inventory allocations include godown -->
+    <ALLINVENTORYENTRIES.LIST>
+      <STOCKITEMNAME>Product Name</STOCKITEMNAME>
+      <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+      <RATE>1000.00</RATE>
+      <AMOUNT>-10000.00</AMOUNT>
+      <ACTUALQTY>10 Meters</ACTUALQTY>
+      <GODOWNNAME>Mumbai Warehouse</GODOWNNAME> <!-- From mapping -->
+    </ALLINVENTORYENTRIES.LIST>
+
+    ...
+  </VOUCHER>
+
+  3. Queue System for Silver Edition:
+
+  // When invoice created/updated
+  async function syncToTally(invoice, tallySettings) {
+    if (tallySettings.tally_edition === 'SILVER') {
+      // Add to queue
+      await addToTallySyncQueue({
+        entity_type: 'sales_invoice',
+        entity_id: invoice.id,
+        company_id: invoice.company_id
+      });
+
+      // Background worker processes queue sequentially
+    } else {
+      // Gold/Server: Immediate sync (parallel allowed)
+      await sendToTallyHTTP(invoice, tallySettings);
+    }
+  }
+
+  // Background worker (runs every 30 seconds)
+  async function processTallyQueue() {
+    const pendingItems = await db.query(`
+      SELECT * FROM tally_sync_queue
+      WHERE status = 'pending'
+      ORDER BY queued_at ASC
+      LIMIT 1
+    `);
+
+    for (const item of pendingItems) {
+      try {
+        await markAsProcessing(item.id);
+
+        const entity = await loadEntity(item.entity_type, item.entity_id);
+        const xml = generateTallyXML(entity);
+        const response = await sendToTallyHTTP(xml);
+
+        await markAsCompleted(item.id, response);
+        await updateEntitySyncStatus(item.entity_type, item.entity_id, true);
+
+      } catch (error) {
+        await handleSyncError(item, error);
+      }
+
+      // Wait 2 seconds between requests (for Silver)
+      await delay(2000);
+    }
+  }
+
+  ---
+  TallyPrime XML Integration
+
+  Connection Setup
+
+  1. Network Configuration (Port Forwarding):
+
+  User Guide for Admin:
+
+  Step 1: Enable Tally as Server
+    - Open TallyPrime
+    - Press F1 (Help) → Settings → Connectivity
+    - Enable "Act as TallyPrime Server"
+    - Port: 9000 (default)
+    - Save
+
+  Step 2: Configure Router
+    - Login to router (usually 192.168.1.1)
+    - Navigate to Port Forwarding / Virtual Server
+    - Add rule:
+      External Port: 9000
+      Internal IP: [Tally PC IP, e.g., 192.168.1.100]
+      Internal Port: 9000
+      Protocol: TCP
+
+  Step 3: IP Whitelisting
+    - In firewall settings, allow port 9000 only from:
+      - Your warehouse IP addresses
+      - Block all other IPs
+
+  Step 4: Get Public IP
+    - Visit whatismyip.com from head office
+    - Note your public IP (e.g., 203.0.113.50)
+    - If dynamic IP, consider DDNS service
+
+  Step 5: Test Connection
+    - In our app, go to Settings → Tally Integration
+    - Enter: http://[YOUR_PUBLIC_IP]:9000
+    - Click "Test Connection"
+    - Should show: "Connected to TallyPrime"
+
+  2. Test Connection Request:
+
+  <!-- Simple request to verify connection -->
+  <ENVELOPE>
+    <HEADER>
+      <VERSION>1</VERSION>
+      <TALLYREQUEST>Export</TALLYREQUEST>
+      <TYPE>Data</TYPE>
+      <ID>CompanyList</ID>
+    </HEADER>
+    <BODY>
+      <DESC>
+        <STATICVARIABLES>
+          <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+        </STATICVARIABLES>
+        <TDL>
+          <TDLMESSAGE>
+            <REPORT NAME="CompanyList">
+              <FORMS>CompanyListForm</FORMS>
+            </REPORT>
+          </TDLMESSAGE>
+        </TDL>
+      </DESC>
+    </BODY>
+  </ENVELOPE>
+
+  XML Message Formats
+
+  1. Sales Invoice (Sales Voucher):
+
+  <ENVELOPE>
+    <HEADER>
+      <VERSION>1</VERSION>
+      <TALLYREQUEST>Import</TALLYREQUEST>
+      <TYPE>Data</TYPE>
+      <ID>Vouchers</ID>
+    </HEADER>
+    <BODY>
+      <DESC/>
+      <DATA>
+        <TALLYMESSAGE>
+          <VOUCHER ACTION="Create" VCHTYPE="Sales">
+
+            <!-- Basic Info -->
+            <DATE>20250115</DATE>
+            <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+            <VOUCHERNUMBER>SI-001</VOUCHERNUMBER>
+            <REFERENCE>SO-001</REFERENCE>
+            <NARRATION>Sales Invoice for Customer</NARRATION>
+
+            <!-- Party Ledger Entry (Customer) -->
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>Customer Name</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <AMOUNT>11800.00</AMOUNT> <!-- Total including GST -->
+            </ALLLEDGERENTRIES.LIST>
+
+            <!-- Sales Ledger Entry -->
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>Sales Account</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <AMOUNT>-10000.00</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+
+            <!-- CGST Ledger Entry -->
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>CGST Output @ 9%</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <AMOUNT>-900.00</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+
+            <!-- SGST Ledger Entry -->
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>SGST Output @ 9%</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <AMOUNT>-900.00</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+
+            <!-- Inventory Allocations (Stock Items) -->
+            <ALLINVENTORYENTRIES.LIST>
+              <STOCKITEMNAME>Cotton Fabric - Blue</STOCKITEMNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <RATE>1000.00/Meter</RATE>
+              <AMOUNT>-10000.00</AMOUNT>
+              <ACTUALQTY>10 Meters</ACTUALQTY>
+              <GODOWNNAME>Mumbai Warehouse</GODOWNNAME>
+
+              <!-- GST Classification -->
+              <BATCHALLOCATIONS.LIST>
+                <GODOWNNAME>Mumbai Warehouse</GODOWNNAME>
+                <BATCHNAME>Primary Batch</BATCHNAME>
+                <AMOUNT>-10000.00</AMOUNT>
+                <ACTUALQTY>10 Meters</ACTUALQTY>
+              </BATCHALLOCATIONS.LIST>
+            </ALLINVENTORYENTRIES.LIST>
+
+          </VOUCHER>
+        </TALLYMESSAGE>
+      </DATA>
+    </BODY>
+  </ENVELOPE>
+
+  2. Purchase Invoice (Purchase Voucher):
+
+  <ENVELOPE>
+    <HEADER>
+      <VERSION>1</VERSION>
+      <TALLYREQUEST>Import</TALLYREQUEST>
+      <TYPE>Data</TYPE>
+      <ID>Vouchers</ID>
+    </HEADER>
+    <BODY>
+      <DESC/>
+      <DATA>
+        <TALLYMESSAGE>
+          <VOUCHER ACTION="Create" VCHTYPE="Purchase">
+
+            <DATE>20250115</DATE>
+            <VOUCHERTYPENAME>Purchase</VOUCHERTYPENAME>
+            <VOUCHERNUMBER>PI-001</VOUCHERNUMBER>
+            <REFERENCE>PO-001</REFERENCE>
+            <NARRATION>Purchase from Supplier</NARRATION>
+
+            <!-- Party Ledger Entry (Supplier) -->
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>Supplier Name</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <AMOUNT>-11800.00</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+
+            <!-- Purchase Ledger Entry -->
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>Purchase Account</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <AMOUNT>10000.00</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+
+            <!-- CGST Input -->
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>CGST Input @ 9%</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <AMOUNT>900.00</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+
+            <!-- SGST Input -->
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>SGST Input @ 9%</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <AMOUNT>900.00</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+
+            <!-- Inventory Allocations -->
+            <ALLINVENTORYENTRIES.LIST>
+              <STOCKITEMNAME>Cotton Fabric - Blue</STOCKITEMNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <RATE>1000.00/Meter</RATE>
+              <AMOUNT>10000.00</AMOUNT>
+              <ACTUALQTY>10 Meters</ACTUALQTY>
+              <GODOWNNAME>Mumbai Warehouse</GODOWNNAME>
+            </ALLINVENTORYENTRIES.LIST>
+
+          </VOUCHER>
+        </TALLYMESSAGE>
+      </DATA>
+    </BODY>
+  </ENVELOPE>
+
+  3. Payment Received (Receipt Voucher):
+
+  <ENVELOPE>
+    <HEADER>
+      <VERSION>1</VERSION>
+      <TALLYREQUEST>Import</TALLYREQUEST>
+      <TYPE>Data</TYPE>
+      <ID>Vouchers</ID>
+    </HEADER>
+    <BODY>
+      <DESC/>
+      <DATA>
+        <TALLYMESSAGE>
+          <VOUCHER ACTION="Create" VCHTYPE="Receipt">
+
+            <DATE>20250115</DATE>
+            <VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME>
+            <VOUCHERNUMBER>PMT-001</VOUCHERNUMBER>
+            <REFERENCE>SI-001</REFERENCE>
+            <NARRATION>Payment received for Invoice SI-001</NARRATION>
+
+            <!-- Cash/Bank Account (Debit) -->
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>Cash in Hand</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <AMOUNT>11800.00</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+
+            <!-- Customer Account (Credit) -->
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>Customer Name</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <AMOUNT>-11800.00</AMOUNT>
+
+              <!-- Bill-wise details -->
+              <BILLALLOCATIONS.LIST>
+                <NAME>SI-001</NAME>
+                <BILLTYPE>New Ref</BILLTYPE>
+                <AMOUNT>-11800.00</AMOUNT>
+              </BILLALLOCATIONS.LIST>
+            </ALLLEDGERENTRIES.LIST>
+
+          </VOUCHER>
+        </TALLYMESSAGE>
+      </DATA>
+    </BODY>
+  </ENVELOPE>
+
+  4. Create Godown Master:
+
+  <ENVELOPE>
+    <HEADER>
+      <VERSION>1</VERSION>
+      <TALLYREQUEST>Import</TALLYREQUEST>
+      <TYPE>Data</TYPE>
+      <ID>All Masters</ID>
+    </HEADER>
+    <BODY>
+      <DESC/>
+      <DATA>
+        <TALLYMESSAGE>
+          <GODOWN NAME="Mumbai Warehouse" ACTION="Create">
+            <NAME>Mumbai Warehouse</NAME>
+            <PARENT/>
+            <ADDRESS.LIST>
+              <ADDRESS>123 Warehouse Street</ADDRESS>
+              <ADDRESS>Mumbai, Maharashtra</ADDRESS>
+              <ADDRESS>400001</ADDRESS>
+            </ADDRESS.LIST>
+          </GODOWN>
+        </TALLYMESSAGE>
+      </DATA>
+    </BODY>
+  </ENVELOPE>
+
+  XML Generation Helper (Backend)
+
+  // services/tally/xml-generator.js
+
+  class TallyXMLGenerator {
+
+    generateSalesInvoice(invoice, tallySettings) {
+      const godownName = tallySettings.godown_mapping[invoice.warehouse_id];
+
+      const xml = `
+  <ENVELOPE>
+    <HEADER>
+      <VERSION>1</VERSION>
+      <TALLYREQUEST>Import</TALLYREQUEST>
+      <TYPE>Data</TYPE>
+      <ID>Vouchers</ID>
+    </HEADER>
+    <BODY>
+      <DESC/>
+      <DATA>
+        <TALLYMESSAGE>
+          <VOUCHER ACTION="Create" VCHTYPE="Sales">
+            <DATE>${this.formatDate(invoice.invoice_date)}</DATE>
+            <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+            <VOUCHERNUMBER>${invoice.invoice_number}</VOUCHERNUMBER>
+            <NARRATION>${this.escape(invoice.notes || 'Sales Invoice')}</NARRATION>
+            
+            <!-- Customer Ledger -->
+            ${this.generateCustomerLedger(invoice)}
+            
+            <!-- Sales Ledger -->
+            ${this.generateSalesLedger(invoice)}
+            
+            <!-- GST Ledgers -->
+            ${this.generateGSTLedgers(invoice)}
+            
+            <!-- Inventory Items -->
+            ${this.generateInventoryEntries(invoice, godownName)}
+            
+          </VOUCHER>
+        </TALLYMESSAGE>
+      </DATA>
+    </BODY>
+  </ENVELOPE>
+      `.trim();
+
+      return xml;
+    }
+
+    generateCustomerLedger(invoice) {
+      return `
+  <ALLLEDGERENTRIES.LIST>
+    <LEDGERNAME>${this.escape(invoice.customer.company_name || invoice.customer.name)}</LEDGERNAME>
+    <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+    <AMOUNT>${invoice.total_amount.toFixed(2)}</AMOUNT>
+  </ALLLEDGERENTRIES.LIST>
+      `;
+    }
+
+    generateSalesLedger(invoice) {
+      return `
+  <ALLLEDGERENTRIES.LIST>
+    <LEDGERNAME>Sales Account</LEDGERNAME>
+    <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+    <AMOUNT>-${invoice.taxable_amount.toFixed(2)}</AMOUNT>
+  </ALLLEDGERENTRIES.LIST>
+      `;
+    }
+
+    generateGSTLedgers(invoice) {
+      let xml = '';
+
+      if (invoice.cgst_amount > 0) {
+        xml += `
+  <ALLLEDGERENTRIES.LIST>
+    <LEDGERNAME>CGST Output @ ${invoice.cgst_rate}%</LEDGERNAME>
+    <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+    <AMOUNT>-${invoice.cgst_amount.toFixed(2)}</AMOUNT>
+  </ALLLEDGERENTRIES.LIST>
+        `;
+      }
+
+      if (invoice.sgst_amount > 0) {
+        xml += `
+  <ALLLEDGERENTRIES.LIST>
+    <LEDGERNAME>SGST Output @ ${invoice.sgst_rate}%</LEDGERNAME>
+    <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+    <AMOUNT>-${invoice.sgst_amount.toFixed(2)}</AMOUNT>
+  </ALLLEDGERENTRIES.LIST>
+        `;
+      }
+
+      if (invoice.igst_amount > 0) {
+        xml += `
+  <ALLLEDGERENTRIES.LIST>
+    <LEDGERNAME>IGST Output @ ${invoice.igst_rate}%</LEDGERNAME>
+    <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+    <AMOUNT>-${invoice.igst_amount.toFixed(2)}</AMOUNT>
+  </ALLLEDGERENTRIES.LIST>
+        `;
+      }
+
+      return xml;
+    }
+
+    generateInventoryEntries(invoice, godownName) {
+      return invoice.line_items.map(item => `
+  <ALLINVENTORYENTRIES.LIST>
+    <STOCKITEMNAME>${this.escape(item.product.name)}</STOCKITEMNAME>
+    <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+    <RATE>${item.unit_rate.toFixed(2)}/${item.product.measuring_unit}</RATE>
+    <AMOUNT>-${item.line_total.toFixed(2)}</AMOUNT>
+    <ACTUALQTY>${item.quantity} ${item.product.measuring_unit}</ACTUALQTY>
+    <GODOWNNAME>${this.escape(godownName)}</GODOWNNAME>
+  </ALLINVENTORYENTRIES.LIST>
+      `).join('');
+    }
+
+    formatDate(date) {
+      // Format: YYYYMMDD
+      return date.toISOString().slice(0, 10).replace(/-/g, '');
+    }
+
+    escape(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    }
+  }
+
+  module.exports = new TallyXMLGenerator();
+
+  HTTP Sync Service
+
+  // services/tally/sync-service.js
+
+  const axios = require('axios');
+  const xmlGenerator = require('./xml-generator');
+
+  class TallySyncService {
+
+    async syncSalesInvoice(invoiceId) {
+      const invoice = await this.loadInvoiceWithRelations(invoiceId);
+      const tallySettings = await this.getTallySettings(invoice.company_id);
+
+      if (!tallySettings.enabled) {
+        throw new Error('Tally integration not enabled');
+      }
+
+      // Check edition and use appropriate sync method
+      if (tallySettings.tally_edition === 'SILVER') {
+        return await this.queueSync('sales_invoice', invoiceId, invoice.company_id);
+      } else {
+        return await this.immediateSync(invoice, tallySettings);
+      }
+    }
+
+    async immediateSync(invoice, tallySettings) {
+      try {
+        // Generate XML
+        const xml = xmlGenerator.generateSalesInvoice(invoice, tallySettings);
+
+        // Send to Tally
+        const response = await axios.post(tallySettings.tally_url, xml, {
+          headers: {
+            'Content-Type': 'text/xml',
+            'Accept': 'text/xml'
+          },
+          timeout: 10000 // 10 seconds
+        });
+
+        // Parse response
+        if (this.isSuccess(response.data)) {
+          await this.markAsSynced(invoice.id, response.data);
+          return { success: true, message: 'Synced to Tally successfully' };
+        } else {
+          throw new Error('Tally returned error: ' + this.parseError(response.data));
+        }
+
+      } catch (error) {
+        await this.logSyncError(invoice.id, error.message);
+        throw error;
+      }
+    }
+
+    async queueSync(entityType, entityId, companyId) {
+      await db.query(`
+        INSERT INTO tally_sync_queue (company_id, entity_type, entity_id)
+        VALUES ($1, $2, $3)
+      `, [companyId, entityType, entityId]);
+
+      return { success: true, message: 'Added to sync queue' };
+    }
+
+    isSuccess(xmlResponse) {
+      // Check if Tally returned success
+      return !xmlResponse.includes('<LINEERROR>') &&
+             !xmlResponse.includes('Error:');
+    }
+
+    parseError(xmlResponse) {
+      // Extract error message from XML
+      const match = xmlResponse.match(/<LINEERROR>(.*?)<\/LINEERROR>/);
+      return match ? match[1] : 'Unknown error';
+    }
+
+    async markAsSynced(invoiceId, tallyResponse) {
+      // Extract voucher number from Tally response if available
+      const voucherMatch = tallyResponse.match(/<VOUCHERNUMBER>(.*?)<\/VOUCHERNUMBER>/);
+      const voucherNumber = voucherMatch ? voucherMatch[1] : null;
+
+      await db.query(`
+        UPDATE sales_invoices
+        SET synced_to_tally = TRUE,
+            tally_sync_at = NOW(),
+            tally_voucher_number = $1,
+            tally_sync_error = NULL
+        WHERE id = $2
+      `, [voucherNumber, invoiceId]);
+    }
+
+    async logSyncError(invoiceId, errorMessage) {
+      await db.query(`
+        UPDATE sales_invoices
+        SET synced_to_tally = FALSE,
+            tally_sync_error = $1
+        WHERE id = $2
+      `, [errorMessage, invoiceId]);
+    }
+  }
+
+  module.exports = new TallySyncService();
+
+  ---
+  UI/UX Workflows
+
+  Invoice Creation Flow
+
+  Accountant Dashboard:
+  ┌──────────────────────────────────────────┐
+  │ Accounting Overview                      │
+  ├──────────────────────────────────────────┤
+  │ Pending Sales Orders: 12                 │
+  │ Uninvoiced Orders: ₹2,45,000            │
+  │                                          │
+  │ Draft Invoices: 3                        │
+  │ Unpaid Invoices: ₹1,80,000              │
+  │                                          │
+  │ [Create Sales Invoice]                   │
+  │ [Record Purchase Invoice]                │
+  │ [Record Payment]                         │
+  └──────────────────────────────────────────┘
+
+  Click "Create Sales Invoice":
+  ┌──────────────────────────────────────────┐
+  │ Create Sales Invoice                     │
+  ├──────────────────────────────────────────┤
+  │ Create From:                             │
+  │ ○ Sales Order (Select from list)        │
+  │ ○ Multiple Orders (Consolidated)        │
+  │ ○ New Invoice (Standalone)              │
+  │                                          │
+  │ [Continue]                               │
+  └──────────────────────────────────────────┘
+
+  Select "Sales Order":
+  ┌──────────────────────────────────────────┐
+  │ Select Sales Order                       │
+  ├──────────────────────────────────────────┤
+  │ Search: [________________] 🔍           │
+  │                                          │
+  │ ☐ SO-001 | Raj Textiles | ₹50,000      │
+  │   Mumbai | 15 Jan 2025                   │
+  │                                          │
+  │ ☐ SO-002 | Kumar Fabrics | ₹80,000     │
+  │   Delhi | 14 Jan 2025                    │
+  │                                          │
+  │ [Continue with Selected]                 │
+  └──────────────────────────────────────────┘
+
+  Invoice Form (Pre-filled from order):
+  ┌──────────────────────────────────────────┐
+  │ Sales Invoice - Draft                    │
+  ├──────────────────────────────────────────┤
+  │ Invoice Number: SI-001 (auto)            │
+  │ Invoice Date: [15 Jan 2025]             │
+  │ Due Date: [30 Jan 2025]                 │
+  │                                          │
+  │ Customer: Raj Textiles ✓                │
+  │ GSTIN: 27XXXXX1234X1Z5                  │
+  │                                          │
+  │ Linked Order: SO-001                     │
+  │                                          │
+  │ Line Items:                              │
+  │ ┌────────────────────────────────────┐  │
+  │ │ Product         Qty    Rate  Total │  │
+  │ ├────────────────────────────────────┤  │
+  │ │ Cotton - Blue   100m   ₹500  50000 │  │
+  │ │ [Edit Qty: 100m of 150m ordered]   │  │
+  │ └────────────────────────────────────┘  │
+  │                                          │
+  │ Subtotal:              ₹50,000          │
+  │ Discount (5%):         -₹2,500          │
+  │ Taxable Amount:        ₹47,500          │
+  │ CGST @ 9%:             ₹4,275           │
+  │ SGST @ 9%:             ₹4,275           │
+  │ Total:                 ₹56,050          │
+  │                                          │
+  │ Notes: [________________________]       │
+  │                                          │
+  │ [Save as Draft] [Finalize & Send]       │
+  └──────────────────────────────────────────┘
+
+  After Finalize:
+  ┌──────────────────────────────────────────┐
+  │ Invoice SI-001 Created! ✓               │
+  ├──────────────────────────────────────────┤
+  │ Status: Sent                             │
+  │ Total: ₹56,050                          │
+  │ Due: 30 Jan 2025                        │
+  │                                          │
+  │ Actions:                                 │
+  │ [📄 Download PDF]                       │
+  │ [✉️ Email to Customer]                  │
+  │ [📱 Share via WhatsApp]                 │
+  │ [Print]                                  │
+  │                                          │
+  │ Tally Sync:                              │
+  │ ⏳ In queue (2 invoices ahead)          │
+  │ Expected sync: ~5 minutes                │
+  │                                          │
+  │ [View Invoice] [Create Another]         │
+  └──────────────────────────────────────────┘
+
+  Tally Sync Status Dashboard
+
+  ┌──────────────────────────────────────────┐
+  │ Tally Integration Status                 │
+  ├──────────────────────────────────────────┤
+  │ Connection: ✓ Connected                  │
+  │ Server: http://203.0.113.50:9000        │
+  │ Company: ABC Fabrics Ltd                 │
+  │ Edition: Silver (Queue Mode)             │
+  │                                          │
+  │ Last Sync: 5 minutes ago                 │
+  │ Sync Queue: 3 pending                    │
+  │                                          │
+  │ Pending Items:                           │
+  │ ┌────────────────────────────────────┐  │
+  │ │ ⏳ SI-003 | ₹25,000 | 2 min ago   │  │
+  │ │ ⏳ PI-005 | ₹18,000 | 5 min ago   │  │
+  │ │ ⏳ PMT-012 | ₹10,000 | 8 min ago  │  │
+  │ └────────────────────────────────────┘  │
+  │                                          │
+  │ Recent Syncs (Last 10):                  │
+  │ ┌────────────────────────────────────┐  │
+  │ │ ✓ SI-002 | Synced | 10 min ago    │  │
+  │ │ ✓ SI-001 | Synced | 15 min ago    │  │
+  │ │ ❌ PI-004 | Failed | 20 min ago   │  │
+  │ │   Error: Ledger not found          │  │
+  │ └────────────────────────────────────┘  │
+  │                                          │
+  │ [View All] [Retry Failed] [Settings]    │
+  └──────────────────────────────────────────┘
+
+  ---
+  GST Invoice PDF Template
+
+  Key Elements:
+
+  ┌─────────────────────────────────────────────┐
+  │          [Company Logo]                     │
+  │                                             │
+  │         ABC FABRICS LTD                     │
+  │    123 Warehouse St, Mumbai 400001          │
+  │    GSTIN: 27XXXXX1234X1Z5                  │
+  │    Phone: +91 9876543210                    │
+  │                                             │
+  ├─────────────────────────────────────────────┤
+  │           TAX INVOICE                       │
+  ├─────────────────────────────────────────────┤
+  │ Invoice No: SI-001    Date: 15 Jan 2025    │
+  │ Due Date: 30 Jan 2025                       │
+  │ Order Ref: SO-001                           │
+  ├─────────────────────────────────────────────┤
+  │ Bill To:                                    │
+  │ Raj Textiles                                │
+  │ 456 Market Road, Mumbai 400002              │
+  │ GSTIN: 27YYYYY5678Y1Z5                     │
+  │ Phone: +91 9988776655                       │
+  ├─────────────────────────────────────────────┤
+  │ Sr | Product      | HSN   | Qty  | Rate    │
+  │ No | Description  | Code  |      | Amount  │
+  ├────┼──────────────┼───────┼──────┼─────────┤
+  │ 1  │ Cotton       │ 5208  │ 100m │ ₹500    │
+  │    │ Fabric-Blue  │       │      │ ₹50,000 │
+  ├─────────────────────────────────────────────┤
+  │                      Subtotal: ₹50,000     │
+  │                   Discount 5%: -₹2,500     │
+  │                 Taxable Amount: ₹47,500    │
+  │                    CGST @ 9%: ₹4,275       │
+  │                    SGST @ 9%: ₹4,275       │
+  │                   Total Amount: ₹56,050    │
+  ├─────────────────────────────────────────────┤
+  │ Amount in Words:                            │
+  │ Fifty Six Thousand Fifty Rupees Only       │
+  ├─────────────────────────────────────────────┤
+  │ Bank Details:                               │
+  │ Bank: HDFC Bank                             │
+  │ Account: 1234567890                         │
+  │ IFSC: HDFC0001234                          │
+  ├─────────────────────────────────────────────┤
+  │ Terms & Conditions:                         │
+  │ 1. Payment due within 15 days              │
+  │ 2. Goods once sold cannot be returned      │
+  │                                             │
+  │              For ABC Fabrics Ltd            │
+  │                                             │
+  │           [Authorized Signatory]            │
+  └─────────────────────────────────────────────┘
+
+  ---
+  Implementation Phases
+
+  Phase 1: Foundation (Week 1-2)
+
+  - Purchase Orders entity & UI
+  - Sales/Purchase Invoice entities
+  - Accountant role & RBAC
+  - Basic invoice creation (from order)
+
+  Phase 2: Core Features (Week 3-4)
+
+  - Invoice workflows (partial, consolidated)
+  - GST calculations
+  - PDF generation
+  - Payment tracking basic
+
+  Phase 3: Tally Integration (Week 5-6)
+
+  - Tally settings configuration
+  - XML generation
+  - HTTP sync service
+  - Queue system for Silver
+  - Godown mapping
+
+  Phase 4: Testing & Polish (Week 7-8)
+
+  - Multi-warehouse sync testing
+  - Error handling & retry logic
+  - UI refinements
+  - Documentation
+
+  ---
+  Success Metrics
+
+  User Experience:
+  - Invoice creation time: < 2 minutes (from order)
+  - Sync success rate: > 95%
+  - Average sync delay (Silver): < 5 minutes
+
+  Technical:
+  - XML validation success: 100%
+  - Connection uptime: > 99%
+  - Error recovery: Auto-retry 3 times
+
+  Business:
+  - Eliminate double-entry (Tally + App)
+  - Reduce invoice errors by 80%
+  - Accountant productivity: +50%
+
+  ---
+  This comprehensive plan covers all aspects of the accounting integration with TallyPrime. Ready to proceed with implementation?
+
+
+
