@@ -149,87 +149,90 @@ export function ManualJournalForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Header Info */}
-      <div className="rounded-lg bg-white p-6 shadow-sm">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Entry Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Entry Date <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Date <span className="text-red-600">*</span>
             </label>
             <input
               type="date"
               required
               value={formData.entry_date}
               onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
           {/* Narration */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Narration <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Description <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
               required
               value={formData.narration}
               onChange={(e) => setFormData({ ...formData, narration: e.target.value })}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Brief description of this transaction"
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="e.g., Opening balance, Bank charges"
             />
           </div>
         </div>
       </div>
 
       {/* Journal Lines */}
-      <div className="rounded-lg bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-medium text-gray-900">Journal Entry Lines</h3>
+          <h3 className="text-base font-medium text-gray-900">Account Details</h3>
           <button
             type="button"
             onClick={addLine}
-            className="rounded-lg bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            className="inline-flex items-center gap-1.5 rounded-md bg-white border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            + Add Line
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Line
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-6 px-6">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead>
+            <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Ledger Account
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Account
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 w-40">
                   Debit
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 w-40">
                   Credit
                 </th>
-                <th className="px-3 py-2"></th>
+                <th className="px-4 py-3 w-10"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {lines.map((line) => (
-                <tr key={line.id}>
-                  <td className="px-3 py-2">
+            <tbody className="bg-white divide-y divide-gray-200">
+              {lines.map((line, index) => (
+                <tr key={line.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
                     <select
                       value={line.ledger_account_id}
                       onChange={(e) => updateLine(line.id, 'ledger_account_id', e.target.value)}
-                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       required
                     >
-                      <option value="">Select Ledger</option>
+                      <option value="">Choose account</option>
                       {ledgers.map((ledger) => (
                         <option key={ledger.id} value={ledger.id}>
-                          {ledger.name} ({ledger.account_type})
+                          {ledger.name}
                         </option>
                       ))}
                     </select>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3">
                     <input
                       type="number"
                       step="0.01"
@@ -237,11 +240,11 @@ export function ManualJournalForm() {
                       value={line.debit_amount}
                       onChange={(e) => updateLine(line.id, 'debit_amount', e.target.value)}
                       disabled={!!line.credit_amount}
-                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-right focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                       placeholder="0.00"
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3">
                     <input
                       type="number"
                       step="0.01"
@@ -249,82 +252,84 @@ export function ManualJournalForm() {
                       value={line.credit_amount}
                       onChange={(e) => updateLine(line.id, 'credit_amount', e.target.value)}
                       disabled={!!line.debit_amount}
-                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-right focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm text-right shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                       placeholder="0.00"
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3 text-center">
                     {lines.length > 2 && (
                       <button
                         type="button"
                         onClick={() => removeLine(line.id)}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-gray-400 hover:text-red-600"
+                        title="Remove line"
                       >
-                        <svg
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
                     )}
                   </td>
                 </tr>
               ))}
-
+            </tbody>
+            <tfoot className="bg-gray-50">
               {/* Totals Row */}
-              <tr className="bg-gray-50 font-medium">
-                <td className="px-3 py-2 text-sm text-gray-900">Total</td>
-                <td className="px-3 py-2 text-right text-sm text-gray-900">
+              <tr className="font-medium">
+                <td className="px-4 py-3 text-sm text-gray-900">Total</td>
+                <td className="px-4 py-3 text-right text-sm text-gray-900">
                   ₹{totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </td>
-                <td className="px-3 py-2 text-right text-sm text-gray-900">
+                <td className="px-4 py-3 text-right text-sm text-gray-900">
                   ₹{totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </td>
-                <td className="px-3 py-2"></td>
+                <td className="px-4 py-3"></td>
               </tr>
-
               {/* Balance Check Row */}
-              <tr
-                className={`font-medium ${isBalanced ? 'bg-green-50' : 'bg-red-50'}`}
-              >
-                <td className="px-3 py-2 text-sm" colSpan={3}>
+              <tr>
+                <td className="px-4 py-3 text-sm" colSpan={4}>
                   {isBalanced ? (
-                    <span className="text-green-800">✓ Balanced (Dr = Cr)</span>
+                    <div className="flex items-center gap-2 text-green-700">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">Entry is balanced</span>
+                    </div>
                   ) : (
-                    <span className="text-red-800">
-                      ✗ Not Balanced (Difference: ₹
-                      {Math.abs(totalDebit - totalCredit).toFixed(2)})
-                    </span>
+                    <div className="flex items-center gap-2 text-red-700">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">
+                        Difference: ₹{Math.abs(totalDebit - totalCredit).toFixed(2)} (Debits must equal Credits)
+                      </span>
+                    </div>
                   )}
                 </td>
-                <td></td>
               </tr>
-            </tbody>
+            </tfoot>
           </table>
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="rounded-lg bg-red-50 p-4">
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <div className="flex gap-3">
+            <svg className="h-5 w-5 text-red-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
         </div>
       )}
 
       {/* Submit Buttons */}
-      <div className="flex gap-3">
+      <div className="flex items-center justify-end gap-3 pt-2">
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           disabled={loading}
         >
           Cancel
@@ -332,9 +337,9 @@ export function ManualJournalForm() {
         <button
           type="submit"
           disabled={loading || !isBalanced}
-          className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? 'Creating...' : 'Create Journal Entry'}
+          {loading ? 'Saving...' : 'Save Entry'}
         </button>
       </div>
     </form>

@@ -165,16 +165,16 @@ export default function JournalEntriesPage() {
     : entries;
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Journal Entries</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            View all accounting transactions and journal entries
+          <h1 className="text-2xl font-semibold text-gray-900">Journal Entries</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            All accounting transactions automatically created from business operations
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button
             onClick={() => {
               // Generate Tally XML export
@@ -188,51 +188,57 @@ export default function JournalEntriesPage() {
               URL.revokeObjectURL(url);
             }}
             disabled={entries.length === 0}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
           >
-            Export to Tally XML
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export to Tally
           </button>
           <Link
             href="/dashboard/accounts/transactions/new"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
           >
-            + New Transaction
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Manual Entry
           </Link>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="mb-6 rounded-lg bg-white p-4 shadow-sm">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
           {/* Start Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Start Date</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">From Date</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           {/* End Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">End Date</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">To Date</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           {/* Transaction Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Transaction Type</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">Type</label>
             <select
               value={transactionType}
               onChange={(e) => setTransactionType(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="all">All Types</option>
               <option value="sales">Sales</option>
@@ -246,20 +252,25 @@ export default function JournalEntriesPage() {
           </div>
 
           {/* Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Search</label>
-            <input
-              type="text"
-              placeholder="Search by entry #, narration..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">Search</label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Entry number or description..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="block w-full rounded-md border-gray-300 pl-10 pr-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
           </div>
         </div>
 
         {/* Manual Entries Toggle */}
-        <div className="mt-4 flex items-center">
+        <div className="mt-4 flex items-center gap-2 pt-3 border-t border-gray-100">
           <input
             type="checkbox"
             id="showOnlyManual"
@@ -267,7 +278,7 @@ export default function JournalEntriesPage() {
             onChange={(e) => setShowOnlyManual(e.target.checked)}
             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
-          <label htmlFor="showOnlyManual" className="ml-2 text-sm text-gray-700">
+          <label htmlFor="showOnlyManual" className="text-sm text-gray-700 cursor-pointer">
             Show only manual adjustments
           </label>
         </div>
@@ -296,46 +307,44 @@ export default function JournalEntriesPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {filteredEntries.map((entry) => {
             const badge = getTransactionBadge(entry.transaction_type, entry.voucher_type);
             const sourceLink = getSourceLink(entry);
             const isAutoGenerated = !!entry.source_id;
 
             return (
-            <div key={entry.id} className="rounded-lg bg-white shadow-sm">
+            <div key={entry.id} className="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
               {/* Entry Header - Clickable */}
               <div
                 onClick={() => toggleExpand(entry.id)}
                 className="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50"
               >
                 <div className="flex flex-1 items-center gap-6">
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 w-24">
                     <div className="text-sm font-medium text-gray-900">{entry.entry_number}</div>
                     <div className="text-xs text-gray-500">
-                      {new Date(entry.entry_date).toLocaleDateString('en-IN')}
+                      {new Date(entry.entry_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </div>
                   </div>
 
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">
-                      {entry.narration || 'No narration'}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-gray-900 truncate">
+                      {entry.narration || 'No description'}
                     </div>
-                    <div className="mt-1 flex items-center gap-2">
+                    <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${badge.color}`}
+                        className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${badge.color}`}
                       >
-                        <span>{badge.icon}</span>
-                        <span>{badge.label}</span>
+                        {badge.label}
                       </span>
                       {isAutoGenerated && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                          <span>🤖</span>
-                          <span>Auto</span>
+                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                          Auto
                         </span>
                       )}
                       {entry.is_opening_entry && (
-                        <span className="inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">
+                        <span className="inline-flex rounded-md bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
                           Opening
                         </span>
                       )}
@@ -343,26 +352,25 @@ export default function JournalEntriesPage() {
                         <Link
                           href={sourceLink.url}
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
                         >
-                          <span>🔗</span>
-                          <span>{sourceLink.label}</span>
+                          {sourceLink.label}
                         </Link>
                       )}
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900">
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-sm font-semibold text-gray-900">
                       ₹{entry.total_debit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
-                    <div className="text-xs text-gray-500">{entry.lines.length} lines</div>
+                    <div className="text-xs text-gray-500">{entry.lines.length} account{entry.lines.length > 1 ? 's' : ''}</div>
                   </div>
                 </div>
 
                 <div className="ml-4 flex-shrink-0">
                   <svg
-                    className={`h-5 w-5 text-gray-400 transition-transform ${expandedEntry === entry.id ? 'rotate-180' : ''}`}
+                    className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${expandedEntry === entry.id ? 'rotate-180' : ''}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -374,59 +382,62 @@ export default function JournalEntriesPage() {
 
               {/* Entry Lines - Expandable */}
               {expandedEntry === entry.id && (
-                <div className="border-t border-gray-200 bg-gray-50 p-4">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                          Ledger Account
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                          Type
-                        </th>
-                        <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
-                          Debit
-                        </th>
-                        <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
-                          Credit
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
-                      {entry.lines.map((line) => (
-                        <tr key={line.id}>
-                          <td className="whitespace-nowrap px-3 py-2 text-sm text-gray-900">
-                            {line.ledger_name}
+                <div className="border-t border-gray-200 bg-gray-50 p-5">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                            Account
+                          </th>
+                          <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                            Type
+                          </th>
+                          <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-600">
+                            Debit
+                          </th>
+                          <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-600">
+                            Credit
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white">
+                        {entry.lines.map((line) => (
+                          <tr key={line.id} className="border-b border-gray-100">
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                              {line.ledger_name}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-gray-500">
+                              {line.account_type}
+                            </td>
+                            <td className="px-4 py-3 text-right text-sm text-gray-900 tabular-nums">
+                              {line.debit_amount > 0
+                                ? `₹${line.debit_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                                : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-right text-sm text-gray-900 tabular-nums">
+                              {line.credit_amount > 0
+                                ? `₹${line.credit_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                                : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-gray-50">
+                        <tr className="border-t-2 border-gray-300">
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-900" colSpan={2}>
+                            Total
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-500">
-                            {line.account_type}
+                          <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 tabular-nums">
+                            ₹{entry.total_debit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2 text-right text-sm text-gray-900">
-                            {line.debit_amount > 0
-                              ? `₹${line.debit_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-                              : '-'}
-                          </td>
-                          <td className="whitespace-nowrap px-3 py-2 text-right text-sm text-gray-900">
-                            {line.credit_amount > 0
-                              ? `₹${line.credit_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-                              : '-'}
+                          <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 tabular-nums">
+                            ₹{entry.total_credit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                           </td>
                         </tr>
-                      ))}
-                      {/* Totals Row */}
-                      <tr className="bg-gray-50 font-medium">
-                        <td className="px-3 py-2 text-sm text-gray-900" colSpan={2}>
-                          Total
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-right text-sm text-gray-900">
-                          ₹{entry.total_debit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-right text-sm text-gray-900">
-                          ₹{entry.total_credit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>

@@ -40,11 +40,10 @@ const nextConfig: NextConfig = {
 
   // Webpack optimizations for better tree-shaking
   webpack: (config, { isServer }) => {
-    // Optimize bundle size
+    // Optimize bundle size - removed usedExports to fix dev server error
     if (!isServer) {
       config.optimization = {
         ...config.optimization,
-        usedExports: true,
         sideEffects: true,
       };
     }
