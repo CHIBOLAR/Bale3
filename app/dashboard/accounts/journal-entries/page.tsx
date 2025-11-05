@@ -77,6 +77,7 @@ export default function JournalEntriesPage() {
   const [endDate, setEndDate] = useState('');
   const [transactionType, setTransactionType] = useState('all');
   const [search, setSearch] = useState('');
+  const [showOnlyManual, setShowOnlyManual] = useState(false);
 
   const loadEntries = async () => {
     setLoading(true);
@@ -105,6 +106,63 @@ export default function JournalEntriesPage() {
   const toggleExpand = (entryId: string) => {
     setExpandedEntry(expandedEntry === entryId ? null : entryId);
   };
+
+  // Helper to get source transaction link
+  const getSourceLink = (entry: JournalEntry): { url: string; label: string } | null => {
+    if (!entry.source_table || !entry.source_id) return null;
+
+    switch (entry.source_table) {
+      case 'invoices':
+        return {
+          url: `/dashboard/invoices/${entry.source_id}`,
+          label: 'View Invoice',
+        };
+      case 'payments_received':
+        return {
+          url: `/dashboard/invoices`, // Could enhance to link to specific payment
+          label: 'View Payment',
+        };
+      case 'payments_made':
+        return {
+          url: `/dashboard/purchases/payments`, // Adjust based on your routing
+          label: 'View Payment',
+        };
+      case 'purchase_bills':
+        return {
+          url: `/dashboard/purchases/${entry.source_id}`,
+          label: 'View Purchase Bill',
+        };
+      case 'expenses':
+        return {
+          url: `/dashboard/expenses/${entry.source_id}`,
+          label: 'View Expense',
+        };
+      default:
+        return null;
+    }
+  };
+
+  // Helper to get transaction type badge config
+  const getTransactionBadge = (type: string, voucherType: string | null) => {
+    const configs: Record<string, { color: string; icon: string; label: string }> = {
+      sales: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: '📊', label: 'Sales' },
+      invoice: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: '📄', label: 'Invoice' },
+      receipt: { color: 'bg-green-100 text-green-800 border-green-200', icon: '💰', label: 'Receipt' },
+      payment: { color: 'bg-red-100 text-red-800 border-red-200', icon: '💳', label: 'Payment' },
+      purchase: { color: 'bg-orange-100 text-orange-800 border-orange-200', icon: '🛒', label: 'Purchase' },
+      expense: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: '💸', label: 'Expense' },
+      manual: { color: 'bg-purple-100 text-purple-800 border-purple-200', icon: '✏️', label: 'Manual' },
+      opening: { color: 'bg-gray-100 text-gray-800 border-gray-200', icon: '🔓', label: 'Opening' },
+    };
+
+    const key = voucherType || type;
+    return configs[key] || { color: 'bg-gray-100 text-gray-800 border-gray-200', icon: '📋', label: type };
+  };
+
+  // Filter entries
+  const filteredEntries = showOnlyManual
+    ? entries.filter(e => e.transaction_type === 'manual' || !e.source_id)
+    : entries;
 
   return (
     <div className="p-6">
@@ -177,8 +235,11 @@ export default function JournalEntriesPage() {
               className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="all">All Types</option>
-              <option value="invoice">Invoice</option>
+              <option value="sales">Sales</option>
+              <option value="receipt">Receipt</option>
               <option value="payment">Payment</option>
+              <option value="purchase">Purchase</option>
+              <option value="expense">Expense</option>
               <option value="manual">Manual Entry</option>
               <option value="opening">Opening Balance</option>
             </select>
@@ -196,6 +257,20 @@ export default function JournalEntriesPage() {
             />
           </div>
         </div>
+
+        {/* Manual Entries Toggle */}
+        <div className="mt-4 flex items-center">
+          <input
+            type="checkbox"
+            id="showOnlyManual"
+            checked={showOnlyManual}
+            onChange={(e) => setShowOnlyManual(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <label htmlFor="showOnlyManual" className="ml-2 text-sm text-gray-700">
+            Show only manual adjustments
+          </label>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -210,7 +285,7 @@ export default function JournalEntriesPage() {
         <div className="flex justify-center py-12">
           <div className="text-gray-500">Loading journal entries...</div>
         </div>
-      ) : entries.length === 0 ? (
+      ) : filteredEntries.length === 0 ? (
         <div className="rounded-lg bg-white p-12 text-center shadow-sm">
           <p className="text-gray-500">No journal entries found</p>
           <Link
@@ -222,7 +297,12 @@ export default function JournalEntriesPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {entries.map((entry) => (
+          {filteredEntries.map((entry) => {
+            const badge = getTransactionBadge(entry.transaction_type, entry.voucher_type);
+            const sourceLink = getSourceLink(entry);
+            const isAutoGenerated = !!entry.source_id;
+
+            return (
             <div key={entry.id} className="rounded-lg bg-white shadow-sm">
               {/* Entry Header - Clickable */}
               <div
@@ -243,22 +323,31 @@ export default function JournalEntriesPage() {
                     </div>
                     <div className="mt-1 flex items-center gap-2">
                       <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          entry.transaction_type === 'invoice'
-                            ? 'bg-blue-100 text-blue-800'
-                            : entry.transaction_type === 'payment'
-                              ? 'bg-green-100 text-green-800'
-                              : entry.transaction_type === 'manual'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-gray-100 text-gray-800'
-                        }`}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${badge.color}`}
                       >
-                        {entry.transaction_type}
+                        <span>{badge.icon}</span>
+                        <span>{badge.label}</span>
                       </span>
+                      {isAutoGenerated && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                          <span>🤖</span>
+                          <span>Auto</span>
+                        </span>
+                      )}
                       {entry.is_opening_entry && (
                         <span className="inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">
                           Opening
                         </span>
+                      )}
+                      {sourceLink && (
+                        <Link
+                          href={sourceLink.url}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                        >
+                          <span>🔗</span>
+                          <span>{sourceLink.label}</span>
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -341,7 +430,8 @@ export default function JournalEntriesPage() {
                 </div>
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
     </div>

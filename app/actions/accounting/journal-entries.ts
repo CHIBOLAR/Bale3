@@ -21,6 +21,9 @@ export interface JournalEntry {
   entry_number: string;
   entry_date: string;
   transaction_type: string;
+  voucher_type: string | null;
+  source_table: string | null;
+  source_id: string | null;
   narration: string | null;
   is_opening_entry: boolean;
   created_at: string;
@@ -68,6 +71,9 @@ export async function getJournalEntries(filters?: {
         entry_number,
         entry_date,
         transaction_type,
+        voucher_type,
+        source_table,
+        source_id,
         narration,
         is_opening_entry,
         created_at
